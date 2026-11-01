@@ -210,9 +210,12 @@ public final class ReportSubmissionService {
 
     if (!category.get().enabled()) {
 
+      // The pure core hands back the config display value; the Bukkit layer
+      // rewrites the "category" placeholder through categoryDisplay(), which
+      // localises it via the language files and only falls back to this value.
+
       return SubmitResult.error(
-          SubmitReason.CATEGORY_DISABLED,
-          Map.of("category", category.get().id()));
+          SubmitReason.CATEGORY_DISABLED, Map.of("category", category.get().display()));
     }
 
     boolean samePlayer =

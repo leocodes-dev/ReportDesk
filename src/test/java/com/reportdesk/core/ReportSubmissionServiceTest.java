@@ -193,9 +193,10 @@ class ReportSubmissionServiceTest {
     assertEquals(
         ReportSubmissionService.SubmitReason.CATEGORY_DISABLED, disabled.reason());
 
-    // The pure core reports the category id; the Bukkit layer localises the label.
+    // The pure core reports the config display value; the Bukkit layer
+    // rewrites the "category" placeholder through categoryDisplay().
 
-    assertEquals("disabled", disabled.placeholders().get("category"));
+    assertEquals("Disabled", disabled.placeholders().get("category"));
   }
 
   @Test
