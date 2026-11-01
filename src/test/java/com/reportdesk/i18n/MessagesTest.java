@@ -20,6 +20,7 @@ package com.reportdesk.i18n;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
@@ -196,6 +197,46 @@ config:
 
       assertTrue(missing.isEmpty(), () -> language + " is missing keys: " + missing);
     }
+  }
+
+  @Test
+  void categoryNameIsLocalised() {
+
+    Messages en =
+        Messages.fromMap(
+            Map.of(
+                "categories",
+                Map.of(
+                    "cheating",
+                    Map.of("name", "<gold>Cheating / Hacking", "description", "line-1"))),
+            "en_US");
+
+    Messages zh =
+        Messages.fromMap(
+            Map.of(
+                "categories",
+                Map.of("cheating", Map.of("name", "作弊 / 外挂"))),
+            "zh_CN");
+
+    assertEquals("Cheating / Hacking", en.categoryName("cheating"));
+
+    assertEquals("Cheating / Hacking", en.categoryName("CHEATING"));
+
+    assertEquals("作弊 / 外挂", zh.categoryName("cheating"));
+
+    assertEquals(List.of("line-1"), en.categoryDescription("cheating"));
+
+    assertEquals(List.of(), en.categoryDescription("grief"));
+
+    assertEquals(List.of(), zh.categoryDescription("cheating"));
+
+    // Unknown language falls back to the config display value (null from the lang side).
+
+    Messages empty = Messages.fromMap(Map.of(), "en_US");
+
+    assertNull(empty.categoryName("cheating"));
+
+    assertEquals(List.of(), empty.categoryDescription("cheating"));
   }
 
   private static Messages loadBundled(String language) {

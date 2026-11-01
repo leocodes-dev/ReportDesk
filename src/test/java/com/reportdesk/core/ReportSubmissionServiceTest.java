@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.reportdesk.test.TestFixtures;
+import com.reportdesk.core.ReportSubmissionService.SubmitResult;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -186,9 +187,15 @@ class ReportSubmissionServiceTest {
         ReportSubmissionService.SubmitReason.CATEGORY_UNKNOWN,
         service.submit(request("Bob", "nope", "hello")).reason());
 
+    SubmitResult disabled =
+        service.submit(request("Bob", "off", "hello"));
+
     assertEquals(
-        ReportSubmissionService.SubmitReason.CATEGORY_DISABLED,
-        service.submit(request("Bob", "off", "hello")).reason());
+        ReportSubmissionService.SubmitReason.CATEGORY_DISABLED, disabled.reason());
+
+    // The pure core reports the category id; the Bukkit layer localises the label.
+
+    assertEquals("disabled", disabled.placeholders().get("category"));
   }
 
   @Test

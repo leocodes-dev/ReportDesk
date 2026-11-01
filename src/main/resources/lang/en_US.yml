@@ -1216,3 +1216,28 @@ time:
 
 time-format:
   date: 'yyyy-MM-dd HH:mm'
+
+categories:
+  # Localized names for the bundled categories from config.yml.
+  # The config display value is only a fallback; these win when set.
+  cheating:
+    name: '<gold>Cheating / Hacking'
+    description: '<gray>Flying, speed, auto-click, x-ray, etc.'
+  chat:
+    name: '<gold>Chat Violation'
+    description: '<gray>Insults, spam, harassment, etc.'
+  grief:
+    name: '<gold>Griefing / Stealing'
+    description: '<gray>Destroying builds, stealing items, etc.'
+  advertising:
+    name: '<gold>Advertising / Shilling'
+    description: '<gray>Promoting other servers, posting external links, etc.'
+  bug:
+    name: '<gold>Exploit'
+    description: '<gray>Duping, lag exploitation, abusing game mechanics, etc.'
+  inappropriate:
+    name: '<gold>Inappropriate Content'
+    description: '<gray>Inappropriate skins, names or builds, etc.'
+  other:
+    name: '<gold>Other'
+    description: '<gray>Other issues that need staff attention.'

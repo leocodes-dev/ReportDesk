@@ -211,7 +211,8 @@ public final class ReportSubmissionService {
     if (!category.get().enabled()) {
 
       return SubmitResult.error(
-          SubmitReason.CATEGORY_DISABLED, Map.of("category", category.get().display()));
+          SubmitReason.CATEGORY_DISABLED,
+          Map.of("category", category.get().id()));
     }
 
     boolean samePlayer =

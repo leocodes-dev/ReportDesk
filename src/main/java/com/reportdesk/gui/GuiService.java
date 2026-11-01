@@ -420,7 +420,10 @@ public final class GuiService {
 
       List<Component> lore = new ArrayList<>();
 
-      for (String line : category.description()) {
+      List<String> descriptionLines =
+          plugin.messages().categoryDescription(category.id());
+
+      for (String line : descriptionLines.isEmpty() ? category.description() : descriptionLines) {
 
         lore.add(plugin.messages().render(line, Map.of()));
       }
@@ -429,7 +432,9 @@ public final class GuiService {
           slot,
           item(
               material(category.icon(), Material.PAPER),
-              plugin.messages().render(category.display(), Map.of()),
+              plugin
+                  .messages()
+                  .render(plugin.categoryDisplay(category.id()), Map.of()),
               lore));
 
       slot++;
@@ -767,7 +772,9 @@ public final class GuiService {
         13,
         item(
             material(category.icon(), Material.PAPER),
-            plugin.messages().render(category.display(), Map.of()),
+            plugin
+                .messages()
+                .render(plugin.categoryDisplay(category.id()), Map.of()),
             List.of(
                 plugin
                     .messages()

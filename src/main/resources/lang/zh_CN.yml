@@ -1216,3 +1216,27 @@ time:
 
 time-format:
   date: 'yyyy-MM-dd HH:mm'
+
+categories:
+  # 内置分类的本地化名称。config.yml 里的 display 只是兜底，这里优先。
+  cheating:
+    name: '<gold>作弊 / 外挂'
+    description: '<gray>飞行、加速、自动点击、透视等'
+  chat:
+    name: '<gold>聊天违规'
+    description: '<gray>辱骂、刷屏、骚扰等'
+  grief:
+    name: '<gold>破坏 / 偷窃'
+    description: '<gray>破坏建筑、偷取物品等'
+  advertising:
+    name: '<gold>广告 / 引流'
+    description: '<gray>宣传其他服务器、发布外部链接等'
+  bug:
+    name: '<gold>利用漏洞'
+    description: '<gray>复制物品、卡服、利用机制漏洞等'
+  inappropriate:
+    name: '<gold>不当内容'
+    description: '<gray>不文明皮肤、昵称或建筑等'
+  other:
+    name: '<gold>其他'
+    description: '<gray>其他需要管理员处理的问题'

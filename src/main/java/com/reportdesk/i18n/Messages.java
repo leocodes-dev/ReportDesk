@@ -27,6 +27,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
@@ -299,6 +300,61 @@ public final class Messages {
 
       return DEFAULT_DATE;
     }
+  }
+
+  /**
+   * Localized display name for a report category. The language files may define
+   *
+   * <p>{@code categories.<id>.name}; when they do, it wins over the config value so the GUI and
+   * command output follow the selected language. Returns null when the current language has no
+   * entry, so callers can fall back to the config display name.
+   */
+  public String categoryName(String categoryId) {
+
+    if (categoryId == null || categoryId.isBlank()) {
+
+      return null;
+    }
+
+    String id = categoryId.trim().toLowerCase(Locale.ROOT);
+
+    if (!values.containsKey("categories." + id + ".name")) {
+
+      return null;
+    }
+
+    String rendered = plain("categories." + id + ".name", Map.of());
+
+    return rendered == null || rendered.isBlank() ? null : rendered;
+  }
+
+  /**
+   * Localized description lines for a report category. The language files may define
+   *
+   * <p>{@code categories.<id>.description} as a list; when present it wins over the config value.
+   * Returns an empty list when the current language has no entry so callers can fall back to the
+   * config description.
+   */
+  public List<String> categoryDescription(String categoryId) {
+
+    if (categoryId == null || categoryId.isBlank()) {
+
+      return List.of();
+    }
+
+    String id = categoryId.trim().toLowerCase(Locale.ROOT);
+
+    List<String> lines = rawList("categories." + id + ".description");
+
+    if (lines.isEmpty()) {
+
+      return List.of();
+    }
+
+    return lines.stream()
+        .map(line -> plain(render(line, Map.of())))
+        .filter(s -> !s.isBlank())
+        .toList();
   }
 
   private static Map<String, Object> read(Path path, Consumer<String> warning) {

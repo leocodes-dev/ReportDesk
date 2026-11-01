@@ -117,74 +117,75 @@ reports:
     max-selected: 5
 
   # 举报分类。键名即分类 ID，可自行增删。
-  # display: 显示名称
+  # display: 显示名称兜底。lang/en_US.yml 或 lang/zh_CN.yml 里的
+  # categories.<分类ID>.name 优先于本值（语言跟随所选 language 切换）。
   # icon: Bukkit Material 名称
   # aliases: 命令别名（/report <玩家> <别名>）
   # priority: 越大越靠前，仅用于展示
   categories:
     cheating:
-      display: '作弊 / 外挂'
+      display: 'Cheating / Hacking'
       icon: DIAMOND_SWORD
       aliases: [cheat, hack, xray, wai_gua]
       enabled: true
       priority: 100
       severity: high
       description:
-        - '飞行、加速、自动点击、透视等'
+        - 'Flying, speed, auto-click, x-ray, etc.'
     chat:
-      display: '聊天违规'
+      display: 'Chat Violation'
       icon: PAPER
       aliases: [chat, insult, spam, ma_ren]
       enabled: true
       priority: 90
       severity: normal
       description:
-        - '辱骂、刷屏、骚扰等'
+        - 'Insults, spam, harassment, etc.'
     grief:
-      display: '破坏 / 偷窃'
+      display: 'Griefing / Stealing'
       icon: IRON_PICKAXE
       aliases: [grief, steal, po_hui]
       enabled: true
       priority: 80
       severity: high
       description:
-        - '破坏建筑、偷取物品等'
+        - 'Destroying builds, stealing items, etc.'
     advertising:
-      display: '广告 / 引流'
+      display: 'Advertising / Shilling'
       icon: MAP
       aliases: [ad, advertise, guang_gao]
       enabled: true
       priority: 70
       severity: normal
       description:
-        - '宣传其他服务器、发布外部链接等'
+        - 'Promoting other servers, posting external links, etc.'
     bug:
-      display: '利用漏洞'
+      display: 'Exploit'
       icon: REDSTONE
       aliases: [bug, exploit, lou_dong]
       enabled: true
       priority: 60
       severity: normal
       description:
-        - '复制物品、卡服、利用机制漏洞等'
+        - 'Duping, lag exploitation, abusing game mechanics, etc.'
     inappropriate:
-      display: '不当内容'
+      display: 'Inappropriate Content'
       icon: BOOK
       aliases: [skin, name, building]
       enabled: true
       priority: 50
       severity: low
       description:
-        - '不文明皮肤、昵称或建筑等'
+        - 'Inappropriate skins, names or builds, etc.'
     other:
-      display: '其他'
+      display: 'Other'
       icon: WRITABLE_BOOK
       aliases: [other, misc]
       enabled: true
       priority: 10
       severity: low
       description:
-        - '其他需要管理员处理的问题'
+        - 'Other issues that need staff attention.'
 
 gui:
   # 是否启用 GUI。关闭后只能使用命令。

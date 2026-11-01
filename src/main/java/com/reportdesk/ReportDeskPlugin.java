@@ -829,6 +829,16 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
   public String categoryDisplay(String id) {
 
+    // The selected language may provide a localized category name that wins over
+    // the config display value, so the GUI and command output always follow it.
+
+    String localized = id == null ? null : messages.categoryName(id);
+
+    if (localized != null) {
+
+      return localized;
+    }
+
     return config
         .category(id)
         .map(category -> messages.plain(messages.render(category.display(), Map.of())))
