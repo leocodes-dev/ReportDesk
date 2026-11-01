@@ -82,8 +82,6 @@ import org.bukkit.scheduler.BukkitTask;
  */
 public final class ReportDeskPlugin extends JavaPlugin {
 
-  private static final long TASK_TICK_MILLIS = 50L;
-
   private volatile PluginConfig config;
 
   private volatile Messages messages;

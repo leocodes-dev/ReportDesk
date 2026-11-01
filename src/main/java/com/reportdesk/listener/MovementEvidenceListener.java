@@ -41,12 +41,12 @@ public final class MovementEvidenceListener implements Listener {
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onMove(PlayerMoveEvent event) {
 
-    if (!plugin.config().evidence().movement().enabled()) {
+    if (!plugin.config().evidence().enabled()) {
 
       return;
     }
 
-    if (!plugin.config().evidence().enabled()) {
+    if (!plugin.config().evidence().movement().enabled()) {
 
       return;
     }

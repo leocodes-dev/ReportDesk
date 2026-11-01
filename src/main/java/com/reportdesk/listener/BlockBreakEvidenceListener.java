@@ -42,12 +42,12 @@ public final class BlockBreakEvidenceListener implements Listener {
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void onBlockBreak(BlockBreakEvent event) {
 
-    if (!plugin.config().evidence().blockBreak().enabled()) {
+    if (!plugin.config().evidence().enabled()) {
 
       return;
     }
 
-    if (!plugin.config().evidence().enabled()) {
+    if (!plugin.config().evidence().blockBreak().enabled()) {
 
       return;
     }
