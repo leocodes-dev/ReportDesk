@@ -17,92 +17,53 @@
  */
 
 package com.reportdesk.core;
-import com.reportdesk.test.TestFixtures; import org.junit.jupiter.api.Test;
-import java.util.HashMap; import java.util.Map;
-import static org.junit.jupiter.api.Assertions.assertEquals; import static org.junit.jupiter.api.Assertions.assertFalse; import static org.junit.jupiter.api.Assertions.assertThrows; import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.reportdesk.test.TestFixtures;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+
 class PendingNoticeTest {
 
+  @Test
+  void normalizesNullsAndCopiesPlaceholders() {
 
-@Test
+    Map<String, String> source = new HashMap<>();
 
- void normalizesNullsAndCopiesPlaceholders() {
+    source.put("id", null);
 
+    source.put("", "ignored");
 
+    source.put(null, "ignored");
 
- Map<String, String> source = new HashMap<>();
+    PendingNotice notice = new PendingNotice(null, " notify.reporter-reply ", source, -5L);
 
+    assertEquals(new java.util.UUID(0L, 0L), notice.playerId());
 
+    assertEquals("notify.reporter-reply", notice.messageKey());
 
- source.put("id", null);
+    assertEquals("", notice.placeholders().get("id"));
 
+    assertEquals(1, notice.placeholders().size());
 
+    assertEquals(0L, notice.createdAt());
 
- source.put("", "ignored");
+    assertFalse(notice.valid());
+  }
 
+  @Test
+  void placeholdersAreImmutableAndValidNoticePasses() {
 
+    PendingNotice notice =
+        new PendingNotice(TestFixtures.ALICE, "notify.reporter-closed", Map.of("id", "3"), 10L);
 
- source.put(null, "ignored");
+    assertTrue(notice.valid());
 
-
-
-
-PendingNotice notice = new PendingNotice(null, " notify.reporter-reply ", source, -5L);
-
-
-
-
-assertEquals(new java.util.UUID(0L, 0L), notice.playerId());
-
-
-
- assertEquals("notify.reporter-reply", notice.messageKey());
-
-
-
- assertEquals("", notice.placeholders().get("id"));
-
-
-
- assertEquals(1, notice.placeholders().size());
-
-
-
- assertEquals(0L, notice.createdAt());
-
-
-
- assertFalse(notice.valid());
-
- }
-
-
-@Test
-
- void placeholdersAreImmutableAndValidNoticePasses() {
-
-
-
- PendingNotice notice = new PendingNotice(TestFixtures.ALICE, "notify.reporter-closed",
-
-
-
-
-
- Map.of("id", "3"), 10L);
-
-
-
-
-assertTrue(notice.valid());
-
-
-
- assertThrows(UnsupportedOperationException.class,
-
-
-
-
-
- () -> notice.placeholders().put("id", "4"));
-
- } }
+    assertThrows(UnsupportedOperationException.class, () -> notice.placeholders().put("id", "4"));
+  }
+}

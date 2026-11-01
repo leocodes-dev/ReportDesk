@@ -17,115 +17,62 @@
  */
 
 package com.reportdesk.core;
+
 import java.util.Locale;
+
 /**
-* How a report was closed. {@link #INSUFFICIENT} is stored as a
-* {@link ReportStatus#REJECTED} report with a distinct verdict label.
-*/ public enum Verdict {
+ * How a report was closed. {@link #INSUFFICIENT} is stored as a {@link ReportStatus#REJECTED}
+ * report with a distinct verdict label.
+ */
+public enum Verdict {
+  RESOLVED(ReportStatus.RESOLVED),
 
- RESOLVED(ReportStatus.RESOLVED),
+  REJECTED(ReportStatus.REJECTED),
 
- REJECTED(ReportStatus.REJECTED),
+  DUPLICATE(ReportStatus.DUPLICATE),
 
- DUPLICATE(ReportStatus.DUPLICATE),
+  INSUFFICIENT(ReportStatus.REJECTED),
 
- INSUFFICIENT(ReportStatus.REJECTED),
+  AUTO_CLOSED(ReportStatus.AUTO_CLOSED);
 
- AUTO_CLOSED(ReportStatus.AUTO_CLOSED);
+  private final ReportStatus status;
 
+  Verdict(ReportStatus status) {
 
-private final ReportStatus status;
+    this.status = status;
+  }
 
+  public ReportStatus status() {
 
-Verdict(ReportStatus status) {
+    return status;
+  }
 
+  public String messageKey() {
 
+    return "verdict." + name().toLowerCase(Locale.ROOT).replace('_', '-');
+  }
 
- this.status = status;
+  public static Verdict parse(String value) {
 
- }
+    if (value == null) {
 
+      return null;
+    }
 
-public ReportStatus status() {
+    String normalized = value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
 
+    return switch (normalized) {
+      case "RESOLVED", "RESOLVE", "ACCEPT", "ACCEPTED", "TRUE", "成立" -> RESOLVED;
 
+      case "REJECTED", "REJECT", "FALSE", "不成立" -> REJECTED;
 
- return status;
+      case "DUPLICATE", "DUP", "重复" -> DUPLICATE;
 
- }
+      case "INSUFFICIENT", "EVIDENCE_INSUFFICIENT", "证据不足" -> INSUFFICIENT;
 
+      case "AUTO_CLOSED", "AUTOCLOSED", "自动关闭" -> AUTO_CLOSED;
 
-public String messageKey() {
-
-
-
- return "verdict." + name().toLowerCase(Locale.ROOT).replace('_', '-');
-
- }
-
-
-public static Verdict parse(String value) {
-
-
-
- if (value == null) {
-
-
-
-
-
- return null;
-
-
-
- }
-
-
-
- String normalized = value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
-
-
-
- return switch (normalized) {
-
-
-
-
-
- case "RESOLVED", "RESOLVE", "ACCEPT", "ACCEPTED", "TRUE", "成立" -> RESOLVED;
-
-
-
-
-
- case "REJECTED", "REJECT", "FALSE", "不成立" -> REJECTED;
-
-
-
-
-
- case "DUPLICATE", "DUP", "重复" -> DUPLICATE;
-
-
-
-
-
- case "INSUFFICIENT", "EVIDENCE_INSUFFICIENT", "证据不足" -> INSUFFICIENT;
-
-
-
-
-
- case "AUTO_CLOSED", "AUTOCLOSED", "自动关闭" -> AUTO_CLOSED;
-
-
-
-
-
- default -> null;
-
-
-
- };
-
- } }
+      default -> null;
+    };
+  }
+}

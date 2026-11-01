@@ -17,842 +17,250 @@
  */
 
 package com.reportdesk.service;
-import com.reportdesk.ReportDeskPlugin; import com.reportdesk.config.PluginConfig; import com.reportdesk.core.Report; import com.reportdesk.core.Verdict;
-import java.util.ArrayList; import java.util.List; import java.util.UUID; import java.util.concurrent.CompletableFuture;
-/**
-* Auto-close and retention maintenance. Runs asynchronously; repository access
-* is thread-safe and all file work is delegated to the storage executors.
-*/ public final class MaintenanceService {
 
-
-private static final UUID SYSTEM_ID = new UUID(0L, 0L);
-
-
-public record MaintenanceResult(int autoClosed, int purgedReports, int purgedEvidence, int purgedAudit) {
-
-
-
- public static MaintenanceResult empty() {
-
-
-
-
-
- return new MaintenanceResult(0, 0, 0, 0);
-
-
-
- }
-
-
-
-
-public boolean changed() {
-
-
-
-
-
- return autoClosed + purgedReports + purgedEvidence + purgedAudit > 0;
-
-
-
- }
-
- }
-
-
-private final ReportDeskPlugin plugin;
-
-
-public MaintenanceService(ReportDeskPlugin plugin) {
-
-
-
- this.plugin = plugin;
-
- }
-
-
-public CompletableFuture<MaintenanceResult> runOnce() {
-
-
-
- return CompletableFuture.supplyAsync(() -> {
-
-
-
-
-
- if (!plugin.repository().isReady()) {
-
-
-
-
-
-
-
- return MaintenanceResult.empty();
-
-
-
-
-
- }
-
-
-
-
-
- PluginConfig config = plugin.config();
-
-
-
-
-
- long now = System.currentTimeMillis();
-
-
-
-
-
- int autoClosed = 0;
-
-
-
-
-
- int purgedReports = 0;
-
-
-
-
-
- List<Report> snapshot = plugin.repository().all();
-
-
-
-
-
-
-if (config.reports().autoCloseEnabled() && config.reports().autoCloseDays() > 0) {
-
-
-
-
-
-
-
- long cutoff = now - config.reports().autoCloseDays() * 86_400_000L;
-
-
-
-
-
-
-
- for (Report report : snapshot) {
-
-
-
-
-
-
-
-
-
- if (report.isOpen() && report.createdAt() <= cutoff) {
-
-
-
-
-
-
-
-
-
-
-
- Report closed = report.withClosed(Verdict.AUTO_CLOSED, SYSTEM_ID,
-
-
-
-
-
-
-
-
-
-
-
-
-
- ReportService.SYSTEM_NAME, "auto-closed", now);
-
-
-
-
-
-
-
-
-
-
-
- plugin.repository().put(closed);
-
-
-
-
-
-
-
-
-
-
-
- plugin.storage().saveReport(closed);
-
-
-
-
-
-
-
-
-
-
-
- autoClosed++;
-
-
-
-
-
-
-
-
-
- }
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
-
-
-
-if (config.reports().retentionDays() > 0) {
-
-
-
-
-
-
-
- long cutoff = now - config.reports().retentionDays() * 86_400_000L;
-
-
-
-
-
-
-
- for (Report report : new ArrayList<>(plugin.repository().all())) {
-
-
-
-
-
-
-
-
-
- if (report.isTerminal() && report.closedAt() > 0 && report.closedAt() <= cutoff) {
-
-
-
-
-
-
-
-
-
-
-
- plugin.repository().remove(report.id());
-
-
-
-
-
-
-
-
-
-
-
- plugin.storage().deleteReport(report.id());
-
-
-
-
-
-
-
-
-
-
-
- plugin.storage().deleteEvidence(report.id());
-
-
-
-
-
-
-
-
-
-
-
- purgedReports++;
-
-
-
-
-
-
-
-
-
- }
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
-
-
-
-if (autoClosed > 0) {
-
-
-
-
-
-
-
- plugin.audit("AUTO_CLOSE", null, 0L, "reports=" + autoClosed);
-
-
-
-
-
- }
-
-
-
-
-
- if (purgedReports > 0) {
-
-
-
-
-
-
-
- plugin.audit("RETENTION_PURGE", null, 0L, "reports=" + purgedReports);
-
-
-
-
-
- }
-
-
-
-
-
-
-long evidenceCutoff = config.evidence().retentionDays() <= 0
-
-
-
-
-
-
-
- ? 0L : now - config.evidence().retentionDays() * 86_400_000L;
-
-
-
-
-
- CompletableFuture<Integer> evidenceFuture = evidenceCutoff <= 0
-
-
-
-
-
-
-
- ? CompletableFuture.completedFuture(0)
-
-
-
-
-
-
-
- : plugin.storage().purgeEvidenceBefore(evidenceCutoff);
-
-
-
-
-
- long auditCutoff = config.audit().retentionDays() <= 0
-
-
-
-
-
-
-
- ? 0L : now - config.audit().retentionDays() * 86_400_000L;
-
-
-
-
-
- CompletableFuture<Integer> auditFuture = auditCutoff <= 0
-
-
-
-
-
-
-
- ? CompletableFuture.completedFuture(0)
-
-
-
-
-
-
-
- : plugin.auditStorage().purgeBefore(auditCutoff);
-
-
-
-
-
-
-int finalAutoClosed = autoClosed;
-
-
-
-
-
- int finalPurgedReports = purgedReports;
-
-
-
-
-
- return evidenceFuture.thenCombine(auditFuture, (evidence, audit) ->
-
-
-
-
-
-
-
- new MaintenanceResult(finalAutoClosed, finalPurgedReports, evidence, audit)).join();
-
-
-
- });
-
- }
-
+import com.reportdesk.ReportDeskPlugin;
+import com.reportdesk.config.PluginConfig;
+import com.reportdesk.core.Report;
+import com.reportdesk.core.Verdict;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
+ * Auto-close and retention maintenance. Runs asynchronously; repository access is thread-safe and
+ * all file work is delegated to the storage executors.
+ */
+public final class MaintenanceService {
 
+  private static final UUID SYSTEM_ID = new UUID(0L, 0L);
 
-* Finds open reports past their SLA deadline and alerts staff once per
+  public record MaintenanceResult(
+      int autoClosed, int purgedReports, int purgedEvidence, int purgedAudit) {
 
+    public static MaintenanceResult empty() {
 
-* report. Runs off the main thread; notifications hop back to it.
+      return new MaintenanceResult(0, 0, 0, 0);
+    }
 
+    public boolean changed() {
 
-*/
+      return autoClosed + purgedReports + purgedEvidence + purgedAudit > 0;
+    }
+  }
 
- public CompletableFuture<Integer> alertOverdue() {
+  private final ReportDeskPlugin plugin;
 
+  public MaintenanceService(ReportDeskPlugin plugin) {
 
+    this.plugin = plugin;
+  }
 
- PluginConfig.Priority priority = plugin.config().reports().priority();
+  public CompletableFuture<MaintenanceResult> runOnce() {
 
+    return CompletableFuture.supplyAsync(
+        () -> {
+          if (!plugin.repository().isReady()) {
 
+            return MaintenanceResult.empty();
+          }
 
- if (!priority.enabled() || !priority.overdueAlertEnabled()) {
+          PluginConfig config = plugin.config();
 
+          long now = System.currentTimeMillis();
 
+          int autoClosed = 0;
 
+          int purgedReports = 0;
 
+          List<Report> snapshot = plugin.repository().all();
 
- return CompletableFuture.completedFuture(0);
+          if (config.reports().autoCloseEnabled() && config.reports().autoCloseDays() > 0) {
 
+            long cutoff = now - config.reports().autoCloseDays() * 86_400_000L;
 
+            for (Report report : snapshot) {
 
- }
+              if (report.isOpen() && report.createdAt() <= cutoff) {
 
+                Report closed =
+                    report.withClosed(
+                        Verdict.AUTO_CLOSED,
+                        SYSTEM_ID,
+                        ReportService.SYSTEM_NAME,
+                        "auto-closed",
+                        now);
 
+                plugin.repository().put(closed);
 
- return CompletableFuture.supplyAsync(() -> {
+                plugin.storage().saveReport(closed);
 
+                autoClosed++;
+              }
+            }
+          }
 
+          if (config.reports().retentionDays() > 0) {
 
+            long cutoff = now - config.reports().retentionDays() * 86_400_000L;
 
+            for (Report report : new ArrayList<>(plugin.repository().all())) {
 
- if (!plugin.repository().isReady()) {
+              if (report.isTerminal() && report.closedAt() > 0 && report.closedAt() <= cutoff) {
 
+                plugin.repository().remove(report.id());
 
+                plugin.storage().deleteReport(report.id());
 
+                plugin.storage().deleteEvidence(report.id());
 
+                purgedReports++;
+              }
+            }
+          }
 
+          if (autoClosed > 0) {
 
+            plugin.audit("AUTO_CLOSE", null, 0L, "reports=" + autoClosed);
+          }
 
- return 0;
+          if (purgedReports > 0) {
 
+            plugin.audit("RETENTION_PURGE", null, 0L, "reports=" + purgedReports);
+          }
 
+          long evidenceCutoff =
+              config.evidence().retentionDays() <= 0
+                  ? 0L
+                  : now - config.evidence().retentionDays() * 86_400_000L;
 
+          CompletableFuture<Integer> evidenceFuture =
+              evidenceCutoff <= 0
+                  ? CompletableFuture.completedFuture(0)
+                  : plugin.storage().purgeEvidenceBefore(evidenceCutoff);
 
+          long auditCutoff =
+              config.audit().retentionDays() <= 0
+                  ? 0L
+                  : now - config.audit().retentionDays() * 86_400_000L;
 
- }
+          CompletableFuture<Integer> auditFuture =
+              auditCutoff <= 0
+                  ? CompletableFuture.completedFuture(0)
+                  : plugin.auditStorage().purgeBefore(auditCutoff);
 
+          int finalAutoClosed = autoClosed;
 
+          int finalPurgedReports = purgedReports;
 
+          return evidenceFuture
+              .thenCombine(
+                  auditFuture,
+                  (evidence, audit) ->
+                      new MaintenanceResult(finalAutoClosed, finalPurgedReports, evidence, audit))
+              .join();
+        });
+  }
 
+  /**
+   * Finds open reports past their SLA deadline and alerts staff once per
+   *
+   * <p>report. Runs off the main thread; notifications hop back to it.
+   */
+  public CompletableFuture<Integer> alertOverdue() {
 
- long now = System.currentTimeMillis();
+    PluginConfig.Priority priority = plugin.config().reports().priority();
 
+    if (!priority.enabled() || !priority.overdueAlertEnabled()) {
 
+      return CompletableFuture.completedFuture(0);
+    }
 
+    return CompletableFuture.supplyAsync(
+        () -> {
+          if (!plugin.repository().isReady()) {
 
+            return 0;
+          }
 
- List<Report> overdue = new ArrayList<>();
+          long now = System.currentTimeMillis();
 
+          List<Report> overdue = new ArrayList<>();
 
+          for (Report report : plugin.repository().all()) {
 
+            if (report.isOverdue(now) && report.slaAlertedAt() <= 0L) {
 
+              Report updated = report.withSlaAlerted(now);
 
- for (Report report : plugin.repository().all()) {
+              plugin.repository().put(updated);
 
+              plugin.storage().saveReport(updated);
 
+              overdue.add(updated);
+            }
+          }
 
+          if (!overdue.isEmpty()) {
 
+            plugin.audit("SLA_ALERT", null, 0L, "reports=" + overdue.size());
 
+            for (Report report : overdue) {
 
+              plugin.notification().onOverdue(report);
+            }
+          }
 
- if (report.isOverdue(now) && report.slaAlertedAt() <= 0L) {
+          return overdue.size();
+        });
+  }
 
+  /**
+   * Manual /reports purge [days]. Removes terminal reports older than the
+   *
+   * <p>supplied number of days and their evidence files.
+   */
+  public CompletableFuture<MaintenanceResult> purgeOlderThan(int days) {
 
+    return CompletableFuture.supplyAsync(
+        () -> {
+          long now = System.currentTimeMillis();
 
+          long cutoff = now - Math.max(0, days) * 86_400_000L;
 
+          int purgedReports = 0;
 
+          for (Report report : new ArrayList<>(plugin.repository().all())) {
 
+            if (report.isTerminal() && report.closedAt() > 0 && report.closedAt() <= cutoff) {
 
+              plugin.repository().remove(report.id());
 
+              plugin.storage().deleteReport(report.id());
 
- Report updated = report.withSlaAlerted(now);
+              plugin.storage().deleteEvidence(report.id());
 
+              purgedReports++;
+            }
+          }
 
+          if (purgedReports > 0) {
 
+            plugin.audit("MANUAL_PURGE", null, 0L, "days=" + days + " reports=" + purgedReports);
+          }
 
+          CompletableFuture<Integer> evidenceFuture = plugin.storage().purgeEvidenceBefore(cutoff);
 
+          CompletableFuture<Integer> auditFuture = plugin.auditStorage().purgeBefore(cutoff);
 
+          int finalPurgedReports = purgedReports;
 
-
-
- plugin.repository().put(updated);
-
-
-
-
-
-
-
-
-
- plugin.storage().saveReport(updated);
-
-
-
-
-
-
-
-
-
- overdue.add(updated);
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
-
-
- if (!overdue.isEmpty()) {
-
-
-
-
-
-
-
- plugin.audit("SLA_ALERT", null, 0L, "reports=" + overdue.size());
-
-
-
-
-
-
-
- for (Report report : overdue) {
-
-
-
-
-
-
-
-
-
- plugin.notification().onOverdue(report);
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
-
-
- return overdue.size();
-
-
-
- });
-
- }
-
-
-/**
-
-
-* Manual /reports purge [days]. Removes terminal reports older than the
-
-
-* supplied number of days and their evidence files.
-
-
-*/
-
- public CompletableFuture<MaintenanceResult> purgeOlderThan(int days) {
-
-
-
- return CompletableFuture.supplyAsync(() -> {
-
-
-
-
-
- long now = System.currentTimeMillis();
-
-
-
-
-
- long cutoff = now - Math.max(0, days) * 86_400_000L;
-
-
-
-
-
- int purgedReports = 0;
-
-
-
-
-
- for (Report report : new ArrayList<>(plugin.repository().all())) {
-
-
-
-
-
-
-
- if (report.isTerminal() && report.closedAt() > 0 && report.closedAt() <= cutoff) {
-
-
-
-
-
-
-
-
-
- plugin.repository().remove(report.id());
-
-
-
-
-
-
-
-
-
- plugin.storage().deleteReport(report.id());
-
-
-
-
-
-
-
-
-
- plugin.storage().deleteEvidence(report.id());
-
-
-
-
-
-
-
-
-
- purgedReports++;
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
-
-
- if (purgedReports > 0) {
-
-
-
-
-
-
-
- plugin.audit("MANUAL_PURGE", null, 0L, "days=" + days + " reports=" + purgedReports);
-
-
-
-
-
- }
-
-
-
-
-
- CompletableFuture<Integer> evidenceFuture = plugin.storage().purgeEvidenceBefore(cutoff);
-
-
-
-
-
- CompletableFuture<Integer> auditFuture = plugin.auditStorage().purgeBefore(cutoff);
-
-
-
-
-
- int finalPurgedReports = purgedReports;
-
-
-
-
-
- return evidenceFuture.thenCombine(auditFuture, (evidence, audit) ->
-
-
-
-
-
-
-
- new MaintenanceResult(0, finalPurgedReports, evidence, audit)).join();
-
-
-
- });
-
- } }
+          return evidenceFuture
+              .thenCombine(
+                  auditFuture,
+                  (evidence, audit) ->
+                      new MaintenanceResult(0, finalPurgedReports, evidence, audit))
+              .join();
+        });
+  }
+}

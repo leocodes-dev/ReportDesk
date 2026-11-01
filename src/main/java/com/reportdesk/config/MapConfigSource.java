@@ -17,429 +17,168 @@
  */
 
 package com.reportdesk.config;
-import java.util.ArrayList; import java.util.LinkedHashSet; import java.util.List; import java.util.Map; import java.util.Set;
-/**
-* Map-backed config source used by unit tests.
-*/ public final class MapConfigSource implements ConfigSource {
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-private final Map<?, ?> root;
+/** Map-backed config source used by unit tests. */
+public final class MapConfigSource implements ConfigSource {
 
+  private final Map<?, ?> root;
 
-public MapConfigSource(Map<?, ?> root) {
+  public MapConfigSource(Map<?, ?> root) {
 
+    this.root = root == null ? Map.of() : root;
+  }
 
+  @Override
+  public String getString(String path, String fallback) {
 
- this.root = root == null ? Map.of() : root;
+    Object value = value(path);
 
- }
+    return value instanceof String string ? string : fallback;
+  }
 
+  @Override
+  public int getInt(String path, int fallback) {
 
-@Override
+    Object value = value(path);
 
- public String getString(String path, String fallback) {
+    if (value instanceof Number number) {
 
+      return number.intValue();
+    }
 
+    if (value instanceof String string) {
 
- Object value = value(path);
+      try {
 
+        return Integer.parseInt(string.trim());
 
+      } catch (NumberFormatException ignored) {
 
- return value instanceof String string ? string : fallback;
+        return fallback;
+      }
+    }
 
- }
+    return fallback;
+  }
 
+  @Override
+  public boolean getBoolean(String path, boolean fallback) {
 
-@Override
+    Object value = value(path);
 
- public int getInt(String path, int fallback) {
+    if (value instanceof Boolean bool) {
 
+      return bool;
+    }
 
+    if (value instanceof String string) {
 
- Object value = value(path);
+      if ("true".equalsIgnoreCase(string.trim())) {
 
+        return true;
+      }
 
+      if ("false".equalsIgnoreCase(string.trim())) {
 
- if (value instanceof Number number) {
+        return false;
+      }
+    }
 
+    return fallback;
+  }
 
+  @Override
+  public List<String> getStringList(String path, List<String> fallback) {
 
+    Object value = value(path);
 
+    if (value instanceof List<?> list) {
 
- return number.intValue();
+      List<String> result = new ArrayList<>();
 
+      for (Object element : list) {
 
+        if (element != null) {
 
- }
+          result.add(String.valueOf(element));
+        }
+      }
 
+      return result;
+    }
 
+    if (value instanceof String string) {
 
- if (value instanceof String string) {
+      return List.of(string);
+    }
 
+    return fallback;
+  }
 
+  @Override
+  public Set<String> keys(String path) {
 
+    Object value = value(path);
 
+    if (value instanceof Map<?, ?> map) {
 
- try {
+      Set<String> keys = new LinkedHashSet<>();
 
+      for (Object key : map.keySet()) {
 
+        if (key != null) {
 
+          keys.add(String.valueOf(key));
+        }
+      }
 
+      return keys;
+    }
 
+    return Set.of();
+  }
 
+  @Override
+  public boolean isSection(String path) {
 
- return Integer.parseInt(string.trim());
+    return value(path) instanceof Map<?, ?>;
+  }
 
+  @Override
+  public ConfigSource section(String path) {
 
+    Object value = value(path);
 
+    return value instanceof Map<?, ?> map
+        ? new MapConfigSource(map)
+        : new MapConfigSource(Map.of());
+  }
 
+  private Object value(String path) {
 
- } catch (NumberFormatException ignored) {
+    if (path == null || path.isBlank()) {
 
+      return root;
+    }
 
+    Object current = root;
 
+    for (String part : path.split("\\.")) {
 
+      if (!(current instanceof Map<?, ?> map)) {
 
+        return null;
+      }
 
+      current = map.get(part);
+    }
 
- return fallback;
-
-
-
-
-
- }
-
-
-
- }
-
-
-
- return fallback;
-
- }
-
-
-@Override
-
- public boolean getBoolean(String path, boolean fallback) {
-
-
-
- Object value = value(path);
-
-
-
- if (value instanceof Boolean bool) {
-
-
-
-
-
- return bool;
-
-
-
- }
-
-
-
- if (value instanceof String string) {
-
-
-
-
-
- if ("true".equalsIgnoreCase(string.trim())) {
-
-
-
-
-
-
-
- return true;
-
-
-
-
-
- }
-
-
-
-
-
- if ("false".equalsIgnoreCase(string.trim())) {
-
-
-
-
-
-
-
- return false;
-
-
-
-
-
- }
-
-
-
- }
-
-
-
- return fallback;
-
- }
-
-
-@Override
-
- public List<String> getStringList(String path, List<String> fallback) {
-
-
-
- Object value = value(path);
-
-
-
- if (value instanceof List<?> list) {
-
-
-
-
-
- List<String> result = new ArrayList<>();
-
-
-
-
-
- for (Object element : list) {
-
-
-
-
-
-
-
- if (element != null) {
-
-
-
-
-
-
-
-
-
- result.add(String.valueOf(element));
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
-
-
- return result;
-
-
-
- }
-
-
-
- if (value instanceof String string) {
-
-
-
-
-
- return List.of(string);
-
-
-
- }
-
-
-
- return fallback;
-
- }
-
-
-@Override
-
- public Set<String> keys(String path) {
-
-
-
- Object value = value(path);
-
-
-
- if (value instanceof Map<?, ?> map) {
-
-
-
-
-
- Set<String> keys = new LinkedHashSet<>();
-
-
-
-
-
- for (Object key : map.keySet()) {
-
-
-
-
-
-
-
- if (key != null) {
-
-
-
-
-
-
-
-
-
- keys.add(String.valueOf(key));
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
-
-
- return keys;
-
-
-
- }
-
-
-
- return Set.of();
-
- }
-
-
-@Override
-
- public boolean isSection(String path) {
-
-
-
- return value(path) instanceof Map<?, ?>;
-
- }
-
-
-@Override
-
- public ConfigSource section(String path) {
-
-
-
- Object value = value(path);
-
-
-
- return value instanceof Map<?, ?> map ? new MapConfigSource(map) : new MapConfigSource(Map.of());
-
- }
-
-
-private Object value(String path) {
-
-
-
- if (path == null || path.isBlank()) {
-
-
-
-
-
- return root;
-
-
-
- }
-
-
-
- Object current = root;
-
-
-
- for (String part : path.split("\\.")) {
-
-
-
-
-
- if (!(current instanceof Map<?, ?> map)) {
-
-
-
-
-
-
-
- return null;
-
-
-
-
-
- }
-
-
-
-
-
- current = map.get(part);
-
-
-
- }
-
-
-
- return current;
-
- } }
+    return current;
+  }
+}

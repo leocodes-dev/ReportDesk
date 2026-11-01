@@ -17,46 +17,29 @@
  */
 
 package com.reportdesk.core;
+
 /**
-* One chat line the reporter explicitly selected when filing a chat violation.
-*
-* <p>The snapshot fields mirror {@link ChatSample}; they are persisted with the
-* report so staff can still see exactly what was highlighted even after the
-* bounded live chat buffer has rotated.</p>
-*/ public record ReportChatSelection(long createdAt, String playerName, String message) {
+ * One chat line the reporter explicitly selected when filing a chat violation.
+ *
+ * <p>The snapshot fields mirror {@link ChatSample}; they are persisted with the report so staff can
+ * still see exactly what was highlighted even after the bounded live chat buffer has rotated.
+ */
+public record ReportChatSelection(long createdAt, String playerName, String message) {
 
+  public ReportChatSelection {
 
-public ReportChatSelection {
+    playerName = playerName == null ? "" : playerName;
 
+    message = message == null ? "" : message;
+  }
 
+  public static ReportChatSelection of(ChatSample sample) {
 
- playerName = playerName == null ? "" : playerName;
+    if (sample == null) {
 
+      return new ReportChatSelection(0L, "", "");
+    }
 
-
- message = message == null ? "" : message;
-
- }
-
-
-public static ReportChatSelection of(ChatSample sample) {
-
-
-
- if (sample == null) {
-
-
-
-
-
- return new ReportChatSelection(0L, "", "");
-
-
-
- }
-
-
-
- return new ReportChatSelection(sample.createdAt(), sample.playerName(), sample.message());
-
- } }
+    return new ReportChatSelection(sample.createdAt(), sample.playerName(), sample.message());
+  }
+}

@@ -17,60 +17,40 @@
  */
 
 package com.reportdesk.listener;
-import com.reportdesk.ReportDeskPlugin; import org.bukkit.event.EventHandler; import org.bukkit.event.EventPriority; import org.bukkit.event.Listener; import org.bukkit.event.player.PlayerMoveEvent;
+
+import com.reportdesk.ReportDeskPlugin;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerMoveEvent;
+
 /**
-* Optional trajectory sampling. Registered only when
-* {@code evidence.movement.enabled} is true (default false). The very first
-* statement checks the switch, so a disabled path performs no other work.
-*/ public final class MovementEvidenceListener implements Listener {
+ * Optional trajectory sampling. Registered only when {@code evidence.movement.enabled} is true
+ * (default false). The very first statement checks the switch, so a disabled path performs no other
+ * work.
+ */
+public final class MovementEvidenceListener implements Listener {
 
+  private final ReportDeskPlugin plugin;
 
-private final ReportDeskPlugin plugin;
+  public MovementEvidenceListener(ReportDeskPlugin plugin) {
 
+    this.plugin = plugin;
+  }
 
-public MovementEvidenceListener(ReportDeskPlugin plugin) {
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void onMove(PlayerMoveEvent event) {
 
+    if (!plugin.config().evidence().movement().enabled()) {
 
+      return;
+    }
 
- this.plugin = plugin;
+    if (!plugin.config().evidence().enabled()) {
 
- }
+      return;
+    }
 
-
-@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-
- public void onMove(PlayerMoveEvent event) {
-
-
-
- if (!plugin.config().evidence().movement().enabled()) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- if (!plugin.config().evidence().enabled()) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- plugin.evidence().recordMove(event.getPlayer(), event.getTo());
-
- } }
+    plugin.evidence().recordMove(event.getPlayer(), event.getTo());
+  }
+}

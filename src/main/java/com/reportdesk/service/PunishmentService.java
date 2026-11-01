@@ -17,333 +17,106 @@
  */
 
 package com.reportdesk.service;
-import com.reportdesk.ReportDeskPlugin; import com.reportdesk.config.PluginConfig; import com.reportdesk.core.Report; import com.reportdesk.core.Verdict; import org.bukkit.Bukkit;
-import java.util.List; import java.util.Locale;
+
+import com.reportdesk.ReportDeskPlugin;
+import com.reportdesk.config.PluginConfig;
+import com.reportdesk.core.Report;
+import com.reportdesk.core.Verdict;
+import java.util.List;
+import java.util.Locale;
+import org.bukkit.Bukkit;
+
 /**
-* Optional linkage-punishment layer. Disabled by default; when disabled the
-* only work done is a single boolean check.
-*/ public final class PunishmentService {
+ * Optional linkage-punishment layer. Disabled by default; when disabled the only work done is a
+ * single boolean check.
+ */
+public final class PunishmentService {
 
+  private final ReportDeskPlugin plugin;
 
-private final ReportDeskPlugin plugin;
+  public PunishmentService(ReportDeskPlugin plugin) {
 
+    this.plugin = plugin;
+  }
 
-public PunishmentService(ReportDeskPlugin plugin) {
+  public void apply(Report report, Verdict verdict, String staffName) {
 
+    PluginConfig.Punishments settings = plugin.config().punishments();
 
+    if (!settings.enabled()) {
 
- this.plugin = plugin;
+      return;
+    }
 
- }
+    List<String> commands =
+        switch (verdict) {
+          case RESOLVED -> settings.resolvedCommands();
 
+          case REJECTED, INSUFFICIENT -> settings.rejectedCommands();
 
-public void apply(Report report, Verdict verdict, String staffName) {
+          default -> List.of();
+        };
 
+    if (commands.isEmpty()) {
 
+      return;
+    }
 
- PluginConfig.Punishments settings = plugin.config().punishments();
+    Runnable dispatch =
+        () -> {
+          for (String raw : commands) {
 
+            if (raw == null || raw.isBlank()) {
 
+              continue;
+            }
 
- if (!settings.enabled()) {
+            String command = raw.trim();
 
+            if (command.startsWith("/")) {
 
+              command = command.substring(1);
+            }
 
+            String resolved =
+                command
+                    .replace("%player%", safe(report.targetName()))
+                    .replace("%reason%", safe(report.detail()))
+                    .replace("%id%", String.valueOf(report.id()))
+                    .replace("%staff%", safe(staffName))
+                    .replace("%verdict%", verdict.name().toLowerCase(Locale.ROOT))
+                    .replace("%category%", safe(report.category()));
 
+            try {
 
- return;
+              Bukkit.dispatchCommand(Bukkit.getConsoleSender(), resolved);
 
+              plugin.audit("PUNISH", null, report.id(), resolved);
 
+            } catch (RuntimeException exception) {
 
- }
+              plugin.getLogger().warning("Punishment command failed: " + exception.getMessage());
+            }
+          }
+        };
 
+    if (Bukkit.isPrimaryThread()) {
 
+      dispatch.run();
 
- List<String> commands = switch (verdict) {
+    } else {
 
+      Bukkit.getScheduler().runTask(plugin, dispatch);
+    }
+  }
 
+  private String safe(String value) {
 
+    if (value == null) {
 
+      return "";
+    }
 
- case RESOLVED -> settings.resolvedCommands();
-
-
-
-
-
- case REJECTED, INSUFFICIENT -> settings.rejectedCommands();
-
-
-
-
-
- default -> List.of();
-
-
-
- };
-
-
-
- if (commands.isEmpty()) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- Runnable dispatch = () -> {
-
-
-
-
-
- for (String raw : commands) {
-
-
-
-
-
-
-
- if (raw == null || raw.isBlank()) {
-
-
-
-
-
-
-
-
-
- continue;
-
-
-
-
-
-
-
- }
-
-
-
-
-
-
-
- String command = raw.trim();
-
-
-
-
-
-
-
- if (command.startsWith("/")) {
-
-
-
-
-
-
-
-
-
- command = command.substring(1);
-
-
-
-
-
-
-
- }
-
-
-
-
-
-
-
- String resolved = command
-
-
-
-
-
-
-
-
-
- .replace("%player%", safe(report.targetName()))
-
-
-
-
-
-
-
-
-
- .replace("%reason%", safe(report.detail()))
-
-
-
-
-
-
-
-
-
- .replace("%id%", String.valueOf(report.id()))
-
-
-
-
-
-
-
-
-
- .replace("%staff%", safe(staffName))
-
-
-
-
-
-
-
-
-
- .replace("%verdict%", verdict.name().toLowerCase(Locale.ROOT))
-
-
-
-
-
-
-
-
-
- .replace("%category%", safe(report.category()));
-
-
-
-
-
-
-
- try {
-
-
-
-
-
-
-
-
-
- Bukkit.dispatchCommand(Bukkit.getConsoleSender(), resolved);
-
-
-
-
-
-
-
-
-
- plugin.audit("PUNISH", null, report.id(), resolved);
-
-
-
-
-
-
-
- } catch (RuntimeException exception) {
-
-
-
-
-
-
-
-
-
- plugin.getLogger().warning("Punishment command failed: " + exception.getMessage());
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
- };
-
-
-
- if (Bukkit.isPrimaryThread()) {
-
-
-
-
-
- dispatch.run();
-
-
-
- } else {
-
-
-
-
-
- Bukkit.getScheduler().runTask(plugin, dispatch);
-
-
-
- }
-
- }
-
-
-private String safe(String value) {
-
-
-
- if (value == null) {
-
-
-
-
-
- return "";
-
-
-
- }
-
-
-
- return value.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ');
-
- } }
+    return value.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ');
+  }
+}

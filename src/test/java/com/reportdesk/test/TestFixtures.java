@@ -17,227 +17,64 @@
  */
 
 package com.reportdesk.test;
-import com.reportdesk.core.EvidenceMeta; import com.reportdesk.core.Report; import com.reportdesk.core.ReportStatus;
-import java.util.List; import java.util.UUID;
-/**
-* Shared immutable report fixtures for the pure unit tests.
-*/ public final class TestFixtures {
 
-
-public static final UUID ALICE = UUID.fromString("11111111-1111-1111-1111-111111111111");
-
- public static final UUID BOB = UUID.fromString("22222222-2222-2222-2222-222222222222");
-
- public static final UUID STAFF = UUID.fromString("33333333-3333-3333-3333-333333333333");
-
-
-private TestFixtures() {
-
- }
-
-
-public static Report open(long id, UUID reporter, String reporterName, String target,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- String category, long createdAt) {
-
-
-
- return report(id, reporter, reporterName, target, category, ReportStatus.OPEN,
-
-
-
-
-
- createdAt, createdAt, 0L);
-
- }
-
-
-public static Report report(long id, UUID reporter, String reporterName, String target,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- String category, ReportStatus status, long createdAt, long updatedAt,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- long closedAt) {
-
-
-
- return new Report(
-
-
-
-
-
- id,
-
-
-
-
-
- reporter,
-
-
-
-
-
- reporterName,
-
-
-
-
-
- null,
-
-
-
-
-
- target,
-
-
-
-
-
- category,
-
-
-
-
-
- "detail " + id,
-
-
-
-
-
- status,
-
-
-
-
-
- createdAt,
-
-
-
-
-
- updatedAt,
-
-
-
-
-
- null,
-
-
-
-
-
- "",
-
-
-
-
-
- 0L,
-
-
-
-
-
- null,
-
-
-
-
-
- "",
-
-
-
-
-
- closedAt,
-
-
-
-
-
- "",
-
-
-
-
-
- "",
-
-
-
-
-
- List.of(),
-
-
-
-
-
- EvidenceMeta.none(),
-
-
-
-
-
- false,
-
-
-
-
-
- "test"
-
-
-
- );
-
- } }
+import com.reportdesk.core.EvidenceMeta;
+import com.reportdesk.core.Report;
+import com.reportdesk.core.ReportStatus;
+import java.util.List;
+import java.util.UUID;
+
+/** Shared immutable report fixtures for the pure unit tests. */
+public final class TestFixtures {
+
+  public static final UUID ALICE = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+  public static final UUID BOB = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
+  public static final UUID STAFF = UUID.fromString("33333333-3333-3333-3333-333333333333");
+
+  private TestFixtures() {}
+
+  public static Report open(
+      long id, UUID reporter, String reporterName, String target, String category, long createdAt) {
+
+    return report(
+        id, reporter, reporterName, target, category, ReportStatus.OPEN, createdAt, createdAt, 0L);
+  }
+
+  public static Report report(
+      long id,
+      UUID reporter,
+      String reporterName,
+      String target,
+      String category,
+      ReportStatus status,
+      long createdAt,
+      long updatedAt,
+      long closedAt) {
+
+    return new Report(
+        id,
+        reporter,
+        reporterName,
+        null,
+        target,
+        category,
+        "detail " + id,
+        status,
+        createdAt,
+        updatedAt,
+        null,
+        "",
+        0L,
+        null,
+        "",
+        closedAt,
+        "",
+        "",
+        List.of(),
+        EvidenceMeta.none(),
+        false,
+        "test");
+  }
+}

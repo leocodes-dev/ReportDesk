@@ -17,40 +17,25 @@
  */
 
 package com.reportdesk.core;
+
 import java.util.UUID;
+
 /**
-* One message in a report's conversation thread. Staff replies are visible to
-* the reporter; player replies are visible to staff. Internal staff notes stay
-* in {@link ReportNote} and are never shown to players.
-*/ public record ReportReply(
+ * One message in a report's conversation thread. Staff replies are visible to the reporter; player
+ * replies are visible to staff. Internal staff notes stay in {@link ReportNote} and are never shown
+ * to players.
+ */
+public record ReportReply(
+    UUID authorId, String authorName, boolean staff, String text, long createdAt) {
 
- UUID authorId,
+  public ReportReply {
 
- String authorName,
+    authorId = authorId == null ? new UUID(0L, 0L) : authorId;
 
- boolean staff,
+    authorName = authorName == null ? "" : authorName;
 
- String text,
+    text = text == null ? "" : text.trim();
 
- long createdAt ) {
-
-
-public ReportReply {
-
-
-
- authorId = authorId == null ? new UUID(0L, 0L) : authorId;
-
-
-
- authorName = authorName == null ? "" : authorName;
-
-
-
- text = text == null ? "" : text.trim();
-
-
-
- createdAt = Math.max(0L, createdAt);
-
- } }
+    createdAt = Math.max(0L, createdAt);
+  }
+}

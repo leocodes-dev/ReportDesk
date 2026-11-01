@@ -17,564 +17,206 @@
  */
 
 package com.reportdesk.command;
-import org.bukkit.Bukkit; import org.bukkit.command.Command; import org.bukkit.command.CommandExecutor; import org.bukkit.command.CommandMap; import org.bukkit.command.CommandSender; import org.bukkit.command.PluginCommand; import org.bukkit.command.TabCompleter; import org.bukkit.plugin.java.JavaPlugin;
-import java.lang.reflect.Field; import java.lang.reflect.Method; import java.util.ArrayList; import java.util.List;
-/**
-* Registers commands for both plugin.yml and paper-plugin.yml deployments.
-*
-* <p>Paper plugins do not read commands from paper-plugin.yml. If plugin.yml
-* command resolution is unavailable, this falls back to the server CommandMap
-* (public getCommandMap() first, then the commandMap field). Registration only
-* happens once during onEnable.</p>
-*/ public final class CommandRegistrar {
 
-
-private CommandRegistrar() {
-
- }
-
-
-public static void register(
-
-
-
- JavaPlugin plugin,
-
-
-
- String name,
-
-
-
- CommandExecutor executor,
-
-
-
- TabCompleter completer,
-
-
-
- List<String> aliases,
-
-
-
- String description,
-
-
-
- String usage
-
- ) {
-
-
-
- PluginCommand existing = findCommand(plugin, name);
-
-
-
- if (existing != null) {
-
-
-
-
-
- existing.setExecutor(executor);
-
-
-
-
-
- existing.setTabCompleter(completer);
-
-
-
-
-
- existing.setDescription(description);
-
-
-
-
-
- existing.setUsage(usage);
-
-
-
-
-
- plugin.getLogger().info("Registered /" + name + " via plugin.yml");
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
-
-try {
-
-
-
-
-
- CommandMap commandMap = commandMap(plugin);
-
-
-
-
-
- List<String> allAliases = aliases == null ? List.of() : List.copyOf(aliases);
-
-
-
-
-
- BukkitCommand command = new BukkitCommand(name, executor, completer);
-
-
-
-
-
- command.setDescription(description);
-
-
-
-
-
- command.setUsage(usage);
-
-
-
-
-
- command.setAliases(allAliases);
-
-
-
-
-
- commandMap.register("reportdesk", command);
-
-
-
-
-
-
-for (String alias : allAliases) {
-
-
-
-
-
-
-
- BukkitCommand aliasCommand = new BukkitCommand(alias, executor, completer);
-
-
-
-
-
-
-
- aliasCommand.setDescription(description);
-
-
-
-
-
-
-
- aliasCommand.setUsage(usage);
-
-
-
-
-
-
-
- commandMap.register("reportdesk", aliasCommand);
-
-
-
-
-
- }
-
-
-
-
-
- plugin.getLogger().info("Registered /" + name + " via CommandMap");
-
-
-
- } catch (Throwable throwable) {
-
-
-
-
-
- plugin.getLogger().warning("Failed to register /" + name + " command: "
-
-
-
-
-
-
-
- + throwable.getClass().getSimpleName() + " - " + throwable.getMessage());
-
-
-
- }
-
- }
-
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandMap;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.plugin.java.JavaPlugin;
 
 /**
+ * Registers commands for both plugin.yml and paper-plugin.yml deployments.
+ *
+ * <p>Paper plugins do not read commands from paper-plugin.yml. If plugin.yml command resolution is
+ * unavailable, this falls back to the server CommandMap (public getCommandMap() first, then the
+ * commandMap field). Registration only happens once during onEnable.
+ */
+public final class CommandRegistrar {
 
+  private CommandRegistrar() {}
 
-* Returns a descriptor-declared command, or null when the plugin is a
+  public static void register(
+      JavaPlugin plugin,
+      String name,
+      CommandExecutor executor,
+      TabCompleter completer,
+      List<String> aliases,
+      String description,
+      String usage) {
 
+    PluginCommand existing = findCommand(plugin, name);
 
-* paper-plugin. Paper throws {@link UnsupportedOperationException} from
+    if (existing != null) {
 
+      existing.setExecutor(executor);
 
-* {@link JavaPlugin#getCommand(String)} instead of returning null, so a
+      existing.setTabCompleter(completer);
 
+      existing.setDescription(description);
 
-* plain null check is not enough.
+      existing.setUsage(usage);
 
+      plugin.getLogger().info("Registered /" + name + " via plugin.yml");
 
-*/
+      return;
+    }
 
- public static PluginCommand findCommand(JavaPlugin plugin, String name) {
+    try {
 
+      CommandMap commandMap = commandMap(plugin);
 
+      List<String> allAliases = aliases == null ? List.of() : List.copyOf(aliases);
 
- try {
+      BukkitCommand command = new BukkitCommand(name, executor, completer);
 
+      command.setDescription(description);
 
+      command.setUsage(usage);
 
+      command.setAliases(allAliases);
 
+      commandMap.register("reportdesk", command);
 
- return plugin.getCommand(name);
+      for (String alias : allAliases) {
 
+        BukkitCommand aliasCommand = new BukkitCommand(alias, executor, completer);
 
+        aliasCommand.setDescription(description);
 
- } catch (RuntimeException exception) {
+        aliasCommand.setUsage(usage);
 
+        commandMap.register("reportdesk", aliasCommand);
+      }
 
+      plugin.getLogger().info("Registered /" + name + " via CommandMap");
 
+    } catch (Throwable throwable) {
 
+      plugin
+          .getLogger()
+          .warning(
+              "Failed to register /"
+                  + name
+                  + " command: "
+                  + throwable.getClass().getSimpleName()
+                  + " - "
+                  + throwable.getMessage());
+    }
+  }
 
- return null;
+  /**
+   * Returns a descriptor-declared command, or null when the plugin is a
+   *
+   * <p>paper-plugin. Paper throws {@link UnsupportedOperationException} from
+   *
+   * <p>{@link JavaPlugin#getCommand(String)} instead of returning null, so a
+   *
+   * <p>plain null check is not enough.
+   */
+  public static PluginCommand findCommand(JavaPlugin plugin, String name) {
 
+    try {
 
+      return plugin.getCommand(name);
 
- }
+    } catch (RuntimeException exception) {
 
- }
+      return null;
+    }
+  }
 
+  private static CommandMap commandMap(JavaPlugin plugin) throws Exception {
 
-private static CommandMap commandMap(JavaPlugin plugin) throws Exception {
+    Object server = Bukkit.getServer();
 
+    try {
 
+      Method method = server.getClass().getMethod("getCommandMap");
 
- Object server = Bukkit.getServer();
+      Object value = method.invoke(server);
 
+      if (value instanceof CommandMap map) {
 
+        return map;
+      }
 
- try {
+    } catch (ReflectiveOperationException ignored) {
 
+      // Fall through to field lookup.
 
+    }
 
+    List<String> tried = new ArrayList<>();
 
+    Class<?> type = server.getClass();
 
- Method method = server.getClass().getMethod("getCommandMap");
+    while (type != null && type != Object.class) {
 
+      for (Field field : type.getDeclaredFields()) {
 
+        if (!"commandMap".equals(field.getName())) {
 
+          continue;
+        }
 
+        tried.add(type.getName() + "." + field.getName());
 
- Object value = method.invoke(server);
+        try {
 
+          field.setAccessible(true);
 
+          Object value = field.get(server);
 
+          if (value instanceof CommandMap map) {
 
+            return map;
+          }
 
- if (value instanceof CommandMap map) {
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
 
+          // Try the next candidate.
 
+        }
+      }
 
+      type = type.getSuperclass();
+    }
 
+    throw new IllegalStateException("No Bukkit CommandMap found; tried " + tried);
+  }
 
+  private static final class BukkitCommand extends Command {
 
+    private final CommandExecutor executor;
 
- return map;
+    private final TabCompleter completer;
 
+    private BukkitCommand(String name, CommandExecutor executor, TabCompleter completer) {
 
+      super(name);
 
+      this.executor = executor;
 
+      this.completer = completer;
+    }
 
- }
+    @Override
+    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
 
+      return executor.onCommand(sender, this, commandLabel, args);
+    }
 
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
 
- } catch (ReflectiveOperationException ignored) {
-
-
-
-
-
- // Fall through to field lookup.
-
-
-
- }
-
-
-
-
-List<String> tried = new ArrayList<>();
-
-
-
- Class<?> type = server.getClass();
-
-
-
- while (type != null && type != Object.class) {
-
-
-
-
-
- for (Field field : type.getDeclaredFields()) {
-
-
-
-
-
-
-
- if (!"commandMap".equals(field.getName())) {
-
-
-
-
-
-
-
-
-
- continue;
-
-
-
-
-
-
-
- }
-
-
-
-
-
-
-
- tried.add(type.getName() + "." + field.getName());
-
-
-
-
-
-
-
- try {
-
-
-
-
-
-
-
-
-
- field.setAccessible(true);
-
-
-
-
-
-
-
-
-
- Object value = field.get(server);
-
-
-
-
-
-
-
-
-
- if (value instanceof CommandMap map) {
-
-
-
-
-
-
-
-
-
-
-
- return map;
-
-
-
-
-
-
-
-
-
- }
-
-
-
-
-
-
-
- } catch (ReflectiveOperationException | RuntimeException ignored) {
-
-
-
-
-
-
-
-
-
- // Try the next candidate.
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
-
-
- type = type.getSuperclass();
-
-
-
- }
-
-
-
- throw new IllegalStateException("No Bukkit CommandMap found; tried " + tried);
-
- }
-
-
-private static final class BukkitCommand extends Command {
-
-
-
-
-private final CommandExecutor executor;
-
-
-
- private final TabCompleter completer;
-
-
-
-
-private BukkitCommand(String name, CommandExecutor executor, TabCompleter completer) {
-
-
-
-
-
- super(name);
-
-
-
-
-
- this.executor = executor;
-
-
-
-
-
- this.completer = completer;
-
-
-
- }
-
-
-
-
-@Override
-
-
-
- public boolean execute(CommandSender sender, String commandLabel, String[] args) {
-
-
-
-
-
- return executor.onCommand(sender, this, commandLabel, args);
-
-
-
- }
-
-
-
-
-@Override
-
-
-
- public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
-
-
-
-
-
- return completer == null ? List.of() : completer.onTabComplete(sender, this, alias, args);
-
-
-
- }
-
- } }
+      return completer == null ? List.of() : completer.onTabComplete(sender, this, alias, args);
+    }
+  }
+}

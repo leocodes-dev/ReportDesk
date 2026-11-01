@@ -17,1020 +17,367 @@
  */
 
 package com.reportdesk.config;
-import org.junit.jupiter.api.Test; import org.yaml.snakeyaml.Yaml;
-import java.io.InputStream; import java.util.ArrayList; import java.util.List; import java.util.Map;
-import static org.junit.jupiter.api.Assertions.assertEquals; import static org.junit.jupiter.api.Assertions.assertFalse; import static org.junit.jupiter.api.Assertions.assertNotNull; import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
+
 class ConfigLoaderTest {
 
+  @Test
+  void bundledConfigLoadsWithoutWarnings() {
 
-@Test
+    List<String> warnings = new ArrayList<>();
 
- void bundledConfigLoadsWithoutWarnings() {
+    PluginConfig config = new ConfigLoader(warnings::add).load(bundledConfig());
 
+    assertTrue(warnings.isEmpty(), () -> "unexpected warnings: " + warnings);
 
+    assertEquals("ReportDesk Server", config.serverName());
 
- List<String> warnings = new ArrayList<>();
+    assertEquals("zh_CN", config.language());
 
+    assertEquals("data", config.storage().directory());
 
+    assertEquals(50, config.storage().compactAfterEntries());
 
- PluginConfig config = new ConfigLoader(warnings::add).load(bundledConfig());
+    assertEquals(360L, config.storage().compactIntervalMinutes());
 
+    assertEquals(60, config.limits().cooldownSeconds());
 
+    assertEquals(10, config.limits().dailyLimit());
 
+    assertEquals(10, config.reports().textPageSize());
 
-assertTrue(warnings.isEmpty(), () -> "unexpected warnings: " + warnings);
+    assertEquals(28, config.reports().guiPageSize());
 
+    assertEquals(3, config.reports().statsTopTargets());
 
+    assertEquals("ui.button.click", config.gui().soundClick());
 
- assertEquals("ReportDesk Server", config.serverName());
+    assertEquals("block.note_block.pling", config.notifications().staffSound());
 
+    assertTrue(config.notifications().reporterQueueOffline());
 
+    assertEquals(20, config.notifications().reporterMaxQueued());
 
- assertEquals("zh_CN", config.language());
+    assertEquals(30, config.notifications().reporterQueueRetentionDays());
 
+    assertTrue(config.notifications().watchlistEnabled());
 
+    assertEquals(20, config.notifications().watchlistMaxTargets());
 
- assertEquals("data", config.storage().directory());
+    assertTrue(config.notifications().watchlistNotifyOnReport());
 
+    assertTrue(config.configEditor().enabled());
 
+    assertTrue(config.configEditor().backupOnSave());
 
- assertEquals(50, config.storage().compactAfterEntries());
+    assertEquals(5, config.configEditor().maxBackups());
 
+    assertEquals(256, config.configEditor().maxValueLength());
 
+    assertTrue(config.gui().admin().enabled());
 
- assertEquals(360L, config.storage().compactIntervalMinutes());
+    assertTrue(config.gui().admin().confirmDestructive());
 
+    assertEquals(20, config.evidence().chatLogSize());
 
+    assertEquals(256, config.evidence().chatMaxLength());
 
- assertEquals(60, config.limits().cooldownSeconds());
+    assertEquals(80, config.evidence().displayNameMaxLength());
 
+    assertEquals(7, config.categories().size());
 
+    assertEquals("cheating", config.category("hack").orElseThrow().id());
 
- assertEquals(10, config.limits().dailyLimit());
+    assertEquals("high", config.category("cheating").orElseThrow().severity().id());
 
+    assertEquals("other", config.defaultCategory());
 
+    assertEquals(5, config.reports().staffStatsTop());
 
- assertEquals(10, config.reports().textPageSize());
+    assertTrue(config.reports().priority().enabled());
 
+    assertEquals(3, config.reports().priority().repeatOffenderThreshold());
 
+    assertEquals("high", config.reports().priority().repeatOffenderLevel().id());
 
- assertEquals(28, config.reports().guiPageSize());
+    assertEquals(15, config.reports().priority().overdueCheckMinutes());
 
+    assertEquals(
+        2, config.reports().priority().slaHours(com.reportdesk.core.ReportPriority.URGENT));
 
+    assertEquals(72, config.reports().priority().slaHours(com.reportdesk.core.ReportPriority.LOW));
 
- assertEquals(3, config.reports().statsTopTargets());
+    assertTrue(config.replies().enabled());
 
+    assertTrue(config.replies().allowPlayerReplies());
 
+    assertEquals(300, config.replies().maxLength());
 
- assertEquals("ui.button.click", config.gui().soundClick());
+    assertEquals(50, config.replies().maxPerReport());
 
+    assertTrue(config.replies().notifyOnReply());
 
+    assertFalse(config.reports().chatReport().enabled());
 
- assertEquals("block.note_block.pling", config.notifications().staffSound());
+    assertEquals("chat", config.reports().chatReport().category());
 
+    assertEquals(5, config.reports().chatReport().maxSelected());
 
+    assertFalse(config.chatReportAvailable());
 
- assertTrue(config.notifications().reporterQueueOffline());
+    assertEquals(2, config.priorityPolicy().slaHours(com.reportdesk.core.ReportPriority.URGENT));
 
+    assertFalse(config.evidence().enabled());
 
+    assertFalse(config.evidence().blockBreak().enabled());
 
- assertEquals(20, config.notifications().reporterMaxQueued());
+    assertFalse(config.evidence().movement().enabled());
 
+    assertFalse(config.evidence().autoDetect().enabled());
 
+    assertFalse(config.punishments().enabled());
+  }
 
- assertEquals(30, config.notifications().reporterQueueRetentionDays());
+  @Test
+  void emptyConfigUsesSafeDefaults() {
 
+    List<String> warnings = new ArrayList<>();
 
+    PluginConfig config = new ConfigLoader(warnings::add).load(new MapConfigSource(Map.of()));
 
- assertTrue(config.notifications().watchlistEnabled());
+    assertEquals(50, config.storage().compactAfterEntries());
 
+    assertEquals(360L, config.storage().compactIntervalMinutes());
 
+    assertEquals(60, config.limits().cooldownSeconds());
 
- assertEquals(20, config.notifications().watchlistMaxTargets());
+    assertEquals(10, config.limits().dailyLimit());
 
+    assertEquals(10, config.reports().textPageSize());
 
+    assertEquals(28, config.reports().guiPageSize());
 
- assertTrue(config.notifications().watchlistNotifyOnReport());
+    assertEquals(3, config.reports().statsTopTargets());
 
+    assertEquals(2, config.security().detailMinLength());
 
+    assertEquals(200, config.security().detailMaxLength());
 
- assertTrue(config.configEditor().enabled());
+    assertTrue(config.gui().admin().enabled());
 
+    assertTrue(config.gui().admin().confirmDestructive());
 
+    assertNotNull(config.categories());
 
- assertTrue(config.configEditor().backupOnSave());
+    assertEquals(1, config.categories().size());
 
+    assertEquals("other", config.defaultCategory());
 
+    assertFalse(warnings.isEmpty());
+  }
 
- assertEquals(5, config.configEditor().maxBackups());
+  @Test
+  void invalidValuesAreClampedOrReplaced() {
 
+    Map<String, Object> root =
+        Map.of(
+            "storage", Map.of("directory", "../outside"),
+            "limits", Map.of("cooldown-seconds", -5, "daily-limit", 999_999),
+            "security",
+                Map.of(
+                    "detail-min-length", 50,
+                    "detail-max-length", 10,
+                    "player-name-pattern", "["),
+            "notifications",
+                Map.of(
+                    "webhook", Map.of("enabled", true, "url", "ftp://example.com/hook"),
+                    "reporter", Map.of("max-queued", 0, "queue-retention-days", -1),
+                    "watchlist", Map.of("max-targets", 999)),
+            "reports",
+                Map.of(
+                    "categories",
+                    Map.of("broken", "not-a-section"),
+                    "default-category",
+                    "does-not-exist",
+                    "stats-top-targets",
+                    99),
+            "config-editor", Map.of("max-backups", -5, "max-value-length", 0));
 
+    List<String> warnings = new ArrayList<>();
 
- assertEquals(256, config.configEditor().maxValueLength());
+    PluginConfig config = new ConfigLoader(warnings::add).load(new MapConfigSource(root));
 
+    assertEquals("data", config.storage().directory());
 
+    assertEquals(0, config.limits().cooldownSeconds());
 
- assertTrue(config.gui().admin().enabled());
+    assertEquals(10_000, config.limits().dailyLimit());
 
+    assertEquals(50, config.security().detailMaxLength());
 
+    assertEquals(20, config.reports().statsTopTargets());
 
- assertTrue(config.gui().admin().confirmDestructive());
+    assertEquals(ConfigLoader.DEFAULT_PLAYER_PATTERN, config.security().playerNamePattern());
 
+    assertFalse(config.notifications().webhook().enabled());
 
+    assertEquals(1, config.notifications().reporterMaxQueued());
 
- assertEquals(20, config.evidence().chatLogSize());
+    assertEquals(0, config.notifications().reporterQueueRetentionDays());
 
+    assertEquals(200, config.notifications().watchlistMaxTargets());
 
+    assertEquals(0, config.configEditor().maxBackups());
 
- assertEquals(256, config.evidence().chatMaxLength());
+    assertEquals(1, config.configEditor().maxValueLength());
 
+    assertEquals(1, config.categories().size());
 
+    assertEquals("other", config.defaultCategory());
 
- assertEquals(80, config.evidence().displayNameMaxLength());
+    assertFalse(warnings.isEmpty());
+  }
 
+  @Test
+  void chatReportRequiresEvidenceChatCaptureAndAValidCategory() {
 
+    List<String> warnings = new ArrayList<>();
 
- assertEquals(7, config.categories().size());
+    PluginConfig aliasResolution =
+        new ConfigLoader(warnings::add).load(chatConfig(true, "insult", 3, true, true));
 
+    assertTrue(aliasResolution.reports().chatReport().enabled());
 
+    assertEquals("chat", aliasResolution.reports().chatReport().category());
 
- assertEquals("cheating", config.category("hack").orElseThrow().id());
+    assertEquals(3, aliasResolution.reports().chatReport().maxSelected());
 
+    assertTrue(aliasResolution.chatReportAvailable());
 
+    assertFalse(
+        new ConfigLoader(warnings::add)
+            .load(chatConfig(true, "chat", 5, false, true))
+            .chatReportAvailable());
 
- assertEquals("high", config.category("cheating").orElseThrow().severity().id());
+    assertFalse(
+        new ConfigLoader(warnings::add)
+            .load(chatConfig(true, "chat", 5, true, false))
+            .chatReportAvailable());
+  }
 
+  @Test
+  void unknownOrDisabledChatCategoryDisablesThePicker() {
 
+    List<String> unknownWarnings = new ArrayList<>();
 
- assertEquals("other", config.defaultCategory());
+    PluginConfig unknown =
+        new ConfigLoader(unknownWarnings::add)
+            .load(chatConfig(true, "missing-category", 5, true, true));
 
+    assertFalse(unknown.reports().chatReport().enabled());
 
+    assertFalse(unknown.chatReportAvailable());
 
- assertEquals(5, config.reports().staffStatsTop());
+    assertTrue(
+        unknownWarnings.stream().anyMatch(warning -> warning.contains("chat-report.category")),
+        () -> "expected a chat-report warning, got " + unknownWarnings);
 
+    List<String> disabledWarnings = new ArrayList<>();
 
+    PluginConfig disabled =
+        new ConfigLoader(disabledWarnings::add).load(chatConfig(true, "disabled", 5, true, true));
 
- assertTrue(config.reports().priority().enabled());
+    assertFalse(disabled.reports().chatReport().enabled());
 
+    assertFalse(disabled.chatReportAvailable());
 
+    assertTrue(
+        disabledWarnings.stream().anyMatch(warning -> warning.contains("chat-report.category")),
+        () -> "expected a chat-report warning, got " + disabledWarnings);
+  }
 
- assertEquals(3, config.reports().priority().repeatOffenderThreshold());
+  @Test
+  void chatReportMaxSelectedIsClamped() {
 
+    List<String> warnings = new ArrayList<>();
 
+    PluginConfig tooSmall =
+        new ConfigLoader(warnings::add).load(chatConfig(true, "chat", 0, true, true));
 
- assertEquals("high", config.reports().priority().repeatOffenderLevel().id());
+    assertEquals(1, tooSmall.reports().chatReport().maxSelected());
 
+    PluginConfig tooLarge =
+        new ConfigLoader(warnings::add).load(chatConfig(true, "chat", 500, true, true));
 
+    assertEquals(100, tooLarge.reports().chatReport().maxSelected());
+  }
 
- assertEquals(15, config.reports().priority().overdueCheckMinutes());
+  private static MapConfigSource chatConfig(
+      boolean enabled, String category, int maxSelected, boolean evidenceEnabled, boolean chatLog) {
 
+    return new MapConfigSource(
+        Map.of(
+            "reports",
+                Map.of(
+                    "categories",
+                        Map.of(
+                            "chat",
+                                Map.of(
+                                    "display",
+                                    "Chat",
+                                    "icon",
+                                    "PAPER",
+                                    "aliases",
+                                    List.of("insult"),
+                                    "enabled",
+                                    true),
+                            "disabled",
+                                Map.of(
+                                    "display", "Disabled",
+                                    "icon", "BARRIER",
+                                    "enabled", false)),
+                    "default-category", "chat",
+                    "chat-report",
+                        Map.of(
+                            "enabled", enabled,
+                            "category", category,
+                            "max-selected", maxSelected)),
+            "evidence",
+                Map.of(
+                    "enabled",
+                    evidenceEnabled,
+                    "capture-on-report",
+                    true,
+                    "capture",
+                    Map.of("chat-log", chatLog))));
+  }
 
+  private static MapConfigSource bundledConfig() {
 
- assertEquals(2, config.reports().priority().slaHours(com.reportdesk.core.ReportPriority.URGENT));
+    try (InputStream input = ConfigLoaderTest.class.getResourceAsStream("/config.yml")) {
 
+      assertNotNull(input, "bundled config.yml");
 
+      Object loaded = new Yaml().load(input);
 
- assertEquals(72, config.reports().priority().slaHours(com.reportdesk.core.ReportPriority.LOW));
+      assertTrue(loaded instanceof Map<?, ?>, "config.yml must be a mapping");
 
+      return new MapConfigSource((Map<?, ?>) loaded);
 
+    } catch (java.io.IOException exception) {
 
- assertTrue(config.replies().enabled());
-
-
-
- assertTrue(config.replies().allowPlayerReplies());
-
-
-
- assertEquals(300, config.replies().maxLength());
-
-
-
- assertEquals(50, config.replies().maxPerReport());
-
-
-
- assertTrue(config.replies().notifyOnReply());
-
-
-
- assertFalse(config.reports().chatReport().enabled());
-
-
-
- assertEquals("chat", config.reports().chatReport().category());
-
-
-
- assertEquals(5, config.reports().chatReport().maxSelected());
-
-
-
- assertFalse(config.chatReportAvailable());
-
-
-
- assertEquals(2, config.priorityPolicy().slaHours(com.reportdesk.core.ReportPriority.URGENT));
-
-
-
- assertFalse(config.evidence().enabled());
-
-
-
- assertFalse(config.evidence().blockBreak().enabled());
-
-
-
- assertFalse(config.evidence().movement().enabled());
-
-
-
- assertFalse(config.evidence().autoDetect().enabled());
-
-
-
- assertFalse(config.punishments().enabled());
-
- }
-
-
-@Test
-
- void emptyConfigUsesSafeDefaults() {
-
-
-
- List<String> warnings = new ArrayList<>();
-
-
-
- PluginConfig config = new ConfigLoader(warnings::add).load(new MapConfigSource(Map.of()));
-
-
-
-
-assertEquals(50, config.storage().compactAfterEntries());
-
-
-
- assertEquals(360L, config.storage().compactIntervalMinutes());
-
-
-
- assertEquals(60, config.limits().cooldownSeconds());
-
-
-
- assertEquals(10, config.limits().dailyLimit());
-
-
-
- assertEquals(10, config.reports().textPageSize());
-
-
-
- assertEquals(28, config.reports().guiPageSize());
-
-
-
- assertEquals(3, config.reports().statsTopTargets());
-
-
-
- assertEquals(2, config.security().detailMinLength());
-
-
-
- assertEquals(200, config.security().detailMaxLength());
-
-
-
- assertTrue(config.gui().admin().enabled());
-
-
-
- assertTrue(config.gui().admin().confirmDestructive());
-
-
-
- assertNotNull(config.categories());
-
-
-
- assertEquals(1, config.categories().size());
-
-
-
- assertEquals("other", config.defaultCategory());
-
-
-
- assertFalse(warnings.isEmpty());
-
- }
-
-
-@Test
-
- void invalidValuesAreClampedOrReplaced() {
-
-
-
- Map<String, Object> root = Map.of(
-
-
-
-
-
- "storage", Map.of("directory", "../outside"),
-
-
-
-
-
- "limits", Map.of("cooldown-seconds", -5, "daily-limit", 999_999),
-
-
-
-
-
- "security", Map.of(
-
-
-
-
-
-
-
- "detail-min-length", 50,
-
-
-
-
-
-
-
- "detail-max-length", 10,
-
-
-
-
-
-
-
- "player-name-pattern", "["
-
-
-
-
-
- ),
-
-
-
-
-
- "notifications", Map.of(
-
-
-
-
-
-
-
- "webhook", Map.of("enabled", true, "url", "ftp://example.com/hook"),
-
-
-
-
-
-
-
- "reporter", Map.of("max-queued", 0, "queue-retention-days", -1),
-
-
-
-
-
-
-
- "watchlist", Map.of("max-targets", 999)
-
-
-
-
-
- ),
-
-
-
-
-
- "reports", Map.of(
-
-
-
-
-
-
-
- "categories", Map.of("broken", "not-a-section"),
-
-
-
-
-
-
-
- "default-category", "does-not-exist",
-
-
-
-
-
-
-
- "stats-top-targets", 99
-
-
-
-
-
- ),
-
-
-
-
-
- "config-editor", Map.of("max-backups", -5, "max-value-length", 0)
-
-
-
- );
-
-
-
- List<String> warnings = new ArrayList<>();
-
-
-
- PluginConfig config = new ConfigLoader(warnings::add).load(new MapConfigSource(root));
-
-
-
-
-assertEquals("data", config.storage().directory());
-
-
-
- assertEquals(0, config.limits().cooldownSeconds());
-
-
-
- assertEquals(10_000, config.limits().dailyLimit());
-
-
-
- assertEquals(50, config.security().detailMaxLength());
-
-
-
- assertEquals(20, config.reports().statsTopTargets());
-
-
-
- assertEquals(ConfigLoader.DEFAULT_PLAYER_PATTERN, config.security().playerNamePattern());
-
-
-
- assertFalse(config.notifications().webhook().enabled());
-
-
-
- assertEquals(1, config.notifications().reporterMaxQueued());
-
-
-
- assertEquals(0, config.notifications().reporterQueueRetentionDays());
-
-
-
- assertEquals(200, config.notifications().watchlistMaxTargets());
-
-
-
- assertEquals(0, config.configEditor().maxBackups());
-
-
-
- assertEquals(1, config.configEditor().maxValueLength());
-
-
-
- assertEquals(1, config.categories().size());
-
-
-
- assertEquals("other", config.defaultCategory());
-
-
-
- assertFalse(warnings.isEmpty());
-
- }
-
-
-@Test
-
- void chatReportRequiresEvidenceChatCaptureAndAValidCategory() {
-
-
-
- List<String> warnings = new ArrayList<>();
-
-
-
- PluginConfig aliasResolution = new ConfigLoader(warnings::add).load(chatConfig(
-
-
-
-
-
- true, "insult", 3, true, true));
-
-
-
- assertTrue(aliasResolution.reports().chatReport().enabled());
-
-
-
- assertEquals("chat", aliasResolution.reports().chatReport().category());
-
-
-
- assertEquals(3, aliasResolution.reports().chatReport().maxSelected());
-
-
-
- assertTrue(aliasResolution.chatReportAvailable());
-
-
-
-
-assertFalse(new ConfigLoader(warnings::add).load(chatConfig(true, "chat", 5, false, true))
-
-
-
-
-
- .chatReportAvailable());
-
-
-
- assertFalse(new ConfigLoader(warnings::add).load(chatConfig(true, "chat", 5, true, false))
-
-
-
-
-
- .chatReportAvailable());
-
- }
-
-
-@Test
-
- void unknownOrDisabledChatCategoryDisablesThePicker() {
-
-
-
- List<String> unknownWarnings = new ArrayList<>();
-
-
-
- PluginConfig unknown = new ConfigLoader(unknownWarnings::add).load(
-
-
-
-
-
- chatConfig(true, "missing-category", 5, true, true));
-
-
-
- assertFalse(unknown.reports().chatReport().enabled());
-
-
-
- assertFalse(unknown.chatReportAvailable());
-
-
-
- assertTrue(unknownWarnings.stream().anyMatch(warning -> warning.contains("chat-report.category")),
-
-
-
-
-
- () -> "expected a chat-report warning, got " + unknownWarnings);
-
-
-
-
-List<String> disabledWarnings = new ArrayList<>();
-
-
-
- PluginConfig disabled = new ConfigLoader(disabledWarnings::add).load(
-
-
-
-
-
- chatConfig(true, "disabled", 5, true, true));
-
-
-
- assertFalse(disabled.reports().chatReport().enabled());
-
-
-
- assertFalse(disabled.chatReportAvailable());
-
-
-
- assertTrue(disabledWarnings.stream().anyMatch(warning -> warning.contains("chat-report.category")),
-
-
-
-
-
- () -> "expected a chat-report warning, got " + disabledWarnings);
-
- }
-
-
-@Test
-
- void chatReportMaxSelectedIsClamped() {
-
-
-
- List<String> warnings = new ArrayList<>();
-
-
-
- PluginConfig tooSmall = new ConfigLoader(warnings::add).load(
-
-
-
-
-
- chatConfig(true, "chat", 0, true, true));
-
-
-
- assertEquals(1, tooSmall.reports().chatReport().maxSelected());
-
-
-
-
-PluginConfig tooLarge = new ConfigLoader(warnings::add).load(
-
-
-
-
-
- chatConfig(true, "chat", 500, true, true));
-
-
-
- assertEquals(100, tooLarge.reports().chatReport().maxSelected());
-
- }
-
-
-private static MapConfigSource chatConfig(boolean enabled, String category, int maxSelected,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- boolean evidenceEnabled, boolean chatLog) {
-
-
-
- return new MapConfigSource(Map.of(
-
-
-
-
-
- "reports", Map.of(
-
-
-
-
-
-
-
- "categories", Map.of(
-
-
-
-
-
-
-
-
-
- "chat", Map.of(
-
-
-
-
-
-
-
-
-
-
-
- "display", "Chat",
-
-
-
-
-
-
-
-
-
-
-
- "icon", "PAPER",
-
-
-
-
-
-
-
-
-
-
-
- "aliases", List.of("insult"),
-
-
-
-
-
-
-
-
-
-
-
- "enabled", true
-
-
-
-
-
-
-
-
-
- ),
-
-
-
-
-
-
-
-
-
- "disabled", Map.of(
-
-
-
-
-
-
-
-
-
-
-
- "display", "Disabled",
-
-
-
-
-
-
-
-
-
-
-
- "icon", "BARRIER",
-
-
-
-
-
-
-
-
-
-
-
- "enabled", false
-
-
-
-
-
-
-
-
-
- )
-
-
-
-
-
-
-
- ),
-
-
-
-
-
-
-
- "default-category", "chat",
-
-
-
-
-
-
-
- "chat-report", Map.of(
-
-
-
-
-
-
-
-
-
- "enabled", enabled,
-
-
-
-
-
-
-
-
-
- "category", category,
-
-
-
-
-
-
-
-
-
- "max-selected", maxSelected
-
-
-
-
-
-
-
- )
-
-
-
-
-
- ),
-
-
-
-
-
- "evidence", Map.of(
-
-
-
-
-
-
-
- "enabled", evidenceEnabled,
-
-
-
-
-
-
-
- "capture-on-report", true,
-
-
-
-
-
-
-
- "capture", Map.of("chat-log", chatLog)
-
-
-
-
-
- )
-
-
-
- ));
-
- }
-
-
-private static MapConfigSource bundledConfig() {
-
-
-
- try (InputStream input = ConfigLoaderTest.class.getResourceAsStream("/config.yml")) {
-
-
-
-
-
- assertNotNull(input, "bundled config.yml");
-
-
-
-
-
- Object loaded = new Yaml().load(input);
-
-
-
-
-
- assertTrue(loaded instanceof Map<?, ?>, "config.yml must be a mapping");
-
-
-
-
-
- return new MapConfigSource((Map<?, ?>) loaded);
-
-
-
- } catch (java.io.IOException exception) {
-
-
-
-
-
- throw new AssertionError(exception);
-
-
-
- }
-
- } }
+      throw new AssertionError(exception);
+    }
+  }
+}

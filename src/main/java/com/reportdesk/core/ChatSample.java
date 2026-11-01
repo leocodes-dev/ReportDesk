@@ -17,13 +17,11 @@
  */
 package com.reportdesk.core;
 
-/**
- * One captured chat line, kept in memory only until a report is filed.
- */
+/** One captured chat line, kept in memory only until a report is filed. */
 public record ChatSample(long createdAt, String playerName, String message) {
 
-    public ChatSample {
-        playerName = playerName == null ? "" : playerName;
-        message = message == null ? "" : message;
-    }
+  public ChatSample {
+    playerName = playerName == null ? "" : playerName;
+    message = message == null ? "" : message;
+  }
 }

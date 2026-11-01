@@ -17,97 +17,46 @@
  */
 
 package com.reportdesk.core;
-import java.util.Collections; import java.util.LinkedHashMap; import java.util.Map; import java.util.UUID;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
+
 /**
-* A notification that could not be delivered because the player was offline.
-* The message key and raw placeholder values are stored (not the rendered
-* component) so the notice uses the language active when the player returns.
-*/ public record PendingNotice(
+ * A notification that could not be delivered because the player was offline. The message key and
+ * raw placeholder values are stored (not the rendered component) so the notice uses the language
+ * active when the player returns.
+ */
+public record PendingNotice(
+    UUID playerId, String messageKey, Map<String, String> placeholders, long createdAt) {
 
- UUID playerId,
+  public PendingNotice {
 
- String messageKey,
+    playerId = playerId == null ? new UUID(0L, 0L) : playerId;
 
- Map<String, String> placeholders,
+    messageKey = messageKey == null ? "" : messageKey.trim();
 
- long createdAt ) {
+    Map<String, String> copy = new LinkedHashMap<>();
 
+    if (placeholders != null) {
 
-public PendingNotice {
+      placeholders.forEach(
+          (key, value) -> {
+            if (key != null && !key.isBlank()) {
 
+              copy.put(key, value == null ? "" : value);
+            }
+          });
+    }
 
+    placeholders = Collections.unmodifiableMap(copy);
 
- playerId = playerId == null ? new UUID(0L, 0L) : playerId;
+    createdAt = Math.max(0L, createdAt);
+  }
 
+  public boolean valid() {
 
-
- messageKey = messageKey == null ? "" : messageKey.trim();
-
-
-
- Map<String, String> copy = new LinkedHashMap<>();
-
-
-
- if (placeholders != null) {
-
-
-
-
-
- placeholders.forEach((key, value) -> {
-
-
-
-
-
-
-
- if (key != null && !key.isBlank()) {
-
-
-
-
-
-
-
-
-
- copy.put(key, value == null ? "" : value);
-
-
-
-
-
-
-
- }
-
-
-
-
-
- });
-
-
-
- }
-
-
-
- placeholders = Collections.unmodifiableMap(copy);
-
-
-
- createdAt = Math.max(0L, createdAt);
-
- }
-
-
-public boolean valid() {
-
-
-
- return !playerId.equals(new UUID(0L, 0L)) && !messageKey.isBlank();
-
- } }
+    return !playerId.equals(new UUID(0L, 0L)) && !messageKey.isBlank();
+  }
+}

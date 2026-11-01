@@ -17,13 +17,23 @@
  */
 
 package com.reportdesk.config;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
-import java.io.IOException; import java.io.InputStream; import java.nio.charset.StandardCharsets; import java.util.Map;
-import static org.junit.jupiter.api.Assertions.assertEquals; import static org.junit.jupiter.api.Assertions.assertFalse; import static org.junit.jupiter.api.Assertions.assertNotNull; import static org.junit.jupiter.api.Assertions.assertThrows; import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class YamlDocumentTest {
 
-
-private static final String SAMPLE = """
+  private static final String SAMPLE =
+      """
 # top comment
 name: 'demo'
 limits:
@@ -37,408 +47,179 @@ reports:
       high: 6
 """;
 
+  @Test
+  void replacesValueAndKeepsComments() {
 
-@Test
+    String updated = YamlDocument.set(SAMPLE, "limits.daily-limit", 5);
 
- void replacesValueAndKeepsComments() {
+    assertTrue(updated.contains("# top comment"));
 
+    assertTrue(updated.contains("# daily cap"));
 
+    assertTrue(updated.contains("daily-limit: 5 # inline"));
 
- String updated = YamlDocument.set(SAMPLE, "limits.daily-limit", 5);
+    Map<String, Object> parsed = YamlDocument.parse(updated);
 
+    assertEquals(5, YamlDocument.valueAt(parsed, "limits.daily-limit"));
 
+    assertEquals(60, YamlDocument.valueAt(parsed, "limits.cooldown-seconds"));
 
+    assertEquals("demo", YamlDocument.valueAt(parsed, "name"));
+  }
 
-assertTrue(updated.contains("# top comment"));
+  @Test
+  void quotesStringsAndRoundTripsSpecialCharacters() {
 
+    String value = "He said 'hi' # now";
 
+    String updated = YamlDocument.set(SAMPLE, "name", value);
 
- assertTrue(updated.contains("# daily cap"));
+    assertEquals(value, YamlDocument.valueAt(YamlDocument.parse(updated), "name"));
 
+    assertTrue(updated.contains("name: 'He said ''hi'' # now'"));
+  }
 
+  @Test
+  void insertsMissingKeyUnderParentSection() {
 
- assertTrue(updated.contains("daily-limit: 5 # inline"));
+    String withoutKey = SAMPLE.replace("  cooldown-seconds: 60\n", "");
 
+    String updated = YamlDocument.set(withoutKey, "limits.cooldown-seconds", 90);
 
+    assertEquals(90, YamlDocument.valueAt(YamlDocument.parse(updated), "limits.cooldown-seconds"));
 
- Map<String, Object> parsed = YamlDocument.parse(updated);
+    assertEquals(1, countLinesStartingWith(updated, "limits:"));
+  }
 
+  @Test
+  void createsMissingSectionAtEndOfFile() {
 
+    String updated = YamlDocument.set(SAMPLE, "audit.page-size", 7);
 
- assertEquals(5, YamlDocument.valueAt(parsed, "limits.daily-limit"));
+    assertEquals(7, YamlDocument.valueAt(YamlDocument.parse(updated), "audit.page-size"));
 
+    assertTrue(updated.contains("audit:\n  page-size: 7"));
 
+    assertTrue(updated.endsWith("\n"));
+  }
 
- assertEquals(60, YamlDocument.valueAt(parsed, "limits.cooldown-seconds"));
+  @Test
+  void createsDeepMissingSections() {
 
+    String updated = YamlDocument.set(SAMPLE, "notifications.webhook.events.created", false);
 
+    assertEquals(
+        Boolean.FALSE,
+        YamlDocument.valueAt(YamlDocument.parse(updated), "notifications.webhook.events.created"));
+  }
 
- assertEquals("demo", YamlDocument.valueAt(parsed, "name"));
+  @Test
+  void updatesNestedKeyWithoutTouchingSiblings() {
 
- }
+    String updated = YamlDocument.set(SAMPLE, "reports.priority.sla-hours.high", 4);
 
+    Map<String, Object> parsed = YamlDocument.parse(updated);
 
-@Test
+    assertEquals(4, YamlDocument.valueAt(parsed, "reports.priority.sla-hours.high"));
 
- void quotesStringsAndRoundTripsSpecialCharacters() {
+    assertEquals(true, YamlDocument.valueAt(parsed, "reports.priority.enabled"));
+  }
 
+  @Test
+  void preservesWindowsLineEndings() {
 
+    String windows = SAMPLE.replace("\n", "\r\n");
 
- String value = "He said 'hi' # now";
+    String updated = YamlDocument.set(windows, "limits.daily-limit", 3);
 
+    assertTrue(updated.contains("\r\n"));
 
+    assertFalse(updated.replace("\r\n", "").contains("\n"));
 
+    assertEquals(3, YamlDocument.valueAt(YamlDocument.parse(updated), "limits.daily-limit"));
+  }
 
-String updated = YamlDocument.set(SAMPLE, "name", value);
+  @Test
+  void rejectsInvalidYaml() {
 
+    assertThrows(IllegalArgumentException.class, () -> YamlDocument.parse("limits: [unclosed"));
 
+    assertThrows(IllegalArgumentException.class, () -> YamlDocument.parse("- just\n- a list"));
 
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> YamlDocument.set("limits: [unclosed", "limits.priority", 1));
+  }
 
-assertEquals(value, YamlDocument.valueAt(YamlDocument.parse(updated), "name"));
+  @Test
+  void emptyDocumentParsesToEmptyMap() {
 
+    assertTrue(YamlDocument.parse(null).isEmpty());
 
+    assertTrue(YamlDocument.parse(" ").isEmpty());
 
- assertTrue(updated.contains("name: 'He said ''hi'' # now'"));
+    assertTrue(YamlDocument.parse("# only a comment").isEmpty());
+  }
 
- }
+  @Test
+  void everyRegistryPathExistsInBundledConfig() throws IOException {
 
+    Map<String, Object> parsed = YamlDocument.parse(bundledConfig());
 
-@Test
+    for (ConfigKey key : ConfigKeys.all()) {
 
- void insertsMissingKeyUnderParentSection() {
+      assertNotNull(
+          YamlDocument.valueAt(parsed, key.path()),
+          () -> "missing bundled config key " + key.path());
+    }
+  }
 
+  @Test
+  void bundledConfigCanRewriteEveryEditableKey() throws IOException {
 
+    String text = bundledConfig();
 
- String withoutKey = SAMPLE.replace("  cooldown-seconds: 60\n", "");
+    Map<String, Object> original = YamlDocument.parse(text);
 
+    String updated = text;
 
+    for (ConfigKey key : ConfigKeys.all()) {
 
+      Object value = YamlDocument.valueAt(original, key.path());
 
-String updated = YamlDocument.set(withoutKey, "limits.cooldown-seconds", 90);
+      updated = YamlDocument.set(updated, key.path(), value);
+    }
 
+    Map<String, Object> reparsed = YamlDocument.parse(updated);
 
+    for (ConfigKey key : ConfigKeys.all()) {
 
+      assertNotNull(YamlDocument.valueAt(reparsed, key.path()), key.path());
+    }
+  }
 
-assertEquals(90, YamlDocument.valueAt(YamlDocument.parse(updated),
+  private static int countLinesStartingWith(String text, String prefix) {
 
+    int count = 0;
 
+    for (String line : text.split("\r?\n")) {
 
+      if (line.startsWith(prefix)) {
 
+        count++;
+      }
+    }
 
- "limits.cooldown-seconds"));
+    return count;
+  }
 
+  private static String bundledConfig() throws IOException {
 
+    try (InputStream input = YamlDocumentTest.class.getResourceAsStream("/config.yml")) {
 
- assertEquals(1, countLinesStartingWith(updated, "limits:"));
+      assertNotNull(input, "bundled config.yml");
 
- }
-
-
-@Test
-
- void createsMissingSectionAtEndOfFile() {
-
-
-
- String updated = YamlDocument.set(SAMPLE, "audit.page-size", 7);
-
-
-
-
-assertEquals(7, YamlDocument.valueAt(YamlDocument.parse(updated), "audit.page-size"));
-
-
-
- assertTrue(updated.contains("audit:\n  page-size: 7"));
-
-
-
- assertTrue(updated.endsWith("\n"));
-
- }
-
-
-@Test
-
- void createsDeepMissingSections() {
-
-
-
- String updated = YamlDocument.set(SAMPLE, "notifications.webhook.events.created", false);
-
-
-
-
-assertEquals(Boolean.FALSE,
-
-
-
-
-
- YamlDocument.valueAt(YamlDocument.parse(updated),
-
-
-
-
-
-
-
- "notifications.webhook.events.created"));
-
- }
-
-
-@Test
-
- void updatesNestedKeyWithoutTouchingSiblings() {
-
-
-
- String updated = YamlDocument.set(SAMPLE, "reports.priority.sla-hours.high", 4);
-
-
-
-
-Map<String, Object> parsed = YamlDocument.parse(updated);
-
-
-
- assertEquals(4, YamlDocument.valueAt(parsed, "reports.priority.sla-hours.high"));
-
-
-
- assertEquals(true, YamlDocument.valueAt(parsed, "reports.priority.enabled"));
-
- }
-
-
-@Test
-
- void preservesWindowsLineEndings() {
-
-
-
- String windows = SAMPLE.replace("\n", "\r\n");
-
-
-
-
-String updated = YamlDocument.set(windows, "limits.daily-limit", 3);
-
-
-
-
-assertTrue(updated.contains("\r\n"));
-
-
-
- assertFalse(updated.replace("\r\n", "").contains("\n"));
-
-
-
- assertEquals(3, YamlDocument.valueAt(YamlDocument.parse(updated), "limits.daily-limit"));
-
- }
-
-
-@Test
-
- void rejectsInvalidYaml() {
-
-
-
- assertThrows(IllegalArgumentException.class, () -> YamlDocument.parse("limits: [unclosed"));
-
-
-
- assertThrows(IllegalArgumentException.class, () -> YamlDocument.parse("- just\n- a list"));
-
-
-
- assertThrows(IllegalArgumentException.class, () -> YamlDocument.set("limits: [unclosed",
-
-
-
-
-
- "limits.priority", 1));
-
- }
-
-
-@Test
-
- void emptyDocumentParsesToEmptyMap() {
-
-
-
- assertTrue(YamlDocument.parse(null).isEmpty());
-
-
-
- assertTrue(YamlDocument.parse(" ").isEmpty());
-
-
-
- assertTrue(YamlDocument.parse("# only a comment").isEmpty());
-
- }
-
-
-@Test
-
- void everyRegistryPathExistsInBundledConfig() throws IOException {
-
-
-
- Map<String, Object> parsed = YamlDocument.parse(bundledConfig());
-
-
-
-
-for (ConfigKey key : ConfigKeys.all()) {
-
-
-
-
-
- assertNotNull(YamlDocument.valueAt(parsed, key.path()),
-
-
-
-
-
-
-
- () -> "missing bundled config key " + key.path());
-
-
-
- }
-
- }
-
-
-@Test
-
- void bundledConfigCanRewriteEveryEditableKey() throws IOException {
-
-
-
- String text = bundledConfig();
-
-
-
- Map<String, Object> original = YamlDocument.parse(text);
-
-
-
- String updated = text;
-
-
-
-
-for (ConfigKey key : ConfigKeys.all()) {
-
-
-
-
-
- Object value = YamlDocument.valueAt(original, key.path());
-
-
-
-
-
- updated = YamlDocument.set(updated, key.path(), value);
-
-
-
- }
-
-
-
-
-Map<String, Object> reparsed = YamlDocument.parse(updated);
-
-
-
- for (ConfigKey key : ConfigKeys.all()) {
-
-
-
-
-
- assertNotNull(YamlDocument.valueAt(reparsed, key.path()), key.path());
-
-
-
- }
-
- }
-
-
-private static int countLinesStartingWith(String text, String prefix) {
-
-
-
- int count = 0;
-
-
-
- for (String line : text.split("\r?\n")) {
-
-
-
-
-
- if (line.startsWith(prefix)) {
-
-
-
-
-
-
-
- count++;
-
-
-
-
-
- }
-
-
-
- }
-
-
-
- return count;
-
- }
-
-
-private static String bundledConfig() throws IOException {
-
-
-
- try (InputStream input = YamlDocumentTest.class.getResourceAsStream("/config.yml")) {
-
-
-
-
-
- assertNotNull(input, "bundled config.yml");
-
-
-
-
-
- return new String(input.readAllBytes(), StandardCharsets.UTF_8);
-
-
-
- }
-
- } }
+      return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+    }
+  }
+}

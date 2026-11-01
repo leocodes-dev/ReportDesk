@@ -17,58 +17,39 @@
  */
 
 package com.reportdesk.core;
-import com.reportdesk.test.TestFixtures; import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals; import static org.junit.jupiter.api.Assertions.assertFalse; import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.reportdesk.test.TestFixtures;
+import org.junit.jupiter.api.Test;
+
 class WatchEntryTest {
 
+  @Test
+  void normalizesNameAndTimestamp() {
 
-@Test
+    WatchEntry entry = new WatchEntry(null, " Bob ", -1L);
 
- void normalizesNameAndTimestamp() {
+    assertEquals(new java.util.UUID(0L, 0L), entry.staffId());
 
+    assertEquals("Bob", entry.targetName());
 
+    assertEquals(0L, entry.createdAt());
 
- WatchEntry entry = new WatchEntry(null, " Bob ", -1L);
+    assertEquals("bob", entry.targetKey());
 
+    assertFalse(entry.valid());
+  }
 
+  @Test
+  void validEntryExposesLowerCaseKey() {
 
+    WatchEntry entry = new WatchEntry(TestFixtures.STAFF, "Charlie", 1_000L);
 
-assertEquals(new java.util.UUID(0L, 0L), entry.staffId());
+    assertTrue(entry.valid());
 
-
-
- assertEquals("Bob", entry.targetName());
-
-
-
- assertEquals(0L, entry.createdAt());
-
-
-
- assertEquals("bob", entry.targetKey());
-
-
-
- assertFalse(entry.valid());
-
- }
-
-
-@Test
-
- void validEntryExposesLowerCaseKey() {
-
-
-
- WatchEntry entry = new WatchEntry(TestFixtures.STAFF, "Charlie", 1_000L);
-
-
-
-
-assertTrue(entry.valid());
-
-
-
- assertEquals("charlie", entry.targetKey());
-
- } }
+    assertEquals("charlie", entry.targetKey());
+  }
+}

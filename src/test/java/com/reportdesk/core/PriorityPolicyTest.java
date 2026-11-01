@@ -17,204 +17,94 @@
  */
 
 package com.reportdesk.core;
-import org.junit.jupiter.api.Test;
-import java.util.EnumMap; import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.EnumMap;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+
 class PriorityPolicyTest {
 
+  private static Map<ReportPriority, Integer> hours(int urgent, int high, int normal, int low) {
 
-private static Map<ReportPriority, Integer> hours(int urgent, int high, int normal, int low) {
+    Map<ReportPriority, Integer> map = new EnumMap<>(ReportPriority.class);
 
+    map.put(ReportPriority.URGENT, urgent);
 
+    map.put(ReportPriority.HIGH, high);
 
- Map<ReportPriority, Integer> map = new EnumMap<>(ReportPriority.class);
+    map.put(ReportPriority.NORMAL, normal);
 
+    map.put(ReportPriority.LOW, low);
 
+    return map;
+  }
 
- map.put(ReportPriority.URGENT, urgent);
+  @Test
+  void disabledPolicyKeepsCategorySeverityAndSkipsSla() {
 
+    PriorityPolicy policy =
+        new PriorityPolicy(false, 1, ReportPriority.URGENT, hours(2, 6, 24, 72));
 
+    assertEquals(ReportPriority.HIGH, policy.resolve(ReportPriority.HIGH, 100));
 
- map.put(ReportPriority.HIGH, high);
+    assertEquals(0L, policy.dueAt(ReportPriority.HIGH, 1_000L));
+  }
 
+  @Test
+  void repeatOffendersAreEscalatedButNeverDowngraded() {
 
+    PriorityPolicy policy = new PriorityPolicy(true, 3, ReportPriority.HIGH, hours(2, 6, 24, 72));
 
- map.put(ReportPriority.NORMAL, normal);
+    assertEquals(ReportPriority.NORMAL, policy.resolve(ReportPriority.NORMAL, 2));
 
+    assertEquals(ReportPriority.HIGH, policy.resolve(ReportPriority.NORMAL, 3));
 
+    assertEquals(ReportPriority.URGENT, policy.resolve(ReportPriority.URGENT, 5));
+  }
 
- map.put(ReportPriority.LOW, low);
+  @Test
+  void repeatOffenderEscalationCanBeDisabled() {
 
+    PriorityPolicy policy = new PriorityPolicy(true, 0, ReportPriority.URGENT, hours(2, 6, 24, 72));
 
+    assertEquals(ReportPriority.LOW, policy.resolve(ReportPriority.LOW, 50));
+  }
 
- return map;
+  @Test
+  void dueAtUsesPerPriorityHours() {
 
- }
+    PriorityPolicy policy = new PriorityPolicy(true, 0, ReportPriority.HIGH, hours(2, 6, 24, 72));
 
+    long created = 1_000_000L;
 
-@Test
+    assertEquals(created + 2L * 3_600_000L, policy.dueAt(ReportPriority.URGENT, created));
 
- void disabledPolicyKeepsCategorySeverityAndSkipsSla() {
+    assertEquals(created + 24L * 3_600_000L, policy.dueAt(ReportPriority.NORMAL, created));
 
+    assertEquals(created + 72L * 3_600_000L, policy.dueAt(ReportPriority.LOW, created));
 
+    assertEquals(0L, policy.dueAt(ReportPriority.HIGH, 0L));
+  }
 
- PriorityPolicy policy = new PriorityPolicy(false, 1, ReportPriority.URGENT,
+  @Test
+  void zeroHoursMeanNoDeadline() {
 
+    PriorityPolicy policy = new PriorityPolicy(true, 0, ReportPriority.HIGH, hours(0, 0, 0, 0));
 
+    assertEquals(0L, policy.dueAt(ReportPriority.URGENT, 5_000L));
 
+    assertEquals(0, policy.slaHours(ReportPriority.URGENT));
+  }
 
+  @Test
+  void nullSeverityFallsBackToNormal() {
 
- hours(2, 6, 24, 72));
+    PriorityPolicy policy = new PriorityPolicy(true, 0, ReportPriority.HIGH, hours(2, 6, 24, 72));
 
+    assertEquals(ReportPriority.NORMAL, policy.resolve(null, 0));
 
-
-
-assertEquals(ReportPriority.HIGH, policy.resolve(ReportPriority.HIGH, 100));
-
-
-
- assertEquals(0L, policy.dueAt(ReportPriority.HIGH, 1_000L));
-
- }
-
-
-@Test
-
- void repeatOffendersAreEscalatedButNeverDowngraded() {
-
-
-
- PriorityPolicy policy = new PriorityPolicy(true, 3, ReportPriority.HIGH,
-
-
-
-
-
- hours(2, 6, 24, 72));
-
-
-
-
-assertEquals(ReportPriority.NORMAL, policy.resolve(ReportPriority.NORMAL, 2));
-
-
-
- assertEquals(ReportPriority.HIGH, policy.resolve(ReportPriority.NORMAL, 3));
-
-
-
- assertEquals(ReportPriority.URGENT, policy.resolve(ReportPriority.URGENT, 5));
-
- }
-
-
-@Test
-
- void repeatOffenderEscalationCanBeDisabled() {
-
-
-
- PriorityPolicy policy = new PriorityPolicy(true, 0, ReportPriority.URGENT,
-
-
-
-
-
- hours(2, 6, 24, 72));
-
-
-
-
-assertEquals(ReportPriority.LOW, policy.resolve(ReportPriority.LOW, 50));
-
- }
-
-
-@Test
-
- void dueAtUsesPerPriorityHours() {
-
-
-
- PriorityPolicy policy = new PriorityPolicy(true, 0, ReportPriority.HIGH,
-
-
-
-
-
- hours(2, 6, 24, 72));
-
-
-
-
-long created = 1_000_000L;
-
-
-
- assertEquals(created + 2L * 3_600_000L, policy.dueAt(ReportPriority.URGENT, created));
-
-
-
- assertEquals(created + 24L * 3_600_000L, policy.dueAt(ReportPriority.NORMAL, created));
-
-
-
- assertEquals(created + 72L * 3_600_000L, policy.dueAt(ReportPriority.LOW, created));
-
-
-
- assertEquals(0L, policy.dueAt(ReportPriority.HIGH, 0L));
-
- }
-
-
-@Test
-
- void zeroHoursMeanNoDeadline() {
-
-
-
- PriorityPolicy policy = new PriorityPolicy(true, 0, ReportPriority.HIGH,
-
-
-
-
-
- hours(0, 0, 0, 0));
-
-
-
-
-assertEquals(0L, policy.dueAt(ReportPriority.URGENT, 5_000L));
-
-
-
- assertEquals(0, policy.slaHours(ReportPriority.URGENT));
-
- }
-
-
-@Test
-
- void nullSeverityFallsBackToNormal() {
-
-
-
- PriorityPolicy policy = new PriorityPolicy(true, 0, ReportPriority.HIGH,
-
-
-
-
-
- hours(2, 6, 24, 72));
-
-
-
-
-assertEquals(ReportPriority.NORMAL, policy.resolve(null, 0));
-
-
-
- assertEquals(24, policy.slaHours(null));
-
- } }
+    assertEquals(24, policy.slaHours(null));
+  }
+}

@@ -17,92 +17,50 @@
  */
 
 package com.reportdesk.core;
+
 import java.util.Locale;
-/**
-* Lifecycle state of a report.
-*/ public enum ReportStatus {
 
- OPEN,
+/** Lifecycle state of a report. */
+public enum ReportStatus {
+  OPEN,
 
- CLAIMED,
+  CLAIMED,
 
- RESOLVED,
+  RESOLVED,
 
- REJECTED,
+  REJECTED,
 
- DUPLICATE,
+  DUPLICATE,
 
- AUTO_CLOSED;
+  AUTO_CLOSED;
 
+  public boolean isOpen() {
 
-public boolean isOpen() {
+    return this == OPEN || this == CLAIMED;
+  }
 
+  public boolean isTerminal() {
 
+    return !isOpen();
+  }
 
- return this == OPEN || this == CLAIMED;
+  public static ReportStatus parse(String value, ReportStatus fallback) {
 
- }
+    if (value == null) {
 
+      return fallback;
+    }
 
-public boolean isTerminal() {
+    String normalized = value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
 
+    for (ReportStatus status : values()) {
 
+      if (status.name().equals(normalized)) {
 
- return !isOpen();
+        return status;
+      }
+    }
 
- }
-
-
-public static ReportStatus parse(String value, ReportStatus fallback) {
-
-
-
- if (value == null) {
-
-
-
-
-
- return fallback;
-
-
-
- }
-
-
-
- String normalized = value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
-
-
-
- for (ReportStatus status : values()) {
-
-
-
-
-
- if (status.name().equals(normalized)) {
-
-
-
-
-
-
-
- return status;
-
-
-
-
-
- }
-
-
-
- }
-
-
-
- return fallback;
-
- } }
+    return fallback;
+  }
+}

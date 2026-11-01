@@ -17,47 +17,31 @@
  */
 
 package com.reportdesk.gui;
-import org.bukkit.event.EventHandler; import org.bukkit.event.inventory.InventoryClickEvent; import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.lang.reflect.Method;
-import static org.junit.jupiter.api.Assertions.assertFalse; import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.junit.jupiter.api.Test;
+
 /**
-* Regression guard for the spectator-mode bug: the server pre-cancels
-* inventory clicks for spectators, so the GUI click handler must not use
-* {@code ignoreCancelled = true}.
-*/ class GuiClickListenerTest {
+ * Regression guard for the spectator-mode bug: the server pre-cancels inventory clicks for
+ * spectators, so the GUI click handler must not use {@code ignoreCancelled = true}.
+ */
+class GuiClickListenerTest {
 
+  @Test
+  void clickHandlerStillRunsWhenTheServerPreCancelledTheEvent() throws Exception {
 
-@Test
+    Method method = GuiClickListener.class.getDeclaredMethod("onClick", InventoryClickEvent.class);
 
- void clickHandlerStillRunsWhenTheServerPreCancelledTheEvent() throws Exception {
+    EventHandler handler = method.getAnnotation(EventHandler.class);
 
+    assertNotNull(handler, "onClick must be an event handler");
 
-
- Method method = GuiClickListener.class
-
-
-
-
-
- .getDeclaredMethod("onClick", InventoryClickEvent.class);
-
-
-
- EventHandler handler = method.getAnnotation(EventHandler.class);
-
-
-
-
-assertNotNull(handler, "onClick must be an event handler");
-
-
-
- assertFalse(handler.ignoreCancelled(),
-
-
-
-
-
- "ignoreCancelled=true breaks every GUI button for spectators");
-
- } }
+    assertFalse(
+        handler.ignoreCancelled(), "ignoreCancelled=true breaks every GUI button for spectators");
+  }
+}

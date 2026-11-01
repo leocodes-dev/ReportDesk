@@ -17,85 +17,51 @@
  */
 
 package com.reportdesk.core;
-import java.util.List; import java.util.Locale;
-/**
-* A configurable report category.
-*
-* @param priority display ordering (higher first)
-* @param severity default triage priority for reports in this category
-*/ public record ReportCategory(
 
- String id,
-
- String display,
-
- String icon,
-
- List<String> aliases,
-
- boolean enabled,
-
- int priority,
-
- List<String> description,
-
- ReportPriority severity ) {
-
-
-public ReportCategory {
-
-
-
- id = id == null ? "other" : id.trim().toLowerCase(Locale.ROOT);
-
-
-
- display = display == null || display.isBlank() ? id : display;
-
-
-
- icon = icon == null || icon.isBlank() ? "PAPER" : icon.trim().toUpperCase(Locale.ROOT);
-
-
-
- aliases = aliases == null ? List.of() : List.copyOf(aliases);
-
-
-
- description = description == null ? List.of() : List.copyOf(description);
-
-
-
- severity = severity == null ? ReportPriority.NORMAL : severity;
-
- }
-
+import java.util.List;
+import java.util.Locale;
 
 /**
+ * A configurable report category.
+ *
+ * @param priority display ordering (higher first)
+ * @param severity default triage priority for reports in this category
+ */
+public record ReportCategory(
+    String id,
+    String display,
+    String icon,
+    List<String> aliases,
+    boolean enabled,
+    int priority,
+    List<String> description,
+    ReportPriority severity) {
 
+  public ReportCategory {
 
-* Backwards-compatible constructor for callers that do not set a severity.
+    id = id == null ? "other" : id.trim().toLowerCase(Locale.ROOT);
 
+    display = display == null || display.isBlank() ? id : display;
 
-*/
+    icon = icon == null || icon.isBlank() ? "PAPER" : icon.trim().toUpperCase(Locale.ROOT);
 
- public ReportCategory(String id, String display, String icon, List<String> aliases,
+    aliases = aliases == null ? List.of() : List.copyOf(aliases);
 
+    description = description == null ? List.of() : List.copyOf(description);
 
+    severity = severity == null ? ReportPriority.NORMAL : severity;
+  }
 
+  /** Backwards-compatible constructor for callers that do not set a severity. */
+  public ReportCategory(
+      String id,
+      String display,
+      String icon,
+      List<String> aliases,
+      boolean enabled,
+      int priority,
+      List<String> description) {
 
-
-
-
-
-
-
-
-
- boolean enabled, int priority, List<String> description) {
-
-
-
- this(id, display, icon, aliases, enabled, priority, description, ReportPriority.NORMAL);
-
- } }
+    this(id, display, icon, aliases, enabled, priority, description, ReportPriority.NORMAL);
+  }
+}

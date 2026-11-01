@@ -17,228 +17,105 @@
  */
 
 package com.reportdesk.util;
-import com.reportdesk.i18n.MessageKeys; import com.reportdesk.i18n.Messages; import net.kyori.adventure.text.Component;
-import java.time.Instant; import java.time.ZoneId; import java.util.Map; import java.util.concurrent.TimeUnit;
-/**
-* Human readable timestamps for chat output and GUI lore.
-*/ public final class TimeText {
 
+import com.reportdesk.i18n.MessageKeys;
+import com.reportdesk.i18n.Messages;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import net.kyori.adventure.text.Component;
 
-private TimeText() {
+/** Human readable timestamps for chat output and GUI lore. */
+public final class TimeText {
 
- }
+  private TimeText() {}
 
+  public static String absolute(long timestamp, Messages messages) {
 
-public static String absolute(long timestamp, Messages messages) {
+    if (timestamp <= 0) {
 
+      return "-";
+    }
 
+    return messages
+        .dateFormatter()
+        .withZone(ZoneId.systemDefault())
+        .format(Instant.ofEpochMilli(timestamp));
+  }
 
- if (timestamp <= 0) {
+  public static Component relative(long timestamp, long now, Messages messages) {
 
+    if (timestamp <= 0) {
 
+      return messages.component(MessageKeys.GENERAL_NONE);
+    }
 
+    long elapsed = Math.max(0L, now - timestamp);
 
+    long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsed);
 
- return "-";
+    if (seconds < 60) {
 
+      if (seconds <= 5) {
 
+        return messages.component(MessageKeys.TIME_NOW);
+      }
 
- }
+      return messages.component(
+          MessageKeys.TIME_SECONDS_AGO, Map.of("value", String.valueOf(seconds)));
+    }
 
+    long minutes = TimeUnit.SECONDS.toMinutes(seconds);
 
+    if (minutes < 60) {
 
- return messages.dateFormatter().withZone(ZoneId.systemDefault())
+      return messages.component(
+          MessageKeys.TIME_MINUTES_AGO, Map.of("value", String.valueOf(minutes)));
+    }
 
+    long hours = TimeUnit.MINUTES.toHours(minutes);
 
+    if (hours < 24) {
 
+      return messages.component(MessageKeys.TIME_HOURS_AGO, Map.of("value", String.valueOf(hours)));
+    }
 
+    long days = TimeUnit.HOURS.toDays(hours);
 
- .format(Instant.ofEpochMilli(timestamp));
+    return messages.component(MessageKeys.TIME_DAYS_AGO, Map.of("value", String.valueOf(days)));
+  }
 
- }
+  public static String duration(long millis, Messages messages) {
 
+    if (millis <= 0) {
 
-public static Component relative(long timestamp, long now, Messages messages) {
+      return "-";
+    }
 
+    long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
 
+    long minutes = TimeUnit.SECONDS.toMinutes(seconds);
 
- if (timestamp <= 0) {
+    long hours = TimeUnit.MINUTES.toHours(minutes);
 
+    long days = TimeUnit.HOURS.toDays(hours);
 
+    if (days > 0) {
 
+      return days + "d " + (hours % 24) + "h";
+    }
 
+    if (hours > 0) {
 
- return messages.component(MessageKeys.GENERAL_NONE);
+      return hours + "h " + (minutes % 60) + "m";
+    }
 
+    if (minutes > 0) {
 
+      return minutes + "m " + (seconds % 60) + "s";
+    }
 
- }
-
-
-
- long elapsed = Math.max(0L, now - timestamp);
-
-
-
- long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsed);
-
-
-
- if (seconds < 60) {
-
-
-
-
-
- if (seconds <= 5) {
-
-
-
-
-
-
-
- return messages.component(MessageKeys.TIME_NOW);
-
-
-
-
-
- }
-
-
-
-
-
- return messages.component(MessageKeys.TIME_SECONDS_AGO, Map.of("value", String.valueOf(seconds)));
-
-
-
- }
-
-
-
- long minutes = TimeUnit.SECONDS.toMinutes(seconds);
-
-
-
- if (minutes < 60) {
-
-
-
-
-
- return messages.component(MessageKeys.TIME_MINUTES_AGO, Map.of("value", String.valueOf(minutes)));
-
-
-
- }
-
-
-
- long hours = TimeUnit.MINUTES.toHours(minutes);
-
-
-
- if (hours < 24) {
-
-
-
-
-
- return messages.component(MessageKeys.TIME_HOURS_AGO, Map.of("value", String.valueOf(hours)));
-
-
-
- }
-
-
-
- long days = TimeUnit.HOURS.toDays(hours);
-
-
-
- return messages.component(MessageKeys.TIME_DAYS_AGO, Map.of("value", String.valueOf(days)));
-
- }
-
-
-public static String duration(long millis, Messages messages) {
-
-
-
- if (millis <= 0) {
-
-
-
-
-
- return "-";
-
-
-
- }
-
-
-
- long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
-
-
-
- long minutes = TimeUnit.SECONDS.toMinutes(seconds);
-
-
-
- long hours = TimeUnit.MINUTES.toHours(minutes);
-
-
-
- long days = TimeUnit.HOURS.toDays(hours);
-
-
-
- if (days > 0) {
-
-
-
-
-
- return days + "d " + (hours % 24) + "h";
-
-
-
- }
-
-
-
- if (hours > 0) {
-
-
-
-
-
- return hours + "h " + (minutes % 60) + "m";
-
-
-
- }
-
-
-
- if (minutes > 0) {
-
-
-
-
-
- return minutes + "m " + (seconds % 60) + "s";
-
-
-
- }
-
-
-
- return seconds + "s";
-
- } }
+    return seconds + "s";
+  }
+}

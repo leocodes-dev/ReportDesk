@@ -17,292 +17,143 @@
  */
 
 package com.reportdesk.config;
+
 import com.reportdesk.i18n.Messages;
 import java.util.Locale;
+
 /**
-* Localized display names for the admin config editor.
-*
-* <p>Config paths are stable identifiers for server owners who edit
-* {@code config.yml} by hand, but they are poor labels in a GUI. Every editable
-* path and every section therefore resolves to a label and a one-line
-* explanation from the language files. The raw path is still shown as a lore
-* reference so administrators can map the GUI entry back to the file.</p>
-*/ public final class ConfigLabels {
+ * Localized display names for the admin config editor.
+ *
+ * <p>Config paths are stable identifiers for server owners who edit {@code config.yml} by hand, but
+ * they are poor labels in a GUI. Every editable path and every section therefore resolves to a
+ * label and a one-line explanation from the language files. The raw path is still shown as a lore
+ * reference so administrators can map the GUI entry back to the file.
+ */
+public final class ConfigLabels {
 
+  /** Prefix of the flattened {@code gui.admin.config-label.*} message keys. */
+  public static final String LABEL_PREFIX = "gui.admin.config-label.";
 
-/** Prefix of the flattened {@code gui.admin.config-label.*} message keys. */
+  /** Prefix of the flattened {@code gui.admin.config-desc.*} message keys. */
+  public static final String DESCRIPTION_PREFIX = "gui.admin.config-desc.";
 
- public static final String LABEL_PREFIX = "gui.admin.config-label.";
+  /** Prefix of the section label message keys. */
+  public static final String SECTION_LABEL_PREFIX = "gui.admin.section.";
 
+  /** Prefix of the section description message keys. */
+  public static final String SECTION_DESCRIPTION_PREFIX = "gui.admin.section-desc.";
 
-/** Prefix of the flattened {@code gui.admin.config-desc.*} message keys. */
+  /** Prefix of the localized type names shown in the config lore. */
+  public static final String TYPE_NAME_PREFIX = "gui.admin.config-type-name.";
 
- public static final String DESCRIPTION_PREFIX = "gui.admin.config-desc.";
+  private ConfigLabels() {}
 
+  public static String labelKey(String path) {
 
-/** Prefix of the section label message keys. */
+    return key(LABEL_PREFIX, path);
+  }
 
- public static final String SECTION_LABEL_PREFIX = "gui.admin.section.";
+  public static String descriptionKey(String path) {
 
+    return key(DESCRIPTION_PREFIX, path);
+  }
 
-/** Prefix of the section description message keys. */
+  public static String sectionLabelKey(String section) {
 
- public static final String SECTION_DESCRIPTION_PREFIX = "gui.admin.section-desc.";
+    return key(SECTION_LABEL_PREFIX, section);
+  }
 
+  public static String sectionDescriptionKey(String section) {
 
-/** Prefix of the localized type names shown in the config lore. */
+    return key(SECTION_DESCRIPTION_PREFIX, section);
+  }
 
- public static final String TYPE_NAME_PREFIX = "gui.admin.config-type-name.";
+  public static String typeNameKey(ConfigKey.Kind kind) {
 
+    return key(TYPE_NAME_PREFIX, kind == null ? "" : kind.name());
+  }
 
-private ConfigLabels() {
+  /** Human readable label, falling back to the raw path when a translation is missing. */
+  public static String label(Messages messages, String path) {
 
- }
+    String key = labelKey(path);
 
+    if (messages != null && messages.has(key)) {
 
-public static String labelKey(String path) {
+      String label = messages.plain(key);
 
+      if (!label.isBlank()) {
 
+        return label;
+      }
+    }
 
- return key(LABEL_PREFIX, path);
+    String normalized = normalize(path);
 
- }
+    return normalized.isEmpty() ? "-" : normalized;
+  }
 
+  /** One-line explanation, or an empty string when the language file has none. */
+  public static String description(Messages messages, String path) {
 
-public static String descriptionKey(String path) {
+    String key = descriptionKey(path);
 
+    return messages != null && messages.has(key) ? messages.plain(key) : "";
+  }
 
+  public static String sectionLabel(Messages messages, String section) {
 
- return key(DESCRIPTION_PREFIX, path);
+    String key = sectionLabelKey(section);
 
- }
+    if (messages != null && messages.has(key)) {
 
+      String label = messages.plain(key);
 
-public static String sectionLabelKey(String section) {
+      if (!label.isBlank()) {
 
+        return label;
+      }
+    }
 
+    String normalized = normalize(section);
 
- return key(SECTION_LABEL_PREFIX, section);
+    return normalized.isEmpty() ? "-" : normalized;
+  }
 
- }
+  public static String sectionDescription(Messages messages, String section) {
 
+    String key = sectionDescriptionKey(section);
 
-public static String sectionDescriptionKey(String section) {
+    return messages != null && messages.has(key) ? messages.plain(key) : "";
+  }
 
+  /** Plain-language type name, for example "布尔开关" or "整数". */
+  public static String typeName(Messages messages, ConfigKey.Kind kind) {
 
+    String key = typeNameKey(kind);
 
- return key(SECTION_DESCRIPTION_PREFIX, section);
+    if (messages != null && messages.has(key)) {
 
- }
+      String name = messages.plain(key);
 
+      if (!name.isBlank()) {
 
-public static String typeNameKey(ConfigKey.Kind kind) {
+        return name;
+      }
+    }
 
+    return kind == null ? "-" : kind.name().toLowerCase(Locale.ROOT);
+  }
 
+  private static String key(String prefix, String value) {
 
- return key(TYPE_NAME_PREFIX, kind == null ? "" : kind.name());
+    String normalized = normalize(value);
 
- }
+    return normalized.isEmpty() ? prefix : prefix + normalized;
+  }
 
+  private static String normalize(String value) {
 
-/** Human readable label, falling back to the raw path when a translation is missing. */
-
- public static String label(Messages messages, String path) {
-
-
-
- String key = labelKey(path);
-
-
-
- if (messages != null && messages.has(key)) {
-
-
-
-
-
- String label = messages.plain(key);
-
-
-
-
-
- if (!label.isBlank()) {
-
-
-
-
-
-
-
- return label;
-
-
-
-
-
- }
-
-
-
- }
-
-
-
- String normalized = normalize(path);
-
-
-
- return normalized.isEmpty() ? "-" : normalized;
-
- }
-
-
-/** One-line explanation, or an empty string when the language file has none. */
-
- public static String description(Messages messages, String path) {
-
-
-
- String key = descriptionKey(path);
-
-
-
- return messages != null && messages.has(key) ? messages.plain(key) : "";
-
- }
-
-
-public static String sectionLabel(Messages messages, String section) {
-
-
-
- String key = sectionLabelKey(section);
-
-
-
- if (messages != null && messages.has(key)) {
-
-
-
-
-
- String label = messages.plain(key);
-
-
-
-
-
- if (!label.isBlank()) {
-
-
-
-
-
-
-
- return label;
-
-
-
-
-
- }
-
-
-
- }
-
-
-
- String normalized = normalize(section);
-
-
-
- return normalized.isEmpty() ? "-" : normalized;
-
- }
-
-
-public static String sectionDescription(Messages messages, String section) {
-
-
-
- String key = sectionDescriptionKey(section);
-
-
-
- return messages != null && messages.has(key) ? messages.plain(key) : "";
-
- }
-
-
-/** Plain-language type name, for example "布尔开关" or "整数". */
-
- public static String typeName(Messages messages, ConfigKey.Kind kind) {
-
-
-
- String key = typeNameKey(kind);
-
-
-
- if (messages != null && messages.has(key)) {
-
-
-
-
-
- String name = messages.plain(key);
-
-
-
-
-
- if (!name.isBlank()) {
-
-
-
-
-
-
-
- return name;
-
-
-
-
-
- }
-
-
-
- }
-
-
-
- return kind == null ? "-" : kind.name().toLowerCase(Locale.ROOT);
-
- }
-
-
-private static String key(String prefix, String value) {
-
-
-
- String normalized = normalize(value);
-
-
-
- return normalized.isEmpty() ? prefix : prefix + normalized;
-
- }
-
-
-private static String normalize(String value) {
-
-
-
- return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-
- } }
+    return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+  }
+}

@@ -17,161 +17,67 @@
  */
 
 package com.reportdesk.core;
+
 /**
-* Small embedded summary of the evidence file so list/detail GUIs never need
-* to touch the disk. The complete snapshot lives in its own JSON file.
-*/ public record EvidenceMeta(
-
- boolean present,
-
- long capturedAt,
-
- String world,
-
- double x,
-
- double y,
-
- double z,
-
- int inventoryItems,
-
- int chatLines,
-
- int blockBreakSamples,
-
- int movementSamples ) {
-
-
-public EvidenceMeta {
-
-
-
- world = world == null ? "" : world;
-
- }
-
-
-public static EvidenceMeta none() {
-
-
-
- return new EvidenceMeta(false, 0L, "", 0, 0, 0, 0, 0, 0, 0);
-
- }
-
-
-public static EvidenceMeta of(Evidence evidence) {
-
-
-
- if (evidence == null) {
-
-
-
-
-
- return none();
-
-
-
- }
-
-
-
- return new EvidenceMeta(
-
-
-
-
-
- true,
-
-
-
-
-
- evidence.capturedAt(),
-
-
-
-
-
- evidence.world(),
-
-
-
-
-
- evidence.x(),
-
-
-
-
-
- evidence.y(),
-
-
-
-
-
- evidence.z(),
-
-
-
-
-
- evidence.inventory().size(),
-
-
-
-
-
- evidence.chat().size(),
-
-
-
-
-
- evidence.blockBreaks().size(),
-
-
-
-
-
- evidence.movement().size()
-
-
-
- );
-
- }
-
-
-public String shortSummary() {
-
-
-
- if (!present) {
-
-
-
-
-
- return "none";
-
-
-
- }
-
-
-
- return "items=" + inventoryItems + ",chat=" + chatLines
-
-
-
-
-
- + ",breaks=" + blockBreakSamples + ",moves=" + movementSamples;
-
- } }
+ * Small embedded summary of the evidence file so list/detail GUIs never need to touch the disk. The
+ * complete snapshot lives in its own JSON file.
+ */
+public record EvidenceMeta(
+    boolean present,
+    long capturedAt,
+    String world,
+    double x,
+    double y,
+    double z,
+    int inventoryItems,
+    int chatLines,
+    int blockBreakSamples,
+    int movementSamples) {
+
+  public EvidenceMeta {
+
+    world = world == null ? "" : world;
+  }
+
+  public static EvidenceMeta none() {
+
+    return new EvidenceMeta(false, 0L, "", 0, 0, 0, 0, 0, 0, 0);
+  }
+
+  public static EvidenceMeta of(Evidence evidence) {
+
+    if (evidence == null) {
+
+      return none();
+    }
+
+    return new EvidenceMeta(
+        true,
+        evidence.capturedAt(),
+        evidence.world(),
+        evidence.x(),
+        evidence.y(),
+        evidence.z(),
+        evidence.inventory().size(),
+        evidence.chat().size(),
+        evidence.blockBreaks().size(),
+        evidence.movement().size());
+  }
+
+  public String shortSummary() {
+
+    if (!present) {
+
+      return "none";
+    }
+
+    return "items="
+        + inventoryItems
+        + ",chat="
+        + chatLines
+        + ",breaks="
+        + blockBreakSamples
+        + ",moves="
+        + movementSamples;
+  }
+}

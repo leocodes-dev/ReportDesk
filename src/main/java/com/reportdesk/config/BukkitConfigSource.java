@@ -17,218 +17,107 @@
  */
 
 package com.reportdesk.config;
+
+import java.util.List;
+import java.util.Set;
 import org.bukkit.configuration.ConfigurationSection;
-import java.util.List; import java.util.Set;
+
 /**
-* Bukkit-backed configuration source. Only used for config.yml/messages.yml
-* loading during plugin startup and reload.
-*/ public final class BukkitConfigSource implements ConfigSource {
+ * Bukkit-backed configuration source. Only used for config.yml/messages.yml loading during plugin
+ * startup and reload.
+ */
+public final class BukkitConfigSource implements ConfigSource {
 
+  private final ConfigurationSection section;
 
-private final ConfigurationSection section;
+  public BukkitConfigSource(ConfigurationSection section) {
 
+    this.section = section;
+  }
 
-public BukkitConfigSource(ConfigurationSection section) {
+  @Override
+  public String getString(String path, String fallback) {
 
+    if (section == null) {
 
+      return fallback;
+    }
 
- this.section = section;
+    String value = section.getString(path);
 
- }
+    return value == null ? fallback : value;
+  }
 
+  @Override
+  public int getInt(String path, int fallback) {
 
-@Override
+    return section == null ? fallback : section.getInt(path, fallback);
+  }
 
- public String getString(String path, String fallback) {
+  @Override
+  public boolean getBoolean(String path, boolean fallback) {
 
+    return section == null ? fallback : section.getBoolean(path, fallback);
+  }
 
+  @Override
+  public List<String> getStringList(String path, List<String> fallback) {
 
- if (section == null) {
+    if (section == null || !section.isList(path)) {
 
+      return fallback;
+    }
 
+    return section.getStringList(path);
+  }
 
+  @Override
+  public Set<String> keys(String path) {
 
+    if (section == null) {
 
- return fallback;
+      return Set.of();
+    }
 
+    if (path == null || path.isBlank()) {
 
+      return section.getKeys(false);
+    }
 
- }
+    ConfigurationSection child = section.getConfigurationSection(path);
 
+    return child == null ? Set.of() : child.getKeys(false);
+  }
 
+  @Override
+  public boolean isSection(String path) {
 
- String value = section.getString(path);
+    if (section == null) {
 
+      return false;
+    }
 
+    if (path == null || path.isBlank()) {
 
- return value == null ? fallback : value;
+      return true;
+    }
 
- }
+    return section.isConfigurationSection(path);
+  }
 
+  @Override
+  public ConfigSource section(String path) {
 
-@Override
+    if (section == null) {
 
- public int getInt(String path, int fallback) {
+      return new BukkitConfigSource(null);
+    }
 
+    if (path == null || path.isBlank()) {
 
+      return this;
+    }
 
- return section == null ? fallback : section.getInt(path, fallback);
-
- }
-
-
-@Override
-
- public boolean getBoolean(String path, boolean fallback) {
-
-
-
- return section == null ? fallback : section.getBoolean(path, fallback);
-
- }
-
-
-@Override
-
- public List<String> getStringList(String path, List<String> fallback) {
-
-
-
- if (section == null || !section.isList(path)) {
-
-
-
-
-
- return fallback;
-
-
-
- }
-
-
-
- return section.getStringList(path);
-
- }
-
-
-@Override
-
- public Set<String> keys(String path) {
-
-
-
- if (section == null) {
-
-
-
-
-
- return Set.of();
-
-
-
- }
-
-
-
- if (path == null || path.isBlank()) {
-
-
-
-
-
- return section.getKeys(false);
-
-
-
- }
-
-
-
- ConfigurationSection child = section.getConfigurationSection(path);
-
-
-
- return child == null ? Set.of() : child.getKeys(false);
-
- }
-
-
-@Override
-
- public boolean isSection(String path) {
-
-
-
- if (section == null) {
-
-
-
-
-
- return false;
-
-
-
- }
-
-
-
- if (path == null || path.isBlank()) {
-
-
-
-
-
- return true;
-
-
-
- }
-
-
-
- return section.isConfigurationSection(path);
-
- }
-
-
-@Override
-
- public ConfigSource section(String path) {
-
-
-
- if (section == null) {
-
-
-
-
-
- return new BukkitConfigSource(null);
-
-
-
- }
-
-
-
- if (path == null || path.isBlank()) {
-
-
-
-
-
- return this;
-
-
-
- }
-
-
-
- return new BukkitConfigSource(section.getConfigurationSection(path));
-
- } }
+    return new BukkitConfigSource(section.getConfigurationSection(path));
+  }
+}

@@ -17,28 +17,15 @@
  */
 
 package com.reportdesk.core;
+
 /**
-* One movement sample, captured only when movement tracking is explicitly
-* enabled in config.yml.
-*/ public record MoveSample(
+ * One movement sample, captured only when movement tracking is explicitly enabled in config.yml.
+ */
+public record MoveSample(
+    long createdAt, String world, double x, double y, double z, boolean onGround) {
 
- long createdAt,
+  public MoveSample {
 
- String world,
-
- double x,
-
- double y,
-
- double z,
-
- boolean onGround ) {
-
-
-public MoveSample {
-
-
-
- world = world == null ? "" : world;
-
- } }
+    world = world == null ? "" : world;
+  }
+}

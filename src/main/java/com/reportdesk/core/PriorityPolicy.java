@@ -17,118 +17,59 @@
  */
 
 package com.reportdesk.core;
+
 import java.util.Map;
+
 /**
-* Pure triage policy: turns a category severity plus the target's current open
-* report count into an effective priority and an SLA deadline.
-*/ public record PriorityPolicy(
+ * Pure triage policy: turns a category severity plus the target's current open report count into an
+ * effective priority and an SLA deadline.
+ */
+public record PriorityPolicy(
+    boolean enabled,
+    int repeatOffenderThreshold,
+    ReportPriority repeatOffenderLevel,
+    Map<ReportPriority, Integer> slaHours) {
 
- boolean enabled,
+  public PriorityPolicy {
 
- int repeatOffenderThreshold,
+    repeatOffenderLevel = repeatOffenderLevel == null ? ReportPriority.HIGH : repeatOffenderLevel;
 
- ReportPriority repeatOffenderLevel,
+    slaHours = slaHours == null ? Map.of() : Map.copyOf(slaHours);
+  }
 
- Map<ReportPriority, Integer> slaHours ) {
+  public ReportPriority resolve(ReportPriority categorySeverity, int openForTarget) {
 
+    ReportPriority base = categorySeverity == null ? ReportPriority.NORMAL : categorySeverity;
 
-public PriorityPolicy {
+    if (!enabled) {
 
+      return base;
+    }
 
+    if (repeatOffenderThreshold > 0
+        && openForTarget >= repeatOffenderThreshold
+        && repeatOffenderLevel.weight() > base.weight()) {
 
- repeatOffenderLevel = repeatOffenderLevel == null
+      return repeatOffenderLevel;
+    }
 
+    return base;
+  }
 
+  public long dueAt(ReportPriority priority, long createdAt) {
 
+    if (!enabled || createdAt <= 0L) {
 
+      return 0L;
+    }
 
- ? ReportPriority.HIGH : repeatOffenderLevel;
+    int hours = slaHours.getOrDefault(priority == null ? ReportPriority.NORMAL : priority, 0);
 
+    return hours <= 0 ? 0L : createdAt + hours * 3_600_000L;
+  }
 
+  public int slaHours(ReportPriority priority) {
 
- slaHours = slaHours == null ? Map.of() : Map.copyOf(slaHours);
-
- }
-
-
-public ReportPriority resolve(ReportPriority categorySeverity, int openForTarget) {
-
-
-
- ReportPriority base = categorySeverity == null ? ReportPriority.NORMAL : categorySeverity;
-
-
-
- if (!enabled) {
-
-
-
-
-
- return base;
-
-
-
- }
-
-
-
- if (repeatOffenderThreshold > 0 && openForTarget >= repeatOffenderThreshold
-
-
-
-
-
- && repeatOffenderLevel.weight() > base.weight()) {
-
-
-
-
-
- return repeatOffenderLevel;
-
-
-
- }
-
-
-
- return base;
-
- }
-
-
-public long dueAt(ReportPriority priority, long createdAt) {
-
-
-
- if (!enabled || createdAt <= 0L) {
-
-
-
-
-
- return 0L;
-
-
-
- }
-
-
-
- int hours = slaHours.getOrDefault(priority == null ? ReportPriority.NORMAL : priority, 0);
-
-
-
- return hours <= 0 ? 0L : createdAt + hours * 3_600_000L;
-
- }
-
-
-public int slaHours(ReportPriority priority) {
-
-
-
- return slaHours.getOrDefault(priority == null ? ReportPriority.NORMAL : priority, 0);
-
- } }
+    return slaHours.getOrDefault(priority == null ? ReportPriority.NORMAL : priority, 0);
+  }
+}

@@ -17,89 +17,53 @@
  */
 
 package com.reportdesk.core;
+
 import java.util.Locale;
+
 /**
-* Triage priority of a report. The value is persisted with the report so the
-* ordering does not change when configuration is edited later.
-*/ public enum ReportPriority {
+ * Triage priority of a report. The value is persisted with the report so the ordering does not
+ * change when configuration is edited later.
+ */
+public enum ReportPriority {
+  LOW(0),
 
- LOW(0),
+  NORMAL(1),
 
- NORMAL(1),
+  HIGH(2),
 
- HIGH(2),
+  URGENT(3);
 
- URGENT(3);
+  private final int weight;
 
+  ReportPriority(int weight) {
 
-private final int weight;
+    this.weight = weight;
+  }
 
+  public int weight() {
 
-ReportPriority(int weight) {
+    return weight;
+  }
 
+  public String id() {
 
+    return name().toLowerCase(Locale.ROOT);
+  }
 
- this.weight = weight;
+  public static ReportPriority parse(String value, ReportPriority fallback) {
 
- }
+    if (value == null || value.isBlank()) {
 
+      return fallback;
+    }
 
-public int weight() {
+    try {
 
+      return valueOf(value.trim().toUpperCase(Locale.ROOT));
 
+    } catch (IllegalArgumentException exception) {
 
- return weight;
-
- }
-
-
-public String id() {
-
-
-
- return name().toLowerCase(Locale.ROOT);
-
- }
-
-
-public static ReportPriority parse(String value, ReportPriority fallback) {
-
-
-
- if (value == null || value.isBlank()) {
-
-
-
-
-
- return fallback;
-
-
-
- }
-
-
-
- try {
-
-
-
-
-
- return valueOf(value.trim().toUpperCase(Locale.ROOT));
-
-
-
- } catch (IllegalArgumentException exception) {
-
-
-
-
-
- return fallback;
-
-
-
- }
-
- } }
+      return fallback;
+    }
+  }
+}

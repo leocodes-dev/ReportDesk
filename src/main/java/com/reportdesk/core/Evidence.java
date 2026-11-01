@@ -17,95 +17,57 @@
  */
 
 package com.reportdesk.core;
-import java.util.List; import java.util.UUID;
+
+import java.util.List;
+import java.util.UUID;
+
 /**
-* Complete evidence snapshot. It is written to its own JSON file on the storage
-* executor; the main thread only builds the immutable instance.
-*/ public record Evidence(
+ * Complete evidence snapshot. It is written to its own JSON file on the storage executor; the main
+ * thread only builds the immutable instance.
+ */
+public record Evidence(
+    int schema,
+    long reportId,
+    long capturedAt,
+    UUID targetId,
+    String targetName,
+    boolean targetOnline,
+    String world,
+    double x,
+    double y,
+    double z,
+    float yaw,
+    float pitch,
+    String gameMode,
+    double health,
+    int foodLevel,
+    int expLevel,
+    int ping,
+    List<String> inventory,
+    List<String> armor,
+    List<ChatSample> chat,
+    List<BreakSample> blockBreaks,
+    List<MoveSample> movement,
+    String server) {
 
- int schema,
+  public Evidence {
 
- long reportId,
+    targetName = targetName == null ? "" : targetName;
 
- long capturedAt,
+    world = world == null ? "" : world;
 
- UUID targetId,
+    gameMode = gameMode == null ? "" : gameMode;
 
- String targetName,
+    inventory = inventory == null ? List.of() : List.copyOf(inventory);
 
- boolean targetOnline,
+    armor = armor == null ? List.of() : List.copyOf(armor);
 
- String world,
+    chat = chat == null ? List.of() : List.copyOf(chat);
 
- double x,
+    blockBreaks = blockBreaks == null ? List.of() : List.copyOf(blockBreaks);
 
- double y,
+    movement = movement == null ? List.of() : List.copyOf(movement);
 
- double z,
-
- float yaw,
-
- float pitch,
-
- String gameMode,
-
- double health,
-
- int foodLevel,
-
- int expLevel,
-
- int ping,
-
- List<String> inventory,
-
- List<String> armor,
-
- List<ChatSample> chat,
-
- List<BreakSample> blockBreaks,
-
- List<MoveSample> movement,
-
- String server ) {
-
-
-public Evidence {
-
-
-
- targetName = targetName == null ? "" : targetName;
-
-
-
- world = world == null ? "" : world;
-
-
-
- gameMode = gameMode == null ? "" : gameMode;
-
-
-
- inventory = inventory == null ? List.of() : List.copyOf(inventory);
-
-
-
- armor = armor == null ? List.of() : List.copyOf(armor);
-
-
-
- chat = chat == null ? List.of() : List.copyOf(chat);
-
-
-
- blockBreaks = blockBreaks == null ? List.of() : List.copyOf(blockBreaks);
-
-
-
- movement = movement == null ? List.of() : List.copyOf(movement);
-
-
-
- server = server == null ? "" : server;
-
- } }
+    server = server == null ? "" : server;
+  }
+}

@@ -17,646 +17,326 @@
  */
 
 package com.reportdesk.core;
-import com.reportdesk.test.TestFixtures; import org.junit.jupiter.api.Test;
-import java.util.List; import java.util.UUID;
-import static org.junit.jupiter.api.Assertions.assertEquals; import static org.junit.jupiter.api.Assertions.assertFalse; import static org.junit.jupiter.api.Assertions.assertNull; import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.reportdesk.test.TestFixtures;
+import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+
 class ReportTest {
 
+  @Test
+  void constructorNormalizesNullValues() {
 
-@Test
+    Report report =
+        new Report(
+            1L, null, null, null, null, null, null, null, 10L, 10L, null, null, 0L, null, null, 0L,
+            null, null, null, null, false, null);
 
- void constructorNormalizesNullValues() {
+    assertEquals(new UUID(0L, 0L), report.reporterId());
 
+    assertEquals("", report.reporterName());
 
+    assertEquals("", report.targetName());
 
- Report report = new Report(1L, null, null, null, null, null, null, null,
+    assertEquals(ReportStatus.OPEN, report.status());
 
+    assertEquals(List.of(), report.notes());
 
+    assertFalse(report.evidence().present());
 
+    assertTrue(report.isOpen());
+  }
 
+  @Test
+  void claimAndReleaseTransitionStatus() {
 
- 10L, 10L, null, null, 0L, null, null, 0L, null, null, null, null, false, null);
+    Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
 
+    Report claimed = report.withClaim(TestFixtures.STAFF, "Staff", 200L);
 
+    assertEquals(ReportStatus.CLAIMED, claimed.status());
 
+    assertEquals(TestFixtures.STAFF, claimed.claimedBy());
 
-assertEquals(new UUID(0L, 0L), report.reporterId());
+    assertEquals("Staff", claimed.claimedByName());
 
+    assertEquals(200L, claimed.claimedAt());
 
+    assertEquals(200L, claimed.updatedAt());
 
- assertEquals("", report.reporterName());
+    assertTrue(claimed.isClaimed());
 
+    Report released = claimed.withClaimReleased(300L);
 
+    assertEquals(ReportStatus.OPEN, released.status());
 
- assertEquals("", report.targetName());
+    assertNull(released.claimedBy());
 
+    assertEquals("", released.claimedByName());
 
+    assertEquals(0L, released.claimedAt());
 
- assertEquals(ReportStatus.OPEN, report.status());
+    assertEquals(300L, released.updatedAt());
+  }
 
+  @Test
+  void closingStoresVerdictAndClosingStaff() {
 
+    Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
 
- assertEquals(List.of(), report.notes());
+    Report closed =
+        report.withClosed(
+            Verdict.INSUFFICIENT, TestFixtures.STAFF, "Staff", "not enough proof", 500L);
 
+    assertEquals(ReportStatus.REJECTED, closed.status());
 
+    assertEquals(Verdict.INSUFFICIENT.name(), closed.verdict());
 
- assertFalse(report.evidence().present());
+    assertEquals(TestFixtures.STAFF, closed.closedBy());
 
+    assertEquals("Staff", closed.closedByName());
 
+    assertEquals(500L, closed.closedAt());
 
- assertTrue(report.isOpen());
+    assertEquals("not enough proof", closed.closeNote());
 
- }
+    assertTrue(closed.isTerminal());
+  }
 
+  @Test
+  void reopeningClearsClaimAndClosure() {
 
-@Test
+    Report closed =
+        TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L)
+            .withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "handled", 500L);
 
- void claimAndReleaseTransitionStatus() {
+    Report reopened = closed.withReopened(600L);
 
+    assertEquals(ReportStatus.OPEN, reopened.status());
 
+    assertNull(reopened.claimedBy());
 
- Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
+    assertNull(reopened.closedBy());
 
+    assertEquals("", reopened.verdict());
 
+    assertEquals("", reopened.closeNote());
 
+    assertEquals(0L, reopened.closedAt());
 
-Report claimed = report.withClaim(TestFixtures.STAFF, "Staff", 200L);
+    assertEquals(600L, reopened.updatedAt());
+  }
 
+  @Test
+  void notesAreAppendedImmutably() {
 
+    Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
 
- assertEquals(ReportStatus.CLAIMED, claimed.status());
+    ReportNote note = new ReportNote(TestFixtures.STAFF, "Staff", 700L, "checked logs");
 
+    Report updated = report.withNote(note, 700L);
 
+    assertEquals(List.of(note), updated.notes());
 
- assertEquals(TestFixtures.STAFF, claimed.claimedBy());
+    assertTrue(report.notes().isEmpty());
 
+    assertEquals(700L, updated.updatedAt());
+  }
 
+  @Test
+  void evidenceMetaCanBeAttached() {
 
- assertEquals("Staff", claimed.claimedByName());
+    Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
 
+    EvidenceMeta meta = new EvidenceMeta(true, 800L, "world", 1, 2, 3, 4, 5, 6, 7);
 
+    Report updated = report.withEvidence(meta, 800L);
 
- assertEquals(200L, claimed.claimedAt());
+    assertEquals(meta, updated.evidence());
 
+    assertEquals(800L, updated.updatedAt());
 
+    assertTrue(updated.evidence().present());
 
- assertEquals(200L, claimed.updatedAt());
+    assertTrue(updated.evidence().shortSummary().contains("breaks=6"));
+  }
 
+  @Test
+  void statusParsingIsLenient() {
 
+    assertEquals(ReportStatus.OPEN, ReportStatus.parse(" open ", ReportStatus.REJECTED));
 
- assertTrue(claimed.isClaimed());
+    assertEquals(ReportStatus.AUTO_CLOSED, ReportStatus.parse("auto-closed", ReportStatus.OPEN));
 
+    assertEquals(ReportStatus.REJECTED, ReportStatus.parse("unknown", ReportStatus.REJECTED));
 
+    assertEquals(ReportStatus.OPEN, ReportStatus.parse(null, ReportStatus.OPEN));
+  }
 
+  @Test
+  void verdictParsingSupportsAliases() {
 
-Report released = claimed.withClaimReleased(300L);
+    assertEquals(Verdict.RESOLVED, Verdict.parse("accept"));
 
+    assertEquals(Verdict.REJECTED, Verdict.parse("reject"));
 
+    assertEquals(Verdict.DUPLICATE, Verdict.parse("dup"));
 
- assertEquals(ReportStatus.OPEN, released.status());
+    assertEquals(Verdict.INSUFFICIENT, Verdict.parse("evidence-insufficient"));
 
+    assertEquals(Verdict.AUTO_CLOSED, Verdict.parse("auto_closed"));
 
+    assertNull(Verdict.parse("nonsense"));
 
- assertNull(released.claimedBy());
+    assertNull(Verdict.parse(null));
+  }
 
+  @Test
+  void evidenceMetaSummaryHandlesMissingEvidence() {
 
+    assertEquals("none", EvidenceMeta.none().shortSummary());
 
- assertEquals("", released.claimedByName());
+    assertFalse(EvidenceMeta.of(null).present());
+  }
 
+  @Test
+  void priorityDefaultsToNormalAndSlaIsNotTrackedByDefault() {
 
+    Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
 
- assertEquals(0L, released.claimedAt());
+    assertEquals(ReportPriority.NORMAL, report.priority());
 
+    assertEquals(0L, report.slaDueAt());
 
+    assertFalse(report.isOverdue(1_000L));
 
- assertEquals(300L, released.updatedAt());
+    assertEquals(0, report.unreadReplies());
 
- }
+    assertTrue(report.lastReply().isEmpty());
+  }
 
+  @Test
+  void priorityAndSlaCanBeUpdated() {
 
-@Test
+    Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
 
- void closingStoresVerdictAndClosingStaff() {
+    Report updated = report.withPriority(ReportPriority.URGENT, 5_000L, 200L);
 
+    assertEquals(ReportPriority.URGENT, updated.priority());
 
+    assertEquals(5_000L, updated.slaDueAt());
 
- Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
+    assertEquals(200L, updated.updatedAt());
 
+    assertTrue(updated.isOverdue(5_001L));
 
+    assertFalse(updated.isOverdue(5_000L));
 
+    assertFalse(
+        updated
+            .withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "", 6_000L)
+            .isOverdue(7_000L));
+  }
 
-Report closed = report.withClosed(Verdict.INSUFFICIENT, TestFixtures.STAFF, "Staff",
+  @Test
+  void repliesTrackUnreadStateUntilMarkedRead() {
 
+    Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
 
+    ReportReply staffReply = new ReportReply(TestFixtures.STAFF, "Staff", true, "checking", 200L);
 
+    ReportReply playerReply = new ReportReply(TestFixtures.ALICE, "Alice", false, "thanks", 300L);
 
+    Report threaded = report.withReply(staffReply, 200L).withReply(playerReply, 300L);
 
- "not enough proof", 500L);
+    assertEquals(2, threaded.replies().size());
 
+    assertEquals(1, threaded.unreadReplies());
 
+    assertEquals(staffReply, threaded.replies().get(0));
 
+    assertEquals("thanks", threaded.lastReply().orElseThrow().text());
 
-assertEquals(ReportStatus.REJECTED, closed.status());
+    Report read = threaded.withReporterReadAt(250L);
 
+    assertEquals(0, read.unreadReplies());
 
+    assertEquals(250L, read.reporterReadAt());
 
- assertEquals(Verdict.INSUFFICIENT.name(), closed.verdict());
+    assertEquals(threaded.updatedAt(), read.updatedAt());
+  }
 
+  @Test
+  void slaAlertTimestampIsRecordedOnce() {
 
+    Report report =
+        TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L)
+            .withPriority(ReportPriority.HIGH, 1_000L, 100L);
 
- assertEquals(TestFixtures.STAFF, closed.closedBy());
+    Report alerted = report.withSlaAlerted(2_000L);
 
+    assertEquals(2_000L, alerted.slaAlertedAt());
 
+    assertEquals(100L, alerted.updatedAt());
 
- assertEquals("Staff", closed.closedByName());
+    assertEquals(report.slaDueAt(), alerted.slaDueAt());
+  }
 
+  @Test
+  void chatSelectionsSurviveCopiesAndCanBeReplaced() {
 
+    ReportChatSelection first = new ReportChatSelection(1_000L, "Bob", "line one");
 
- assertEquals(500L, closed.closedAt());
+    ReportChatSelection second = new ReportChatSelection(2_000L, "Bob", "line two");
 
+    Report report =
+        TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L)
+            .withChatSelections(List.of(first, second), 150L);
 
+    assertEquals(List.of(first, second), report.chatSelections());
 
- assertEquals("not enough proof", closed.closeNote());
+    assertEquals(150L, report.updatedAt());
 
+    Report claimed = report.withClaim(TestFixtures.STAFF, "Staff", 200L);
 
+    assertEquals(List.of(first, second), claimed.chatSelections());
 
- assertTrue(closed.isTerminal());
+    Report replied =
+        claimed.withReply(
+            new ReportReply(TestFixtures.STAFF, "Staff", true, "checking", 300L), 300L);
 
- }
+    assertEquals(List.of(first, second), replied.chatSelections());
 
+    Report closed = replied.withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "", 400L);
 
-@Test
+    assertEquals(List.of(first, second), closed.chatSelections());
 
- void reopeningClearsClaimAndClosure() {
+    Report cleared = closed.withChatSelections(null, 500L);
 
+    assertTrue(cleared.chatSelections().isEmpty());
 
+    assertEquals(500L, cleared.updatedAt());
+  }
 
- Report closed = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L)
+  @Test
+  void priorityParsingIsLenient() {
 
+    assertEquals(ReportPriority.HIGH, ReportPriority.parse(" high ", null));
 
+    assertEquals(ReportPriority.URGENT, ReportPriority.parse("URGENT", null));
 
+    assertEquals(ReportPriority.LOW, ReportPriority.parse("unknown", ReportPriority.LOW));
 
+    assertEquals(ReportPriority.NORMAL, ReportPriority.parse(null, ReportPriority.NORMAL));
 
- .withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "handled", 500L);
+    assertEquals("urgent", ReportPriority.URGENT.id());
 
-
-
-
-Report reopened = closed.withReopened(600L);
-
-
-
-
-assertEquals(ReportStatus.OPEN, reopened.status());
-
-
-
- assertNull(reopened.claimedBy());
-
-
-
- assertNull(reopened.closedBy());
-
-
-
- assertEquals("", reopened.verdict());
-
-
-
- assertEquals("", reopened.closeNote());
-
-
-
- assertEquals(0L, reopened.closedAt());
-
-
-
- assertEquals(600L, reopened.updatedAt());
-
- }
-
-
-@Test
-
- void notesAreAppendedImmutably() {
-
-
-
- Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
-
-
-
- ReportNote note = new ReportNote(TestFixtures.STAFF, "Staff", 700L, "checked logs");
-
-
-
-
-Report updated = report.withNote(note, 700L);
-
-
-
-
-assertEquals(List.of(note), updated.notes());
-
-
-
- assertTrue(report.notes().isEmpty());
-
-
-
- assertEquals(700L, updated.updatedAt());
-
- }
-
-
-@Test
-
- void evidenceMetaCanBeAttached() {
-
-
-
- Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
-
-
-
- EvidenceMeta meta = new EvidenceMeta(true, 800L, "world", 1, 2, 3, 4, 5, 6, 7);
-
-
-
-
-Report updated = report.withEvidence(meta, 800L);
-
-
-
-
-assertEquals(meta, updated.evidence());
-
-
-
- assertEquals(800L, updated.updatedAt());
-
-
-
- assertTrue(updated.evidence().present());
-
-
-
- assertTrue(updated.evidence().shortSummary().contains("breaks=6"));
-
- }
-
-
-@Test
-
- void statusParsingIsLenient() {
-
-
-
- assertEquals(ReportStatus.OPEN, ReportStatus.parse(" open ", ReportStatus.REJECTED));
-
-
-
- assertEquals(ReportStatus.AUTO_CLOSED, ReportStatus.parse("auto-closed", ReportStatus.OPEN));
-
-
-
- assertEquals(ReportStatus.REJECTED, ReportStatus.parse("unknown", ReportStatus.REJECTED));
-
-
-
- assertEquals(ReportStatus.OPEN, ReportStatus.parse(null, ReportStatus.OPEN));
-
- }
-
-
-@Test
-
- void verdictParsingSupportsAliases() {
-
-
-
- assertEquals(Verdict.RESOLVED, Verdict.parse("accept"));
-
-
-
- assertEquals(Verdict.REJECTED, Verdict.parse("reject"));
-
-
-
- assertEquals(Verdict.DUPLICATE, Verdict.parse("dup"));
-
-
-
- assertEquals(Verdict.INSUFFICIENT, Verdict.parse("evidence-insufficient"));
-
-
-
- assertEquals(Verdict.AUTO_CLOSED, Verdict.parse("auto_closed"));
-
-
-
- assertNull(Verdict.parse("nonsense"));
-
-
-
- assertNull(Verdict.parse(null));
-
- }
-
-
-@Test
-
- void evidenceMetaSummaryHandlesMissingEvidence() {
-
-
-
- assertEquals("none", EvidenceMeta.none().shortSummary());
-
-
-
- assertFalse(EvidenceMeta.of(null).present());
-
- }
-
-
-@Test
-
- void priorityDefaultsToNormalAndSlaIsNotTrackedByDefault() {
-
-
-
- Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
-
-
-
-
-assertEquals(ReportPriority.NORMAL, report.priority());
-
-
-
- assertEquals(0L, report.slaDueAt());
-
-
-
- assertFalse(report.isOverdue(1_000L));
-
-
-
- assertEquals(0, report.unreadReplies());
-
-
-
- assertTrue(report.lastReply().isEmpty());
-
- }
-
-
-@Test
-
- void priorityAndSlaCanBeUpdated() {
-
-
-
- Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
-
-
-
-
-Report updated = report.withPriority(ReportPriority.URGENT, 5_000L, 200L);
-
-
-
-
-assertEquals(ReportPriority.URGENT, updated.priority());
-
-
-
- assertEquals(5_000L, updated.slaDueAt());
-
-
-
- assertEquals(200L, updated.updatedAt());
-
-
-
- assertTrue(updated.isOverdue(5_001L));
-
-
-
- assertFalse(updated.isOverdue(5_000L));
-
-
-
- assertFalse(updated.withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "", 6_000L)
-
-
-
-
-
- .isOverdue(7_000L));
-
- }
-
-
-@Test
-
- void repliesTrackUnreadStateUntilMarkedRead() {
-
-
-
- Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
-
-
-
- ReportReply staffReply = new ReportReply(TestFixtures.STAFF, "Staff", true, "checking", 200L);
-
-
-
- ReportReply playerReply = new ReportReply(TestFixtures.ALICE, "Alice", false, "thanks", 300L);
-
-
-
-
-Report threaded = report.withReply(staffReply, 200L).withReply(playerReply, 300L);
-
-
-
-
-assertEquals(2, threaded.replies().size());
-
-
-
- assertEquals(1, threaded.unreadReplies());
-
-
-
- assertEquals(staffReply, threaded.replies().get(0));
-
-
-
- assertEquals("thanks", threaded.lastReply().orElseThrow().text());
-
-
-
-
-Report read = threaded.withReporterReadAt(250L);
-
-
-
- assertEquals(0, read.unreadReplies());
-
-
-
- assertEquals(250L, read.reporterReadAt());
-
-
-
- assertEquals(threaded.updatedAt(), read.updatedAt());
-
- }
-
-
-@Test
-
- void slaAlertTimestampIsRecordedOnce() {
-
-
-
- Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L)
-
-
-
-
-
- .withPriority(ReportPriority.HIGH, 1_000L, 100L);
-
-
-
-
-Report alerted = report.withSlaAlerted(2_000L);
-
-
-
-
-assertEquals(2_000L, alerted.slaAlertedAt());
-
-
-
- assertEquals(100L, alerted.updatedAt());
-
-
-
- assertEquals(report.slaDueAt(), alerted.slaDueAt());
-
- }
-
-
-@Test
-
- void chatSelectionsSurviveCopiesAndCanBeReplaced() {
-
-
-
- ReportChatSelection first = new ReportChatSelection(1_000L, "Bob", "line one");
-
-
-
- ReportChatSelection second = new ReportChatSelection(2_000L, "Bob", "line two");
-
-
-
- Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L)
-
-
-
-
-
- .withChatSelections(List.of(first, second), 150L);
-
-
-
-
-assertEquals(List.of(first, second), report.chatSelections());
-
-
-
- assertEquals(150L, report.updatedAt());
-
-
-
-
-Report claimed = report.withClaim(TestFixtures.STAFF, "Staff", 200L);
-
-
-
- assertEquals(List.of(first, second), claimed.chatSelections());
-
-
-
-
-Report replied = claimed.withReply(
-
-
-
-
-
- new ReportReply(TestFixtures.STAFF, "Staff", true, "checking", 300L), 300L);
-
-
-
- assertEquals(List.of(first, second), replied.chatSelections());
-
-
-
-
-Report closed = replied.withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "", 400L);
-
-
-
- assertEquals(List.of(first, second), closed.chatSelections());
-
-
-
-
-Report cleared = closed.withChatSelections(null, 500L);
-
-
-
- assertTrue(cleared.chatSelections().isEmpty());
-
-
-
- assertEquals(500L, cleared.updatedAt());
-
- }
-
-
-@Test
-
- void priorityParsingIsLenient() {
-
-
-
- assertEquals(ReportPriority.HIGH, ReportPriority.parse(" high ", null));
-
-
-
- assertEquals(ReportPriority.URGENT, ReportPriority.parse("URGENT", null));
-
-
-
- assertEquals(ReportPriority.LOW, ReportPriority.parse("unknown", ReportPriority.LOW));
-
-
-
- assertEquals(ReportPriority.NORMAL, ReportPriority.parse(null, ReportPriority.NORMAL));
-
-
-
- assertEquals("urgent", ReportPriority.URGENT.id());
-
-
-
- assertTrue(ReportPriority.URGENT.weight() > ReportPriority.LOW.weight());
-
- } }
+    assertTrue(ReportPriority.URGENT.weight() > ReportPriority.LOW.weight());
+  }
+}

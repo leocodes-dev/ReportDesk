@@ -17,41 +17,25 @@
  */
 
 package com.reportdesk.core;
-/**
-* Config-backed anti-abuse limits for report submission.
-*/ public record RateLimitPolicy(
 
- long cooldownSeconds,
+/** Config-backed anti-abuse limits for report submission. */
+public record RateLimitPolicy(
+    long cooldownSeconds,
+    int dailyLimit,
+    long sameTargetIntervalSeconds,
+    long duplicateWindowSeconds,
+    int maxOpenPerTarget) {
 
- int dailyLimit,
+  public RateLimitPolicy {
 
- long sameTargetIntervalSeconds,
+    cooldownSeconds = Math.max(0L, cooldownSeconds);
 
- long duplicateWindowSeconds,
+    dailyLimit = Math.max(0, dailyLimit);
 
- int maxOpenPerTarget ) {
+    sameTargetIntervalSeconds = Math.max(0L, sameTargetIntervalSeconds);
 
+    duplicateWindowSeconds = Math.max(0L, duplicateWindowSeconds);
 
-public RateLimitPolicy {
-
-
-
- cooldownSeconds = Math.max(0L, cooldownSeconds);
-
-
-
- dailyLimit = Math.max(0, dailyLimit);
-
-
-
- sameTargetIntervalSeconds = Math.max(0L, sameTargetIntervalSeconds);
-
-
-
- duplicateWindowSeconds = Math.max(0L, duplicateWindowSeconds);
-
-
-
- maxOpenPerTarget = Math.max(0, maxOpenPerTarget);
-
- } }
+    maxOpenPerTarget = Math.max(0, maxOpenPerTarget);
+  }
+}

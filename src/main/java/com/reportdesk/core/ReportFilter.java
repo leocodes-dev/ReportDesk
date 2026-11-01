@@ -17,515 +17,221 @@
  */
 
 package com.reportdesk.core;
+
 import java.util.Locale;
+
 /**
-* Filter/sort model used by the admin GUI and the text list. It is deliberately
-* Bukkit-free so pagination and query matching can be unit tested.
-*/ public record ReportFilter(
+ * Filter/sort model used by the admin GUI and the text list. It is deliberately Bukkit-free so
+ * pagination and query matching can be unit tested.
+ */
+public record ReportFilter(
+    java.util.Set<ReportStatus> statuses,
+    String category,
+    String query,
+    java.util.UUID claimedBy,
+    SortOrder sort,
+    java.util.Set<ReportPriority> priorities,
+    boolean overdueOnly) {
 
- java.util.Set<ReportStatus> statuses,
+  public enum SortOrder {
+    NEWEST,
 
- String category,
+    OLDEST,
 
- String query,
+    PRIORITY
+  }
 
- java.util.UUID claimedBy,
+  public ReportFilter {
 
- SortOrder sort,
+    statuses = statuses == null ? java.util.Set.of() : java.util.Set.copyOf(statuses);
 
- java.util.Set<ReportPriority> priorities,
+    category = category == null ? "" : category.trim().toLowerCase(Locale.ROOT);
 
- boolean overdueOnly ) {
+    query = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
 
+    sort = sort == null ? SortOrder.NEWEST : sort;
 
-public enum SortOrder {
+    priorities = priorities == null ? java.util.Set.of() : java.util.Set.copyOf(priorities);
+  }
 
+  /** Backwards-compatible constructor for callers that only use the old fields. */
+  public ReportFilter(
+      java.util.Set<ReportStatus> statuses,
+      String category,
+      String query,
+      java.util.UUID claimedBy,
+      SortOrder sort) {
 
+    this(statuses, category, query, claimedBy, sort, java.util.Set.of(), false);
+  }
 
- NEWEST,
+  public static ReportFilter all() {
 
+    return new ReportFilter(java.util.Set.of(), "", "", null, SortOrder.NEWEST);
+  }
 
+  public static ReportFilter ofStatus(ReportStatus status) {
 
- OLDEST,
+    return all().withStatus(status);
+  }
 
+  public ReportFilter withStatus(ReportStatus status) {
 
+    if (status == null) {
 
- PRIORITY
+      return new ReportFilter(
+          java.util.Set.of(), category, query, claimedBy, sort, priorities, overdueOnly);
+    }
 
- }
+    return new ReportFilter(
+        java.util.Set.of(status), category, query, claimedBy, sort, priorities, overdueOnly);
+  }
 
+  public ReportFilter cycleStatus() {
 
-public ReportFilter {
+    ReportStatus[] values = ReportStatus.values();
 
+    if (statuses.isEmpty()) {
 
+      return withStatus(values[0]);
+    }
 
- statuses = statuses == null ? java.util.Set.of() : java.util.Set.copyOf(statuses);
+    ReportStatus current = statuses.iterator().next();
 
+    int next = current.ordinal() + 1;
 
+    if (next >= values.length) {
 
- category = category == null ? "" : category.trim().toLowerCase(Locale.ROOT);
+      return withStatus(null);
+    }
 
+    return withStatus(values[next]);
+  }
 
+  public ReportFilter withCategory(String newCategory) {
 
- query = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+    return new ReportFilter(statuses, newCategory, query, claimedBy, sort, priorities, overdueOnly);
+  }
 
+  public ReportFilter withQuery(String newQuery) {
 
+    return new ReportFilter(statuses, category, newQuery, claimedBy, sort, priorities, overdueOnly);
+  }
 
- sort = sort == null ? SortOrder.NEWEST : sort;
+  public ReportFilter withClaimedBy(java.util.UUID staffId) {
 
+    return new ReportFilter(statuses, category, query, staffId, sort, priorities, overdueOnly);
+  }
 
+  public ReportFilter withSort(SortOrder newSort) {
 
- priorities = priorities == null ? java.util.Set.of() : java.util.Set.copyOf(priorities);
+    return new ReportFilter(statuses, category, query, claimedBy, newSort, priorities, overdueOnly);
+  }
 
- }
+  public ReportFilter withPriority(ReportPriority priority) {
 
+    return new ReportFilter(
+        statuses,
+        category,
+        query,
+        claimedBy,
+        sort,
+        priority == null ? java.util.Set.of() : java.util.Set.of(priority),
+        overdueOnly);
+  }
 
-/** Backwards-compatible constructor for callers that only use the old fields. */
+  public ReportFilter withOverdueOnly(boolean overdue) {
 
- public ReportFilter(java.util.Set<ReportStatus> statuses, String category, String query,
+    return new ReportFilter(statuses, category, query, claimedBy, sort, priorities, overdue);
+  }
 
+  public ReportFilter cyclePriority() {
 
+    ReportPriority[] values = ReportPriority.values();
 
+    if (priorities.isEmpty()) {
 
+      return withPriority(values[0]);
+    }
 
+    ReportPriority current = priorities.iterator().next();
 
+    int next = current.ordinal() + 1;
 
+    if (next >= values.length) {
 
+      return withPriority(null);
+    }
 
+    return withPriority(values[next]);
+  }
 
+  public boolean matches(Report report) {
 
- java.util.UUID claimedBy, SortOrder sort) {
+    if (!statuses.isEmpty() && !statuses.contains(report.status())) {
 
+      return false;
+    }
 
+    if (!category.isEmpty() && !category.equalsIgnoreCase(report.category())) {
 
- this(statuses, category, query, claimedBy, sort, java.util.Set.of(), false);
+      return false;
+    }
 
- }
+    if (claimedBy != null && !claimedBy.equals(report.claimedBy())) {
 
+      return false;
+    }
 
-public static ReportFilter all() {
+    if (!priorities.isEmpty() && !priorities.contains(report.priority())) {
 
+      return false;
+    }
 
+    if (overdueOnly && !report.isOverdue(System.currentTimeMillis())) {
 
- return new ReportFilter(java.util.Set.of(), "", "", null, SortOrder.NEWEST);
+      return false;
+    }
 
- }
+    if (query.isEmpty()) {
 
+      return true;
+    }
 
-public static ReportFilter ofStatus(ReportStatus status) {
+    return contains(report.targetName())
+        || contains(report.reporterName())
+        || contains(report.category())
+        || contains(report.detail())
+        || contains(report.claimedByName())
+        || contains(report.closedByName())
+        || contains(report.verdict())
+        || contains(report.priority().id())
+        || contains(String.valueOf(report.id()))
+        || contains("#" + report.id());
+  }
 
+  private boolean contains(String value) {
 
+    return value != null && value.toLowerCase(Locale.ROOT).contains(query);
+  }
 
- return all().withStatus(status);
+  public java.util.Comparator<Report> comparator() {
 
- }
+    java.util.Comparator<Report> byCreated = java.util.Comparator.comparingLong(Report::createdAt);
 
+    java.util.Comparator<Report> byId = java.util.Comparator.comparingLong(Report::id);
 
-public ReportFilter withStatus(ReportStatus status) {
+    java.util.Comparator<Report> byTime = byCreated.thenComparing(byId);
 
+    return switch (sort) {
+      case OLDEST -> byTime;
 
+      case PRIORITY ->
+          java.util.Comparator.comparingInt((Report report) -> report.priority().weight())
+              .reversed()
+              .thenComparing(byTime.reversed());
 
- if (status == null) {
-
-
-
-
-
- return new ReportFilter(java.util.Set.of(), category, query, claimedBy, sort,
-
-
-
-
-
-
-
- priorities, overdueOnly);
-
-
-
- }
-
-
-
- return new ReportFilter(java.util.Set.of(status), category, query, claimedBy, sort,
-
-
-
-
-
- priorities, overdueOnly);
-
- }
-
-
-public ReportFilter cycleStatus() {
-
-
-
- ReportStatus[] values = ReportStatus.values();
-
-
-
- if (statuses.isEmpty()) {
-
-
-
-
-
- return withStatus(values[0]);
-
-
-
- }
-
-
-
- ReportStatus current = statuses.iterator().next();
-
-
-
- int next = current.ordinal() + 1;
-
-
-
- if (next >= values.length) {
-
-
-
-
-
- return withStatus(null);
-
-
-
- }
-
-
-
- return withStatus(values[next]);
-
- }
-
-
-public ReportFilter withCategory(String newCategory) {
-
-
-
- return new ReportFilter(statuses, newCategory, query, claimedBy, sort, priorities, overdueOnly);
-
- }
-
-
-public ReportFilter withQuery(String newQuery) {
-
-
-
- return new ReportFilter(statuses, category, newQuery, claimedBy, sort, priorities, overdueOnly);
-
- }
-
-
-public ReportFilter withClaimedBy(java.util.UUID staffId) {
-
-
-
- return new ReportFilter(statuses, category, query, staffId, sort, priorities, overdueOnly);
-
- }
-
-
-public ReportFilter withSort(SortOrder newSort) {
-
-
-
- return new ReportFilter(statuses, category, query, claimedBy, newSort, priorities, overdueOnly);
-
- }
-
-
-public ReportFilter withPriority(ReportPriority priority) {
-
-
-
- return new ReportFilter(statuses, category, query, claimedBy, sort,
-
-
-
-
-
- priority == null ? java.util.Set.of() : java.util.Set.of(priority), overdueOnly);
-
- }
-
-
-public ReportFilter withOverdueOnly(boolean overdue) {
-
-
-
- return new ReportFilter(statuses, category, query, claimedBy, sort, priorities, overdue);
-
- }
-
-
-public ReportFilter cyclePriority() {
-
-
-
- ReportPriority[] values = ReportPriority.values();
-
-
-
- if (priorities.isEmpty()) {
-
-
-
-
-
- return withPriority(values[0]);
-
-
-
- }
-
-
-
- ReportPriority current = priorities.iterator().next();
-
-
-
- int next = current.ordinal() + 1;
-
-
-
- if (next >= values.length) {
-
-
-
-
-
- return withPriority(null);
-
-
-
- }
-
-
-
- return withPriority(values[next]);
-
- }
-
-
-public boolean matches(Report report) {
-
-
-
- if (!statuses.isEmpty() && !statuses.contains(report.status())) {
-
-
-
-
-
- return false;
-
-
-
- }
-
-
-
- if (!category.isEmpty() && !category.equalsIgnoreCase(report.category())) {
-
-
-
-
-
- return false;
-
-
-
- }
-
-
-
- if (claimedBy != null && !claimedBy.equals(report.claimedBy())) {
-
-
-
-
-
- return false;
-
-
-
- }
-
-
-
- if (!priorities.isEmpty() && !priorities.contains(report.priority())) {
-
-
-
-
-
- return false;
-
-
-
- }
-
-
-
- if (overdueOnly && !report.isOverdue(System.currentTimeMillis())) {
-
-
-
-
-
- return false;
-
-
-
- }
-
-
-
- if (query.isEmpty()) {
-
-
-
-
-
- return true;
-
-
-
- }
-
-
-
- return contains(report.targetName())
-
-
-
-
-
- || contains(report.reporterName())
-
-
-
-
-
- || contains(report.category())
-
-
-
-
-
- || contains(report.detail())
-
-
-
-
-
- || contains(report.claimedByName())
-
-
-
-
-
- || contains(report.closedByName())
-
-
-
-
-
- || contains(report.verdict())
-
-
-
-
-
- || contains(report.priority().id())
-
-
-
-
-
- || contains(String.valueOf(report.id()))
-
-
-
-
-
- || contains("#" + report.id());
-
- }
-
-
-private boolean contains(String value) {
-
-
-
- return value != null && value.toLowerCase(Locale.ROOT).contains(query);
-
- }
-
-
-public java.util.Comparator<Report> comparator() {
-
-
-
- java.util.Comparator<Report> byCreated = java.util.Comparator.comparingLong(Report::createdAt);
-
-
-
- java.util.Comparator<Report> byId = java.util.Comparator.comparingLong(Report::id);
-
-
-
- java.util.Comparator<Report> byTime = byCreated.thenComparing(byId);
-
-
-
- return switch (sort) {
-
-
-
-
-
- case OLDEST -> byTime;
-
-
-
-
-
- case PRIORITY -> java.util.Comparator
-
-
-
-
-
-
-
- .comparingInt((Report report) -> report.priority().weight()).reversed()
-
-
-
-
-
-
-
- .thenComparing(byTime.reversed());
-
-
-
-
-
- default -> byTime.reversed();
-
-
-
- };
-
- } }
+      default -> byTime.reversed();
+    };
+  }
+}

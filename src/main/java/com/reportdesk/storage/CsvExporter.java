@@ -17,289 +17,105 @@
  */
 
 package com.reportdesk.storage;
+
 import com.reportdesk.core.Report;
-import java.time.Instant; import java.time.ZoneId; import java.time.format.DateTimeFormatter; import java.util.Collection; import java.util.List;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Collection;
+import java.util.List;
+
 /**
-* Pure CSV export helper (RFC 4180 quoting) so the formatting is testable
-* without touching the file system.
-*/ public final class CsvExporter {
+ * Pure CSV export helper (RFC 4180 quoting) so the formatting is testable without touching the file
+ * system.
+ */
+public final class CsvExporter {
 
+  private static final DateTimeFormatter TIME =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
 
-private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+  private CsvExporter() {}
 
+  public static String toCsv(Collection<Report> reports) {
 
+    StringBuilder builder = new StringBuilder(256);
 
- .withZone(ZoneId.systemDefault());
+    builder
+        .append(
+            "id,created_at,status,category,target,reporter,claimed_by,closed_by,verdict,detail,notes")
+        .append('\n');
 
+    if (reports != null) {
 
-private CsvExporter() {
+      for (Report report : List.copyOf(reports)) {
 
- }
+        append(builder, report.id());
 
+        builder.append(',');
 
-public static String toCsv(Collection<Report> reports) {
+        append(builder, TIME.format(Instant.ofEpochMilli(report.createdAt())));
 
+        builder.append(',');
 
+        append(builder, report.status().name());
 
- StringBuilder builder = new StringBuilder(256);
+        builder.append(',');
 
+        append(builder, report.category());
 
+        builder.append(',');
 
- builder.append("id,created_at,status,category,target,reporter,claimed_by,closed_by,verdict,detail,notes")
+        append(builder, report.targetName());
 
+        builder.append(',');
 
+        append(builder, report.reporterName());
 
+        builder.append(',');
 
+        append(builder, report.claimedByName());
 
- .append('\n');
+        builder.append(',');
 
+        append(builder, report.closedByName());
 
+        builder.append(',');
 
- if (reports != null) {
+        append(builder, report.verdict());
 
+        builder.append(',');
 
+        append(builder, report.detail());
 
+        builder.append(',');
 
+        append(builder, String.valueOf(report.notes().size()));
 
- for (Report report : List.copyOf(reports)) {
+        builder.append('\n');
+      }
+    }
 
+    return builder.toString();
+  }
 
+  private static void append(StringBuilder builder, Object value) {
 
+    String text = value == null ? "" : String.valueOf(value);
 
+    text = text.replace('\r', ' ').replace('\n', ' ');
 
+    boolean quote = text.indexOf(',') >= 0 || text.indexOf('"') >= 0 || text.indexOf(';') >= 0;
 
+    if (quote) {
 
- append(builder, report.id());
+      builder.append('"');
+    }
 
+    builder.append(text.replace("\"", "\"\""));
 
+    if (quote) {
 
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, TIME.format(Instant.ofEpochMilli(report.createdAt())));
-
-
-
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, report.status().name());
-
-
-
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, report.category());
-
-
-
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, report.targetName());
-
-
-
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, report.reporterName());
-
-
-
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, report.claimedByName());
-
-
-
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, report.closedByName());
-
-
-
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, report.verdict());
-
-
-
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, report.detail());
-
-
-
-
-
-
-
- builder.append(',');
-
-
-
-
-
-
-
- append(builder, String.valueOf(report.notes().size()));
-
-
-
-
-
-
-
- builder.append('\n');
-
-
-
-
-
- }
-
-
-
- }
-
-
-
- return builder.toString();
-
- }
-
-
-private static void append(StringBuilder builder, Object value) {
-
-
-
- String text = value == null ? "" : String.valueOf(value);
-
-
-
- text = text.replace('\r', ' ').replace('\n', ' ');
-
-
-
- boolean quote = text.indexOf(',') >= 0 || text.indexOf('"') >= 0 || text.indexOf(';') >= 0;
-
-
-
- if (quote) {
-
-
-
-
-
- builder.append('"');
-
-
-
- }
-
-
-
- builder.append(text.replace("\"", "\"\""));
-
-
-
- if (quote) {
-
-
-
-
-
- builder.append('"');
-
-
-
- }
-
- } }
+      builder.append('"');
+    }
+  }
+}

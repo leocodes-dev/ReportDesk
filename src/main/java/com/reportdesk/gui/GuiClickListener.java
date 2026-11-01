@@ -17,100 +17,60 @@
  */
 
 package com.reportdesk.gui;
-import org.bukkit.event.EventHandler; import org.bukkit.event.EventPriority; import org.bukkit.event.Listener; import org.bukkit.event.inventory.InventoryClickEvent; import org.bukkit.event.inventory.InventoryDragEvent;
-/**
-* Dispatches clicks in ReportDesk inventories. Item movement is always
-* cancelled. The actual actions live in {@link GuiService}.
-*/ public final class GuiClickListener implements Listener {
 
-
-private final GuiService gui;
-
-
-public GuiClickListener(GuiService gui) {
-
-
-
- this.gui = gui;
-
- }
-
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 
 /**
+ * Dispatches clicks in ReportDesk inventories. Item movement is always cancelled. The actual
+ * actions live in {@link GuiService}.
+ */
+public final class GuiClickListener implements Listener {
 
+  private final GuiService gui;
 
-* Clicks inside ReportDesk inventories must always reach the GUI service.
+  public GuiClickListener(GuiService gui) {
 
+    this.gui = gui;
+  }
 
-* <p>
+  /**
+   * Clicks inside ReportDesk inventories must always reach the GUI service.
+   *
+   * <p>Do <strong>not</strong> use {@code ignoreCancelled = true} here: the server
+   *
+   * <p>pre-cancels inventory clicks for spectators (and other plugins may cancel
+   *
+   * <p>clicks as well), which would silently disable every button for those
+   *
+   * <p>players. The event is cancelled again below, so no item movement is
+   *
+   * <p>possible either way.
+   */
+  @EventHandler(priority = EventPriority.NORMAL)
+  public void onClick(InventoryClickEvent event) {
 
+    if (!(event.getView().getTopInventory().getHolder() instanceof ReportDeskHolder)) {
 
-* Do <strong>not</strong> use {@code ignoreCancelled = true} here: the server
+      return;
+    }
 
+    // Re-cancel even when a previous handler (or spectator handling) already did.
 
-* pre-cancels inventory clicks for spectators (and other plugins may cancel
+    event.setCancelled(true);
 
+    gui.handleClick(event);
+  }
 
-* clicks as well), which would silently disable every button for those
+  @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+  public void onDrag(InventoryDragEvent event) {
 
+    if (event.getView().getTopInventory().getHolder() instanceof ReportDeskHolder) {
 
-* players. The event is cancelled again below, so no item movement is
-
-
-* possible either way.
-
-
-*/
-
- @EventHandler(priority = EventPriority.NORMAL)
-
- public void onClick(InventoryClickEvent event) {
-
-
-
- if (!(event.getView().getTopInventory().getHolder() instanceof ReportDeskHolder)) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- // Re-cancel even when a previous handler (or spectator handling) already did.
-
-
-
- event.setCancelled(true);
-
-
-
- gui.handleClick(event);
-
- }
-
-
-@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-
- public void onDrag(InventoryDragEvent event) {
-
-
-
- if (event.getView().getTopInventory().getHolder() instanceof ReportDeskHolder) {
-
-
-
-
-
- event.setCancelled(true);
-
-
-
- }
-
- } }
+      event.setCancelled(true);
+    }
+  }
+}

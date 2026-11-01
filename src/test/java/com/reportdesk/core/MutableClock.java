@@ -17,74 +17,51 @@
  */
 
 package com.reportdesk.core;
-import java.time.Clock; import java.time.Instant; import java.time.ZoneId; import java.time.ZoneOffset;
-/** Small deterministic clock for limiter tests. */ final class MutableClock extends Clock {
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
-private Instant instant;
+/** Small deterministic clock for limiter tests. */
+final class MutableClock extends Clock {
 
- private final ZoneId zone;
+  private Instant instant;
 
+  private final ZoneId zone;
 
-MutableClock(Instant instant) {
+  MutableClock(Instant instant) {
 
+    this(instant, ZoneOffset.UTC);
+  }
 
+  private MutableClock(Instant instant, ZoneId zone) {
 
- this(instant, ZoneOffset.UTC);
+    this.instant = instant;
 
- }
+    this.zone = zone;
+  }
 
+  void advanceSeconds(long seconds) {
 
-private MutableClock(Instant instant, ZoneId zone) {
+    instant = instant.plusSeconds(seconds);
+  }
 
+  @Override
+  public ZoneId getZone() {
 
+    return zone;
+  }
 
- this.instant = instant;
+  @Override
+  public Clock withZone(ZoneId zone) {
 
+    return new MutableClock(instant, zone);
+  }
 
+  @Override
+  public Instant instant() {
 
- this.zone = zone;
-
- }
-
-
-void advanceSeconds(long seconds) {
-
-
-
- instant = instant.plusSeconds(seconds);
-
- }
-
-
-@Override
-
- public ZoneId getZone() {
-
-
-
- return zone;
-
- }
-
-
-@Override
-
- public Clock withZone(ZoneId zone) {
-
-
-
- return new MutableClock(instant, zone);
-
- }
-
-
-@Override
-
- public Instant instant() {
-
-
-
- return instant;
-
- } }
+    return instant;
+  }
+}

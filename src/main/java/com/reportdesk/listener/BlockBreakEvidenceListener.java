@@ -17,79 +17,48 @@
  */
 
 package com.reportdesk.listener;
-import com.reportdesk.ReportDeskPlugin; import org.bukkit.entity.Player; import org.bukkit.event.EventHandler; import org.bukkit.event.EventPriority; import org.bukkit.event.Listener; import org.bukkit.event.block.BlockBreakEvent;
+
+import com.reportdesk.ReportDeskPlugin;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+
 /**
-* Enhanced evidence layer only. This listener is registered solely when
-* {@code evidence.enabled} and {@code evidence.block-break.enabled} are true.
-* The handler only appends a small immutable sample to an in-memory deque; no
-* IO, world scan or re-computation happens here.
-*/ public final class BlockBreakEvidenceListener implements Listener {
+ * Enhanced evidence layer only. This listener is registered solely when {@code evidence.enabled}
+ * and {@code evidence.block-break.enabled} are true. The handler only appends a small immutable
+ * sample to an in-memory deque; no IO, world scan or re-computation happens here.
+ */
+public final class BlockBreakEvidenceListener implements Listener {
 
+  private final ReportDeskPlugin plugin;
 
-private final ReportDeskPlugin plugin;
+  public BlockBreakEvidenceListener(ReportDeskPlugin plugin) {
 
+    this.plugin = plugin;
+  }
 
-public BlockBreakEvidenceListener(ReportDeskPlugin plugin) {
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void onBlockBreak(BlockBreakEvent event) {
 
+    if (!plugin.config().evidence().blockBreak().enabled()) {
 
+      return;
+    }
 
- this.plugin = plugin;
+    if (!plugin.config().evidence().enabled()) {
 
- }
+      return;
+    }
 
+    Player player = event.getPlayer();
 
-@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    if (player == null) {
 
- public void onBlockBreak(BlockBreakEvent event) {
+      return;
+    }
 
-
-
- if (!plugin.config().evidence().blockBreak().enabled()) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- if (!plugin.config().evidence().enabled()) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- Player player = event.getPlayer();
-
-
-
- if (player == null) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- plugin.evidence().recordBreak(player, event.getBlock());
-
- } }
+    plugin.evidence().recordBreak(player, event.getBlock());
+  }
+}

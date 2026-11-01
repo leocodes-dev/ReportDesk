@@ -17,175 +17,96 @@
  */
 
 package com.reportdesk.core;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
-import java.util.List; import java.util.Set;
-import static org.junit.jupiter.api.Assertions.assertEquals; import static org.junit.jupiter.api.Assertions.assertFalse; import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class ChatSelectionSupportTest {
 
+  private static final ChatSample EARLY = new ChatSample(1_000L, "Bob", "first line");
 
-private static final ChatSample EARLY = new ChatSample(1_000L, "Bob", "first line");
+  private static final ChatSample MIDDLE = new ChatSample(2_000L, "bob", "second line");
 
- private static final ChatSample MIDDLE = new ChatSample(2_000L, "bob", "second line");
+  private static final ChatSample LATE = new ChatSample(3_000L, "Charlie", "other player");
 
- private static final ChatSample LATE = new ChatSample(3_000L, "Charlie", "other player");
+  @Test
+  void fromSamplesKeepsSelectedIndicesInOriginalOrder() {
 
+    List<ChatSample> samples = List.of(EARLY, MIDDLE, LATE);
 
-@Test
+    List<ReportChatSelection> selections = ChatSelectionSupport.fromSamples(samples, Set.of(2, 0));
 
- void fromSamplesKeepsSelectedIndicesInOriginalOrder() {
+    assertEquals(2, selections.size());
 
+    assertEquals(ReportChatSelection.of(EARLY), selections.get(0));
 
+    assertEquals(ReportChatSelection.of(LATE), selections.get(1));
+  }
 
- List<ChatSample> samples = List.of(EARLY, MIDDLE, LATE);
+  @Test
+  void fromSamplesIgnoresInvalidInput() {
 
+    assertTrue(ChatSelectionSupport.fromSamples(null, Set.of(0)).isEmpty());
 
+    assertTrue(ChatSelectionSupport.fromSamples(List.of(), Set.of(0)).isEmpty());
 
+    assertTrue(ChatSelectionSupport.fromSamples(List.of(EARLY), Set.of()).isEmpty());
 
-List<ReportChatSelection> selections = ChatSelectionSupport.fromSamples(samples, Set.of(2, 0));
+    assertTrue(ChatSelectionSupport.fromSamples(List.of(EARLY), null).isEmpty());
+  }
 
+  @Test
+  void matchingRequiresExactTimestampAndMessageButIgnoresNameCase() {
 
+    ReportChatSelection selection = new ReportChatSelection(1_000L, "BOB", "first line");
 
+    assertTrue(ChatSelectionSupport.matches(selection, EARLY));
 
-assertEquals(2, selections.size());
+    assertFalse(
+        ChatSelectionSupport.matches(selection, new ChatSample(1_001L, "Bob", "first line")));
 
+    assertFalse(
+        ChatSelectionSupport.matches(selection, new ChatSample(1_000L, "Bob", "first line!")));
 
+    assertFalse(ChatSelectionSupport.matches(null, EARLY));
 
- assertEquals(ReportChatSelection.of(EARLY), selections.get(0));
+    assertFalse(ChatSelectionSupport.matches(selection, null));
+  }
 
+  @Test
+  void isSelectedFindsAnyMatchingSample() {
 
+    List<ReportChatSelection> selections = List.of(ReportChatSelection.of(MIDDLE));
 
- assertEquals(ReportChatSelection.of(LATE), selections.get(1));
+    assertTrue(ChatSelectionSupport.isSelected(selections, MIDDLE));
 
- }
+    assertFalse(ChatSelectionSupport.isSelected(selections, EARLY));
 
+    assertFalse(ChatSelectionSupport.isSelected(List.of(), EARLY));
 
-@Test
+    assertFalse(ChatSelectionSupport.isSelected(null, EARLY));
+  }
 
- void fromSamplesIgnoresInvalidInput() {
+  @Test
+  void chronologicalFiltersByPlayerAndSortsOldestFirst() {
 
+    List<ChatSample> unsorted = List.of(LATE, MIDDLE, EARLY);
 
+    List<ChatSample> bobOnly = ChatSelectionSupport.chronological(unsorted, " bOb ");
 
- assertTrue(ChatSelectionSupport.fromSamples(null, Set.of(0)).isEmpty());
+    assertEquals(List.of(EARLY, MIDDLE), bobOnly);
 
+    assertEquals(3, ChatSelectionSupport.chronological(unsorted, null).size());
 
+    assertEquals(3, ChatSelectionSupport.chronological(unsorted, " ").size());
 
- assertTrue(ChatSelectionSupport.fromSamples(List.of(), Set.of(0)).isEmpty());
+    assertTrue(ChatSelectionSupport.chronological(List.of(), "Bob").isEmpty());
 
-
-
- assertTrue(ChatSelectionSupport.fromSamples(List.of(EARLY), Set.of()).isEmpty());
-
-
-
- assertTrue(ChatSelectionSupport.fromSamples(List.of(EARLY), null).isEmpty());
-
- }
-
-
-@Test
-
- void matchingRequiresExactTimestampAndMessageButIgnoresNameCase() {
-
-
-
- ReportChatSelection selection = new ReportChatSelection(1_000L, "BOB", "first line");
-
-
-
-
-assertTrue(ChatSelectionSupport.matches(selection, EARLY));
-
-
-
- assertFalse(ChatSelectionSupport.matches(selection,
-
-
-
-
-
- new ChatSample(1_001L, "Bob", "first line")));
-
-
-
- assertFalse(ChatSelectionSupport.matches(selection,
-
-
-
-
-
- new ChatSample(1_000L, "Bob", "first line!")));
-
-
-
- assertFalse(ChatSelectionSupport.matches(null, EARLY));
-
-
-
- assertFalse(ChatSelectionSupport.matches(selection, null));
-
- }
-
-
-@Test
-
- void isSelectedFindsAnyMatchingSample() {
-
-
-
- List<ReportChatSelection> selections = List.of(ReportChatSelection.of(MIDDLE));
-
-
-
-
-assertTrue(ChatSelectionSupport.isSelected(selections, MIDDLE));
-
-
-
- assertFalse(ChatSelectionSupport.isSelected(selections, EARLY));
-
-
-
- assertFalse(ChatSelectionSupport.isSelected(List.of(), EARLY));
-
-
-
- assertFalse(ChatSelectionSupport.isSelected(null, EARLY));
-
- }
-
-
-@Test
-
- void chronologicalFiltersByPlayerAndSortsOldestFirst() {
-
-
-
- List<ChatSample> unsorted = List.of(LATE, MIDDLE, EARLY);
-
-
-
-
-List<ChatSample> bobOnly = ChatSelectionSupport.chronological(unsorted, " bOb ");
-
-
-
-
-assertEquals(List.of(EARLY, MIDDLE), bobOnly);
-
-
-
- assertEquals(3, ChatSelectionSupport.chronological(unsorted, null).size());
-
-
-
- assertEquals(3, ChatSelectionSupport.chronological(unsorted, " ").size());
-
-
-
- assertTrue(ChatSelectionSupport.chronological(List.of(), "Bob").isEmpty());
-
-
-
- assertTrue(ChatSelectionSupport.chronological(null, "Bob").isEmpty());
-
- } }
+    assertTrue(ChatSelectionSupport.chronological(null, "Bob").isEmpty());
+  }
+}

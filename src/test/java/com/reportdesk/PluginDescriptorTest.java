@@ -17,150 +17,77 @@
  */
 
 package com.reportdesk;
-import org.junit.jupiter.api.Test; import org.yaml.snakeyaml.Yaml;
-import java.io.InputStream; import java.util.Map;
-import static org.junit.jupiter.api.Assertions.assertEquals; import static org.junit.jupiter.api.Assertions.assertNotNull; import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.InputStream;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
+
 class PluginDescriptorTest {
 
+  @Test
+  void paperDescriptorKeepsApiVersionAt120() {
 
-@Test
+    Map<String, Object> descriptor = read("/paper-plugin.yml");
 
- void paperDescriptorKeepsApiVersionAt120() {
+    assertEquals(
+        "1.20",
+        descriptor.get("api-version"),
+        "paper-plugin.yml must keep api-version: '1.20' unless the compatibility plan is updated");
 
+    assertEquals("ReportDesk", descriptor.get("name"));
 
+    assertEquals("com.reportdesk.ReportDeskPlugin", descriptor.get("main"));
+  }
 
- Map<String, Object> descriptor = read("/paper-plugin.yml");
+  @Test
+  void legacyDescriptorMatchesAndDeclaresCommands() {
 
+    Map<String, Object> descriptor = read("/plugin.yml");
 
+    assertEquals("1.20", descriptor.get("api-version"));
 
+    assertEquals("com.reportdesk.ReportDeskPlugin", descriptor.get("main"));
 
-assertEquals("1.20", descriptor.get("api-version"),
+    assertTrue(descriptor.get("commands") instanceof Map<?, ?>, "commands must be a mapping");
 
+    Map<?, ?> commands = (Map<?, ?>) descriptor.get("commands");
 
+    assertTrue(commands.containsKey("report"));
 
+    assertTrue(commands.containsKey("reports"));
 
+    Map<?, ?> permissions = (Map<?, ?>) descriptor.get("permissions");
 
- "paper-plugin.yml must keep api-version: '1.20' unless the compatibility plan is updated");
+    assertTrue(permissions.containsKey("reportdesk.report"));
 
+    assertTrue(permissions.containsKey("reportdesk.admin"));
 
+    assertTrue(permissions.containsKey("reportdesk.bypass.limits"));
+  }
 
- assertEquals("ReportDesk", descriptor.get("name"));
+  private static Map<String, Object> read(String resource) {
 
+    try (InputStream input = PluginDescriptorTest.class.getResourceAsStream(resource)) {
 
+      assertNotNull(input, "missing resource " + resource);
 
- assertEquals("com.reportdesk.ReportDeskPlugin", descriptor.get("main"));
+      Object loaded = new Yaml().load(input);
 
- }
+      assertTrue(loaded instanceof Map<?, ?>, resource + " must be a mapping");
 
+      @SuppressWarnings("unchecked")
+      Map<String, Object> map = (Map<String, Object>) loaded;
 
-@Test
+      return map;
 
- void legacyDescriptorMatchesAndDeclaresCommands() {
+    } catch (java.io.IOException exception) {
 
-
-
- Map<String, Object> descriptor = read("/plugin.yml");
-
-
-
-
-assertEquals("1.20", descriptor.get("api-version"));
-
-
-
- assertEquals("com.reportdesk.ReportDeskPlugin", descriptor.get("main"));
-
-
-
-
-assertTrue(descriptor.get("commands") instanceof Map<?, ?>, "commands must be a mapping");
-
-
-
- Map<?, ?> commands = (Map<?, ?>) descriptor.get("commands");
-
-
-
- assertTrue(commands.containsKey("report"));
-
-
-
- assertTrue(commands.containsKey("reports"));
-
-
-
-
-Map<?, ?> permissions = (Map<?, ?>) descriptor.get("permissions");
-
-
-
- assertTrue(permissions.containsKey("reportdesk.report"));
-
-
-
- assertTrue(permissions.containsKey("reportdesk.admin"));
-
-
-
- assertTrue(permissions.containsKey("reportdesk.bypass.limits"));
-
- }
-
-
-private static Map<String, Object> read(String resource) {
-
-
-
- try (InputStream input = PluginDescriptorTest.class.getResourceAsStream(resource)) {
-
-
-
-
-
- assertNotNull(input, "missing resource " + resource);
-
-
-
-
-
- Object loaded = new Yaml().load(input);
-
-
-
-
-
- assertTrue(loaded instanceof Map<?, ?>, resource + " must be a mapping");
-
-
-
-
-
- @SuppressWarnings("unchecked")
-
-
-
-
-
- Map<String, Object> map = (Map<String, Object>) loaded;
-
-
-
-
-
- return map;
-
-
-
- } catch (java.io.IOException exception) {
-
-
-
-
-
- throw new AssertionError(exception);
-
-
-
- }
-
- } }
+      throw new AssertionError(exception);
+    }
+  }
+}

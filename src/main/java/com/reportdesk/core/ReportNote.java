@@ -19,14 +19,12 @@ package com.reportdesk.core;
 
 import java.util.UUID;
 
-/**
- * A staff note attached to a report.
- */
+/** A staff note attached to a report. */
 public record ReportNote(UUID authorId, String authorName, long createdAt, String text) {
 
-    public ReportNote {
-        authorId = authorId == null ? new UUID(0L, 0L) : authorId;
-        authorName = authorName == null ? "" : authorName;
-        text = text == null ? "" : text;
-    }
+  public ReportNote {
+    authorId = authorId == null ? new UUID(0L, 0L) : authorId;
+    authorName = authorName == null ? "" : authorName;
+    text = text == null ? "" : text;
+  }
 }

@@ -17,336 +17,139 @@
  */
 
 package com.reportdesk.core;
-import java.util.ArrayList; import java.util.Collection; import java.util.Comparator; import java.util.LinkedHashMap; import java.util.List; import java.util.Locale; import java.util.Map; import java.util.Optional;
-/**
-* Lookup helper for categories and their command aliases.
-*/ public final class CategoryRegistry {
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 
-private final Map<String, ReportCategory> byId;
+/** Lookup helper for categories and their command aliases. */
+public final class CategoryRegistry {
 
- private final Map<String, ReportCategory> byAlias;
+  private final Map<String, ReportCategory> byId;
 
+  private final Map<String, ReportCategory> byAlias;
 
-private CategoryRegistry(Map<String, ReportCategory> byId, Map<String, ReportCategory> byAlias) {
+  private CategoryRegistry(Map<String, ReportCategory> byId, Map<String, ReportCategory> byAlias) {
 
+    this.byId = byId;
 
+    this.byAlias = byAlias;
+  }
 
- this.byId = byId;
+  public static CategoryRegistry of(Collection<ReportCategory> categories) {
 
+    Map<String, ReportCategory> ids = new LinkedHashMap<>();
 
+    Map<String, ReportCategory> aliases = new LinkedHashMap<>();
 
- this.byAlias = byAlias;
+    if (categories != null) {
 
- }
+      for (ReportCategory category : categories) {
 
+        if (category == null) {
 
-public static CategoryRegistry of(Collection<ReportCategory> categories) {
+          continue;
+        }
 
+        ids.put(normalize(category.id()), category);
 
+        for (String alias : category.aliases()) {
 
- Map<String, ReportCategory> ids = new LinkedHashMap<>();
+          if (alias != null && !alias.isBlank()) {
 
+            aliases.put(normalize(alias), category);
+          }
+        }
+      }
+    }
 
+    if (ids.isEmpty()) {
 
- Map<String, ReportCategory> aliases = new LinkedHashMap<>();
+      ReportCategory fallback =
+          new ReportCategory("other", "Other", "PAPER", List.of("misc"), true, 0, List.of());
 
+      ids.put("other", fallback);
 
+      aliases.put("misc", fallback);
+    }
 
- if (categories != null) {
+    return new CategoryRegistry(ids, aliases);
+  }
 
+  public Optional<ReportCategory> find(String idOrAlias) {
 
+    if (idOrAlias == null || idOrAlias.isBlank()) {
 
+      return Optional.empty();
+    }
 
+    String key = normalize(idOrAlias);
 
- for (ReportCategory category : categories) {
+    ReportCategory byIdMatch = byId.get(key);
 
+    if (byIdMatch != null) {
 
+      return Optional.of(byIdMatch);
+    }
 
+    return Optional.ofNullable(byAlias.get(key));
+  }
 
+  public boolean isEnabled(String idOrAlias) {
 
+    return find(idOrAlias).map(ReportCategory::enabled).orElse(false);
+  }
 
+  public ReportCategory getOrDefault(String idOrAlias, String defaultId) {
 
- if (category == null) {
+    return find(idOrAlias)
+        .or(() -> find(defaultId))
+        .orElseGet(() -> byId.values().iterator().next());
+  }
 
+  public List<ReportCategory> sorted() {
 
+    List<ReportCategory> categories = new ArrayList<>(byId.values());
 
+    categories.sort(
+        Comparator.comparingInt(ReportCategory::priority)
+            .reversed()
+            .thenComparing(ReportCategory::id));
 
+    return List.copyOf(categories);
+  }
 
+  public List<ReportCategory> enabledSorted() {
 
+    return sorted().stream().filter(ReportCategory::enabled).toList();
+  }
 
+  public List<String> commandSuggestions() {
 
+    List<String> suggestions = new ArrayList<>();
 
- continue;
+    for (ReportCategory category : enabledSorted()) {
 
+      suggestions.add(category.id());
 
+      suggestions.addAll(category.aliases());
+    }
 
+    return List.copyOf(suggestions);
+  }
 
+  public int size() {
 
+    return byId.size();
+  }
 
+  private static String normalize(String value) {
 
- }
-
-
-
-
-
-
-
- ids.put(normalize(category.id()), category);
-
-
-
-
-
-
-
- for (String alias : category.aliases()) {
-
-
-
-
-
-
-
-
-
- if (alias != null && !alias.isBlank()) {
-
-
-
-
-
-
-
-
-
-
-
- aliases.put(normalize(alias), category);
-
-
-
-
-
-
-
-
-
- }
-
-
-
-
-
-
-
- }
-
-
-
-
-
- }
-
-
-
- }
-
-
-
- if (ids.isEmpty()) {
-
-
-
-
-
- ReportCategory fallback = new ReportCategory("other", "Other", "PAPER",
-
-
-
-
-
-
-
- List.of("misc"), true, 0, List.of());
-
-
-
-
-
- ids.put("other", fallback);
-
-
-
-
-
- aliases.put("misc", fallback);
-
-
-
- }
-
-
-
- return new CategoryRegistry(ids, aliases);
-
- }
-
-
-public Optional<ReportCategory> find(String idOrAlias) {
-
-
-
- if (idOrAlias == null || idOrAlias.isBlank()) {
-
-
-
-
-
- return Optional.empty();
-
-
-
- }
-
-
-
- String key = normalize(idOrAlias);
-
-
-
- ReportCategory byIdMatch = byId.get(key);
-
-
-
- if (byIdMatch != null) {
-
-
-
-
-
- return Optional.of(byIdMatch);
-
-
-
- }
-
-
-
- return Optional.ofNullable(byAlias.get(key));
-
- }
-
-
-public boolean isEnabled(String idOrAlias) {
-
-
-
- return find(idOrAlias).map(ReportCategory::enabled).orElse(false);
-
- }
-
-
-public ReportCategory getOrDefault(String idOrAlias, String defaultId) {
-
-
-
- return find(idOrAlias)
-
-
-
-
-
- .or(() -> find(defaultId))
-
-
-
-
-
- .orElseGet(() -> byId.values().iterator().next());
-
- }
-
-
-public List<ReportCategory> sorted() {
-
-
-
- List<ReportCategory> categories = new ArrayList<>(byId.values());
-
-
-
- categories.sort(Comparator.comparingInt(ReportCategory::priority).reversed()
-
-
-
-
-
- .thenComparing(ReportCategory::id));
-
-
-
- return List.copyOf(categories);
-
- }
-
-
-public List<ReportCategory> enabledSorted() {
-
-
-
- return sorted().stream().filter(ReportCategory::enabled).toList();
-
- }
-
-
-public List<String> commandSuggestions() {
-
-
-
- List<String> suggestions = new ArrayList<>();
-
-
-
- for (ReportCategory category : enabledSorted()) {
-
-
-
-
-
- suggestions.add(category.id());
-
-
-
-
-
- suggestions.addAll(category.aliases());
-
-
-
- }
-
-
-
- return List.copyOf(suggestions);
-
- }
-
-
-public int size() {
-
-
-
- return byId.size();
-
- }
-
-
-private static String normalize(String value) {
-
-
-
- return value.trim().toLowerCase(Locale.ROOT);
-
- } }
+    return value.trim().toLowerCase(Locale.ROOT);
+  }
+}

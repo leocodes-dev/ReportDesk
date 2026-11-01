@@ -17,49 +17,32 @@
  */
 
 package com.reportdesk.core;
-import java.util.Locale; import java.util.UUID;
+
+import java.util.Locale;
+import java.util.UUID;
+
 /**
-* One staff watch entry. A watch follows a player name (case-insensitive) so it
-* keeps working when the target is offline or changes UUID between servers.
-*/ public record WatchEntry(
+ * One staff watch entry. A watch follows a player name (case-insensitive) so it keeps working when
+ * the target is offline or changes UUID between servers.
+ */
+public record WatchEntry(UUID staffId, String targetName, long createdAt) {
 
- UUID staffId,
+  public WatchEntry {
 
- String targetName,
+    staffId = staffId == null ? new UUID(0L, 0L) : staffId;
 
- long createdAt ) {
+    targetName = targetName == null ? "" : targetName.trim();
 
+    createdAt = Math.max(0L, createdAt);
+  }
 
-public WatchEntry {
+  public boolean valid() {
 
+    return !staffId.equals(new UUID(0L, 0L)) && !targetName.isBlank();
+  }
 
+  public String targetKey() {
 
- staffId = staffId == null ? new UUID(0L, 0L) : staffId;
-
-
-
- targetName = targetName == null ? "" : targetName.trim();
-
-
-
- createdAt = Math.max(0L, createdAt);
-
- }
-
-
-public boolean valid() {
-
-
-
- return !staffId.equals(new UUID(0L, 0L)) && !targetName.isBlank();
-
- }
-
-
-public String targetKey() {
-
-
-
- return targetName.toLowerCase(Locale.ROOT);
-
- } }
+    return targetName.toLowerCase(Locale.ROOT);
+  }
+}

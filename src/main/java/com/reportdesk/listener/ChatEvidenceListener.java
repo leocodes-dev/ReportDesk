@@ -17,82 +17,50 @@
  */
 
 package com.reportdesk.listener;
-import com.reportdesk.ReportDeskPlugin; import io.papermc.paper.event.player.AsyncChatEvent; import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer; import org.bukkit.entity.Player; import org.bukkit.event.EventHandler; import org.bukkit.event.EventPriority; import org.bukkit.event.Listener;
+
+import com.reportdesk.ReportDeskPlugin;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+
 /**
-* Optional chat evidence layer. Registered only when evidence and chat capture
-* are both enabled. The handler stores a bounded plain-text sample and never
-* performs IO.
-*/ public final class ChatEvidenceListener implements Listener {
+ * Optional chat evidence layer. Registered only when evidence and chat capture are both enabled.
+ * The handler stores a bounded plain-text sample and never performs IO.
+ */
+public final class ChatEvidenceListener implements Listener {
 
+  private final ReportDeskPlugin plugin;
 
-private final ReportDeskPlugin plugin;
+  public ChatEvidenceListener(ReportDeskPlugin plugin) {
 
+    this.plugin = plugin;
+  }
 
-public ChatEvidenceListener(ReportDeskPlugin plugin) {
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void onChat(AsyncChatEvent event) {
 
+    if (!plugin.config().evidence().enabled()) {
 
+      return;
+    }
 
- this.plugin = plugin;
+    if (!plugin.config().evidence().captureChatLog()) {
 
- }
+      return;
+    }
 
+    Player player = event.getPlayer();
 
-@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    if (player == null) {
 
- public void onChat(AsyncChatEvent event) {
+      return;
+    }
 
+    String message = PlainTextComponentSerializer.plainText().serialize(event.message());
 
-
- if (!plugin.config().evidence().enabled()) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- if (!plugin.config().evidence().captureChatLog()) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- Player player = event.getPlayer();
-
-
-
- if (player == null) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- String message = PlainTextComponentSerializer.plainText().serialize(event.message());
-
-
-
- plugin.evidence().recordChat(player, message);
-
- } }
+    plugin.evidence().recordChat(player, message);
+  }
+}

@@ -17,55 +17,43 @@
  */
 
 package com.reportdesk.listener;
-import com.reportdesk.ReportDeskPlugin; import org.bukkit.event.EventHandler; import org.bukkit.event.EventPriority; import org.bukkit.event.Listener; import org.bukkit.event.player.PlayerJoinEvent; import org.bukkit.event.player.PlayerQuitEvent;
+
+import com.reportdesk.ReportDeskPlugin;
 import java.util.UUID;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+
 /**
-* Drops per-player in-memory state when a player leaves. This is a base
-* listener: it does not touch storage and is not a high-frequency event.
-*/ public final class PlayerSessionListener implements Listener {
+ * Drops per-player in-memory state when a player leaves. This is a base listener: it does not touch
+ * storage and is not a high-frequency event.
+ */
+public final class PlayerSessionListener implements Listener {
 
+  private final ReportDeskPlugin plugin;
 
-private final ReportDeskPlugin plugin;
+  public PlayerSessionListener(ReportDeskPlugin plugin) {
 
+    this.plugin = plugin;
+  }
 
-public PlayerSessionListener(ReportDeskPlugin plugin) {
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void onJoin(PlayerJoinEvent event) {
 
+    plugin.offlineNotices().flush(event.getPlayer());
+  }
 
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void onQuit(PlayerQuitEvent event) {
 
- this.plugin = plugin;
+    UUID playerId = event.getPlayer().getUniqueId();
 
- }
+    plugin.evidence().forget(playerId);
 
+    plugin.chatInput().cancel(event.getPlayer(), false);
 
-@EventHandler(priority = EventPriority.MONITOR)
-
- public void onJoin(PlayerJoinEvent event) {
-
-
-
- plugin.offlineNotices().flush(event.getPlayer());
-
- }
-
-
-@EventHandler(priority = EventPriority.MONITOR)
-
- public void onQuit(PlayerQuitEvent event) {
-
-
-
- UUID playerId = event.getPlayer().getUniqueId();
-
-
-
- plugin.evidence().forget(playerId);
-
-
-
- plugin.chatInput().cancel(event.getPlayer(), false);
-
-
-
- plugin.gui().forget(playerId);
-
- } }
+    plugin.gui().forget(playerId);
+  }
+}

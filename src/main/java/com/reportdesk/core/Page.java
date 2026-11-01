@@ -17,87 +17,51 @@
  */
 
 package com.reportdesk.core;
+
 import java.util.List;
-/**
-* Immutable page result with 1-based page numbers.
-*/ public record Page<T>(List<T> items, int page, int pageSize, int totalItems, int totalPages) {
 
+/** Immutable page result with 1-based page numbers. */
+public record Page<T>(List<T> items, int page, int pageSize, int totalItems, int totalPages) {
 
-public Page {
+  public Page {
 
+    items = items == null ? List.of() : List.copyOf(items);
 
+    pageSize = Math.max(1, pageSize);
 
- items = items == null ? List.of() : List.copyOf(items);
+    totalItems = Math.max(0, totalItems);
 
+    totalPages = Math.max(1, totalPages);
 
+    page = Math.max(1, Math.min(page, totalPages));
+  }
 
- pageSize = Math.max(1, pageSize);
+  public static <T> Page<T> of(List<T> all, int requestedPage, int requestedSize) {
 
+    int size = Math.max(1, requestedSize);
 
+    int total = all == null ? 0 : all.size();
 
- totalItems = Math.max(0, totalItems);
+    int pages = Math.max(1, (total + size - 1) / size);
 
+    int page = Math.max(1, Math.min(requestedPage, pages));
 
+    int from = Math.min(total, (page - 1) * size);
 
- totalPages = Math.max(1, totalPages);
+    int to = Math.min(total, from + size);
 
+    List<T> slice = total == 0 ? List.of() : List.copyOf(all.subList(from, to));
 
+    return new Page<>(slice, page, size, total, pages);
+  }
 
- page = Math.max(1, Math.min(page, totalPages));
+  public boolean hasNext() {
 
- }
+    return page < totalPages;
+  }
 
+  public boolean hasPrevious() {
 
-public static <T> Page<T> of(List<T> all, int requestedPage, int requestedSize) {
-
-
-
- int size = Math.max(1, requestedSize);
-
-
-
- int total = all == null ? 0 : all.size();
-
-
-
- int pages = Math.max(1, (total + size - 1) / size);
-
-
-
- int page = Math.max(1, Math.min(requestedPage, pages));
-
-
-
- int from = Math.min(total, (page - 1) * size);
-
-
-
- int to = Math.min(total, from + size);
-
-
-
- List<T> slice = total == 0 ? List.of() : List.copyOf(all.subList(from, to));
-
-
-
- return new Page<>(slice, page, size, total, pages);
-
- }
-
-
-public boolean hasNext() {
-
-
-
- return page < totalPages;
-
- }
-
-
-public boolean hasPrevious() {
-
-
-
- return page > 1;
-
- } }
+    return page > 1;
+  }
+}

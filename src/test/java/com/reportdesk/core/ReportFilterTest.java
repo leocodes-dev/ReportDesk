@@ -17,321 +17,151 @@
  */
 
 package com.reportdesk.core;
-import com.reportdesk.test.TestFixtures; import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.reportdesk.test.TestFixtures;
 import java.util.List;
-import static org.junit.jupiter.api.Assertions.assertEquals; import static org.junit.jupiter.api.Assertions.assertFalse; import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+
 class ReportFilterTest {
 
+  @Test
+  void changingStatusPreservesCategoryQueryClaimAndSort() {
 
-@Test
+    ReportFilter filter =
+        ReportFilter.all()
+            .withStatus(ReportStatus.OPEN)
+            .withCategory("chat")
+            .withQuery("bob")
+            .withClaimedBy(TestFixtures.STAFF)
+            .withSort(ReportFilter.SortOrder.OLDEST);
 
- void changingStatusPreservesCategoryQueryClaimAndSort() {
+    ReportFilter cleared = filter.withStatus(null);
 
+    assertTrue(cleared.statuses().isEmpty());
 
+    assertEquals("chat", cleared.category());
 
- ReportFilter filter = ReportFilter.all()
+    assertEquals("bob", cleared.query());
 
+    assertEquals(TestFixtures.STAFF, cleared.claimedBy());
 
+    assertEquals(ReportFilter.SortOrder.OLDEST, cleared.sort());
+  }
 
+  @Test
+  void completedFilterMatchesOnlyReportsSatisfyingEveryField() {
 
+    ReportFilter filter =
+        ReportFilter.all().withStatus(ReportStatus.OPEN).withCategory("cheating").withQuery("bob");
 
- .withStatus(ReportStatus.OPEN)
+    assertTrue(
+        filter.matches(
+            TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "cheating", 1_000L)));
 
+    assertFalse(
+        filter.matches(TestFixtures.open(2L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L)));
 
+    assertFalse(
+        filter.matches(
+            TestFixtures.open(3L, TestFixtures.ALICE, "Alice", "Charlie", "cheating", 1_000L)));
+  }
 
+  @Test
+  void sortComparatorOrdersByCreationTimeThenId() {
 
+    Report early = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L);
 
- .withCategory("chat")
+    Report late = TestFixtures.open(2L, TestFixtures.ALICE, "Alice", "Bob", "chat", 2_000L);
 
+    Report sameTime = TestFixtures.open(3L, TestFixtures.ALICE, "Alice", "Bob", "chat", 2_000L);
 
+    List<Report> newest = new java.util.ArrayList<>(List.of(early, late, sameTime));
 
+    newest.sort(ReportFilter.all().comparator());
 
+    assertEquals(List.of(3L, 2L, 1L), newest.stream().map(Report::id).toList());
 
- .withQuery("bob")
+    List<Report> oldest = new java.util.ArrayList<>(List.of(late, sameTime, early));
 
+    oldest.sort(ReportFilter.all().withSort(ReportFilter.SortOrder.OLDEST).comparator());
 
+    assertEquals(List.of(1L, 2L, 3L), oldest.stream().map(Report::id).toList());
+  }
 
+  @Test
+  void priorityAndOverdueFiltersMatchReports() {
 
+    Report low = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L);
 
- .withClaimedBy(TestFixtures.STAFF)
+    Report urgent =
+        TestFixtures.open(2L, TestFixtures.ALICE, "Alice", "Bob", "chat", 2_000L)
+            .withPriority(ReportPriority.URGENT, System.currentTimeMillis() - 60_000L, 2_000L);
 
+    ReportFilter priorityFilter = ReportFilter.all().withPriority(ReportPriority.URGENT);
 
+    assertFalse(priorityFilter.matches(low));
 
+    assertTrue(priorityFilter.matches(urgent));
 
+    ReportFilter overdueFilter = ReportFilter.all().withOverdueOnly(true);
 
- .withSort(ReportFilter.SortOrder.OLDEST);
+    assertFalse(overdueFilter.matches(low));
 
+    assertTrue(overdueFilter.matches(urgent));
 
+    assertEquals(
+        ReportPriority.LOW, ReportFilter.all().cyclePriority().priorities().iterator().next());
 
+    assertEquals(
+        ReportPriority.URGENT,
+        ReportFilter.all()
+            .withPriority(ReportPriority.HIGH)
+            .cyclePriority()
+            .priorities()
+            .iterator()
+            .next());
 
-ReportFilter cleared = filter.withStatus(null);
+    assertTrue(
+        ReportFilter.all()
+            .withPriority(ReportPriority.URGENT)
+            .cyclePriority()
+            .priorities()
+            .isEmpty());
+  }
 
+  @Test
+  void prioritySortKeepsHigherPriorityFirstThenNewest() {
 
+    Report low = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 3_000L);
 
+    Report highOld =
+        TestFixtures.open(2L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L)
+            .withPriority(ReportPriority.HIGH, 0L, 1_000L);
 
-assertTrue(cleared.statuses().isEmpty());
+    Report highNew =
+        TestFixtures.open(3L, TestFixtures.ALICE, "Alice", "Bob", "chat", 2_000L)
+            .withPriority(ReportPriority.HIGH, 0L, 2_000L);
 
+    List<Report> reports = new java.util.ArrayList<>(List.of(low, highOld, highNew));
 
+    reports.sort(ReportFilter.all().withSort(ReportFilter.SortOrder.PRIORITY).comparator());
 
- assertEquals("chat", cleared.category());
+    assertEquals(List.of(3L, 2L, 1L), reports.stream().map(Report::id).toList());
+  }
 
+  @Test
+  void priorityQueryMatchesPriorityId() {
 
+    Report urgent =
+        TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L)
+            .withPriority(ReportPriority.URGENT, 0L, 1_000L);
 
- assertEquals("bob", cleared.query());
+    assertTrue(ReportFilter.all().withQuery("urgent").matches(urgent));
 
-
-
- assertEquals(TestFixtures.STAFF, cleared.claimedBy());
-
-
-
- assertEquals(ReportFilter.SortOrder.OLDEST, cleared.sort());
-
- }
-
-
-@Test
-
- void completedFilterMatchesOnlyReportsSatisfyingEveryField() {
-
-
-
- ReportFilter filter = ReportFilter.all()
-
-
-
-
-
- .withStatus(ReportStatus.OPEN)
-
-
-
-
-
- .withCategory("cheating")
-
-
-
-
-
- .withQuery("bob");
-
-
-
-
-assertTrue(filter.matches(TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob",
-
-
-
-
-
- "cheating", 1_000L)));
-
-
-
- assertFalse(filter.matches(TestFixtures.open(2L, TestFixtures.ALICE, "Alice", "Bob",
-
-
-
-
-
- "chat", 1_000L)));
-
-
-
- assertFalse(filter.matches(TestFixtures.open(3L, TestFixtures.ALICE, "Alice", "Charlie",
-
-
-
-
-
- "cheating", 1_000L)));
-
- }
-
-
-@Test
-
- void sortComparatorOrdersByCreationTimeThenId() {
-
-
-
- Report early = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L);
-
-
-
- Report late = TestFixtures.open(2L, TestFixtures.ALICE, "Alice", "Bob", "chat", 2_000L);
-
-
-
- Report sameTime = TestFixtures.open(3L, TestFixtures.ALICE, "Alice", "Bob", "chat", 2_000L);
-
-
-
-
-List<Report> newest = new java.util.ArrayList<>(List.of(early, late, sameTime));
-
-
-
- newest.sort(ReportFilter.all().comparator());
-
-
-
- assertEquals(List.of(3L, 2L, 1L), newest.stream().map(Report::id).toList());
-
-
-
-
-List<Report> oldest = new java.util.ArrayList<>(List.of(late, sameTime, early));
-
-
-
- oldest.sort(ReportFilter.all().withSort(ReportFilter.SortOrder.OLDEST).comparator());
-
-
-
- assertEquals(List.of(1L, 2L, 3L), oldest.stream().map(Report::id).toList());
-
- }
-
-
-@Test
-
- void priorityAndOverdueFiltersMatchReports() {
-
-
-
- Report low = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L);
-
-
-
- Report urgent = TestFixtures.open(2L, TestFixtures.ALICE, "Alice", "Bob", "chat", 2_000L)
-
-
-
-
-
- .withPriority(ReportPriority.URGENT, System.currentTimeMillis() - 60_000L, 2_000L);
-
-
-
-
-ReportFilter priorityFilter = ReportFilter.all().withPriority(ReportPriority.URGENT);
-
-
-
- assertFalse(priorityFilter.matches(low));
-
-
-
- assertTrue(priorityFilter.matches(urgent));
-
-
-
-
-ReportFilter overdueFilter = ReportFilter.all().withOverdueOnly(true);
-
-
-
- assertFalse(overdueFilter.matches(low));
-
-
-
- assertTrue(overdueFilter.matches(urgent));
-
-
-
- assertEquals(ReportPriority.LOW, ReportFilter.all().cyclePriority().priorities().iterator().next());
-
-
-
- assertEquals(ReportPriority.URGENT, ReportFilter.all().withPriority(ReportPriority.HIGH)
-
-
-
-
-
- .cyclePriority().priorities().iterator().next());
-
-
-
- assertTrue(ReportFilter.all().withPriority(ReportPriority.URGENT).cyclePriority()
-
-
-
-
-
- .priorities().isEmpty());
-
- }
-
-
-@Test
-
- void prioritySortKeepsHigherPriorityFirstThenNewest() {
-
-
-
- Report low = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 3_000L);
-
-
-
- Report highOld = TestFixtures.open(2L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L)
-
-
-
-
-
- .withPriority(ReportPriority.HIGH, 0L, 1_000L);
-
-
-
- Report highNew = TestFixtures.open(3L, TestFixtures.ALICE, "Alice", "Bob", "chat", 2_000L)
-
-
-
-
-
- .withPriority(ReportPriority.HIGH, 0L, 2_000L);
-
-
-
-
-List<Report> reports = new java.util.ArrayList<>(List.of(low, highOld, highNew));
-
-
-
- reports.sort(ReportFilter.all().withSort(ReportFilter.SortOrder.PRIORITY).comparator());
-
-
-
-
-assertEquals(List.of(3L, 2L, 1L), reports.stream().map(Report::id).toList());
-
- }
-
-
-@Test
-
- void priorityQueryMatchesPriorityId() {
-
-
-
- Report urgent = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L)
-
-
-
-
-
- .withPriority(ReportPriority.URGENT, 0L, 1_000L);
-
-
-
-
-assertTrue(ReportFilter.all().withQuery("urgent").matches(urgent));
-
-
-
- assertFalse(ReportFilter.all().withQuery("low").matches(urgent));
-
- } }
+    assertFalse(ReportFilter.all().withQuery("low").matches(urgent));
+  }
+}

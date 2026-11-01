@@ -17,361 +17,201 @@
  */
 
 package com.reportdesk.gui;
-import com.reportdesk.core.ReportFilter; import org.bukkit.inventory.Inventory; import org.bukkit.inventory.InventoryHolder;
-import java.util.HashMap; import java.util.Map;
+
+import com.reportdesk.core.ReportFilter;
+import java.util.HashMap;
+import java.util.Map;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+
 /**
-* Typed inventory holder. Actions are derived from the holder type and its
-* slot maps instead of fragile title matching.
-*/ public final class ReportDeskHolder implements InventoryHolder {
+ * Typed inventory holder. Actions are derived from the holder type and its slot maps instead of
+ * fragile title matching.
+ */
+public final class ReportDeskHolder implements InventoryHolder {
 
+  public enum Type {
+    PLAYER_SELECT,
 
-public enum Type {
+    CATEGORY_SELECT,
 
+    CHAT_SELECT,
 
+    CONFIRM,
 
- PLAYER_SELECT,
+    ADMIN_LIST,
 
+    ADMIN_FILTER,
 
+    ADMIN_DETAIL,
 
- CATEGORY_SELECT,
+    VERDICT,
 
+    DELETE,
 
+    NOTES,
 
- CHAT_SELECT,
+    EVIDENCE,
 
+    REPLIES,
 
+    ADMIN_HUB,
 
- CONFIRM,
+    ADMIN_PLAYERS,
 
+    ADMIN_PLAYER,
 
+    ADMIN_PLAYER_REPORTS,
 
- ADMIN_LIST,
+    ADMIN_STATS,
 
+    ADMIN_WATCHLIST,
 
+    ADMIN_CONFIG_SECTIONS,
 
- ADMIN_FILTER,
+    ADMIN_CONFIG_KEYS,
 
+    ADMIN_CONFIG_KEY,
 
+    ADMIN_MISC,
 
- ADMIN_DETAIL,
+    ADMIN_AUDIT,
 
+    ADMIN_CONFIRM,
 
+    ADMIN_CHAT
+  }
 
- VERDICT,
+  private final Type type;
 
+  private final long reportId;
 
+  private final int page;
 
- DELETE,
+  private final ReportFilter filter;
 
+  private final Map<Integer, String> values = new HashMap<>();
 
+  private final Map<Integer, Long> reportIds = new HashMap<>();
 
- NOTES,
+  private final Map<String, String> attributes = new HashMap<>();
 
+  private Inventory inventory;
 
+  private ReportDeskHolder(Type type, long reportId, int page, ReportFilter filter) {
 
- EVIDENCE,
+    this.type = type;
 
+    this.reportId = reportId;
 
+    this.page = page;
 
- REPLIES,
+    this.filter = filter;
+  }
 
+  public static ReportDeskHolder of(Type type) {
 
+    return new ReportDeskHolder(type, 0L, 1, ReportFilter.all());
+  }
 
- ADMIN_HUB,
+  public static ReportDeskHolder of(Type type, long reportId) {
 
+    return new ReportDeskHolder(type, reportId, 1, ReportFilter.all());
+  }
 
+  public static ReportDeskHolder of(Type type, long reportId, int page) {
 
- ADMIN_PLAYERS,
+    return new ReportDeskHolder(type, reportId, page, ReportFilter.all());
+  }
 
+  public static ReportDeskHolder list(ReportFilter filter, int page) {
 
+    return new ReportDeskHolder(
+        Type.ADMIN_LIST, 0L, page, filter == null ? ReportFilter.all() : filter);
+  }
 
- ADMIN_PLAYER,
+  public static ReportDeskHolder filter(ReportFilter filter, int page) {
 
+    return new ReportDeskHolder(
+        Type.ADMIN_FILTER, 0L, page, filter == null ? ReportFilter.all() : filter);
+  }
 
+  public static ReportDeskHolder paged(Type type, int page) {
 
- ADMIN_PLAYER_REPORTS,
+    return new ReportDeskHolder(type, 0L, page, ReportFilter.all());
+  }
 
+  public Type type() {
 
+    return type;
+  }
 
- ADMIN_STATS,
+  public long reportId() {
 
+    return reportId;
+  }
 
+  public int page() {
 
- ADMIN_WATCHLIST,
+    return page;
+  }
 
+  public ReportFilter filter() {
 
+    return filter;
+  }
 
- ADMIN_CONFIG_SECTIONS,
+  public void putValue(int slot, String value) {
 
+    if (value != null) {
 
+      values.put(slot, value);
+    }
+  }
 
- ADMIN_CONFIG_KEYS,
+  public String value(int slot) {
 
+    return values.get(slot);
+  }
 
+  public void putReportId(int slot, long id) {
 
- ADMIN_CONFIG_KEY,
+    reportIds.put(slot, id);
+  }
 
+  public Long reportId(int slot) {
 
+    return reportIds.get(slot);
+  }
 
- ADMIN_MISC,
+  public void putAttribute(String key, String value) {
 
+    if (key != null && value != null) {
 
+      attributes.put(key, value);
+    }
+  }
 
- ADMIN_AUDIT,
+  public String attribute(String key) {
 
+    return key == null ? null : attributes.get(key);
+  }
 
+  public String attribute(String key, String fallback) {
 
- ADMIN_CONFIRM,
+    String value = attribute(key);
 
+    return value == null ? fallback : value;
+  }
 
+  void setInventory(Inventory inventory) {
 
- ADMIN_CHAT
+    this.inventory = inventory;
+  }
 
- }
+  @Override
+  public Inventory getInventory() {
 
-
-private final Type type;
-
- private final long reportId;
-
- private final int page;
-
- private final ReportFilter filter;
-
- private final Map<Integer, String> values = new HashMap<>();
-
- private final Map<Integer, Long> reportIds = new HashMap<>();
-
- private final Map<String, String> attributes = new HashMap<>();
-
- private Inventory inventory;
-
-
-private ReportDeskHolder(Type type, long reportId, int page, ReportFilter filter) {
-
-
-
- this.type = type;
-
-
-
- this.reportId = reportId;
-
-
-
- this.page = page;
-
-
-
- this.filter = filter;
-
- }
-
-
-public static ReportDeskHolder of(Type type) {
-
-
-
- return new ReportDeskHolder(type, 0L, 1, ReportFilter.all());
-
- }
-
-
-public static ReportDeskHolder of(Type type, long reportId) {
-
-
-
- return new ReportDeskHolder(type, reportId, 1, ReportFilter.all());
-
- }
-
-
-public static ReportDeskHolder of(Type type, long reportId, int page) {
-
-
-
- return new ReportDeskHolder(type, reportId, page, ReportFilter.all());
-
- }
-
-
-public static ReportDeskHolder list(ReportFilter filter, int page) {
-
-
-
- return new ReportDeskHolder(Type.ADMIN_LIST, 0L, page,
-
-
-
-
-
- filter == null ? ReportFilter.all() : filter);
-
- }
-
-
-public static ReportDeskHolder filter(ReportFilter filter, int page) {
-
-
-
- return new ReportDeskHolder(Type.ADMIN_FILTER, 0L, page,
-
-
-
-
-
- filter == null ? ReportFilter.all() : filter);
-
- }
-
-
-public static ReportDeskHolder paged(Type type, int page) {
-
-
-
- return new ReportDeskHolder(type, 0L, page, ReportFilter.all());
-
- }
-
-
-public Type type() {
-
-
-
- return type;
-
- }
-
-
-public long reportId() {
-
-
-
- return reportId;
-
- }
-
-
-public int page() {
-
-
-
- return page;
-
- }
-
-
-public ReportFilter filter() {
-
-
-
- return filter;
-
- }
-
-
-public void putValue(int slot, String value) {
-
-
-
- if (value != null) {
-
-
-
-
-
- values.put(slot, value);
-
-
-
- }
-
- }
-
-
-public String value(int slot) {
-
-
-
- return values.get(slot);
-
- }
-
-
-public void putReportId(int slot, long id) {
-
-
-
- reportIds.put(slot, id);
-
- }
-
-
-public Long reportId(int slot) {
-
-
-
- return reportIds.get(slot);
-
- }
-
-
-public void putAttribute(String key, String value) {
-
-
-
- if (key != null && value != null) {
-
-
-
-
-
- attributes.put(key, value);
-
-
-
- }
-
- }
-
-
-public String attribute(String key) {
-
-
-
- return key == null ? null : attributes.get(key);
-
- }
-
-
-public String attribute(String key, String fallback) {
-
-
-
- String value = attribute(key);
-
-
-
- return value == null ? fallback : value;
-
- }
-
-
-void setInventory(Inventory inventory) {
-
-
-
- this.inventory = inventory;
-
- }
-
-
-@Override
-
- public Inventory getInventory() {
-
-
-
- return inventory;
-
- } }
+    return inventory;
+  }
+}

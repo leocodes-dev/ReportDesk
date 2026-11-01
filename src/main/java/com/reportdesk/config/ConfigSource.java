@@ -17,29 +17,27 @@
  */
 
 package com.reportdesk.config;
-import java.util.List; import java.util.Set;
+
+import java.util.List;
+import java.util.Set;
+
 /**
-* Minimal configuration abstraction so {@link ConfigLoader} can be tested
-* without a running Bukkit server.
-*/ public interface ConfigSource {
+ * Minimal configuration abstraction so {@link ConfigLoader} can be tested without a running Bukkit
+ * server.
+ */
+public interface ConfigSource {
 
+  String getString(String path, String fallback);
 
-String getString(String path, String fallback);
+  int getInt(String path, int fallback);
 
+  boolean getBoolean(String path, boolean fallback);
 
-int getInt(String path, int fallback);
+  List<String> getStringList(String path, List<String> fallback);
 
+  Set<String> keys(String path);
 
-boolean getBoolean(String path, boolean fallback);
+  boolean isSection(String path);
 
-
-List<String> getStringList(String path, List<String> fallback);
-
-
-Set<String> keys(String path);
-
-
-boolean isSection(String path);
-
-
-ConfigSource section(String path); }
+  ConfigSource section(String path);
+}

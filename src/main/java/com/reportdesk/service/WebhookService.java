@@ -17,575 +17,225 @@
  */
 
 package com.reportdesk.service;
-import com.google.gson.Gson; import com.reportdesk.ReportDeskPlugin; import com.reportdesk.config.PluginConfig; import com.reportdesk.core.Report; import com.reportdesk.i18n.MessageKeys; import com.reportdesk.i18n.Messages; import com.reportdesk.webhook.WebhookPayload;
-import java.net.URI; import java.net.http.HttpClient; import java.net.http.HttpRequest; import java.net.http.HttpResponse; import java.nio.charset.StandardCharsets; import java.time.Duration; import java.util.ArrayList; import java.util.List; import java.util.Map; import java.util.function.Consumer;
+
+import com.google.gson.Gson;
+import com.reportdesk.ReportDeskPlugin;
+import com.reportdesk.config.PluginConfig;
+import com.reportdesk.core.Report;
+import com.reportdesk.i18n.MessageKeys;
+import com.reportdesk.i18n.Messages;
+import com.reportdesk.webhook.WebhookPayload;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
 /**
-* Asynchronous Discord webhook integration. Disabled by default; no thread is
-* blocked and failures are only logged.
-*/ public final class WebhookService {
+ * Asynchronous Discord webhook integration. Disabled by default; no thread is blocked and failures
+ * are only logged.
+ */
+public final class WebhookService {
 
+  private final ReportDeskPlugin plugin;
 
-private final ReportDeskPlugin plugin;
+  private final Consumer<String> warning;
 
- private final Consumer<String> warning;
+  private final Gson gson = new Gson();
 
- private final Gson gson = new Gson();
+  private final HttpClient client;
 
- private final HttpClient client;
+  public WebhookService(ReportDeskPlugin plugin) {
 
+    this.plugin = plugin;
 
-public WebhookService(ReportDeskPlugin plugin) {
+    this.warning = message -> plugin.getLogger().warning("[webhook] " + message);
 
+    this.client =
+        HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
+  }
 
+  public void created(Report report) {
 
- this.plugin = plugin;
+    send("created", report, "");
+  }
 
+  public void claimed(Report report, String staffName) {
 
+    send("claimed", report, staffName);
+  }
 
- this.warning = message -> plugin.getLogger().warning("[webhook] " + message);
+  public void closed(Report report, String staffName) {
 
+    send("closed", report, staffName);
+  }
 
+  private void send(String event, Report report, String staffName) {
 
- this.client = HttpClient.newBuilder()
+    PluginConfig.Webhook settings = plugin.config().notifications().webhook();
 
+    if (!settings.enabled() || report == null) {
 
+      return;
+    }
 
+    boolean enabledForEvent =
+        switch (event) {
+          case "created" -> settings.eventCreated();
 
+          case "claimed" -> settings.eventClaimed();
 
- .connectTimeout(Duration.ofSeconds(10))
+          case "closed" -> settings.eventClosed();
 
+          default -> false;
+        };
 
+    if (!enabledForEvent) {
 
+      return;
+    }
 
+    if (settings.url() == null || settings.url().isBlank()) {
 
- .followRedirects(HttpClient.Redirect.NORMAL)
+      return;
+    }
 
+    Messages messages = plugin.messages();
 
+    String titleKey =
+        switch (event) {
+          case "created" -> MessageKeys.WEBHOOK_TITLE_CREATED;
 
+          case "claimed" -> MessageKeys.WEBHOOK_TITLE_CLAIMED;
 
+          default -> MessageKeys.WEBHOOK_TITLE_CLOSED;
+        };
 
- .build();
+    String contentKey =
+        switch (event) {
+          case "created" -> MessageKeys.WEBHOOK_CONTENT_CREATED;
 
- }
+          case "claimed" -> MessageKeys.WEBHOOK_CONTENT_CLAIMED;
 
+          default -> MessageKeys.WEBHOOK_CONTENT_CLOSED;
+        };
 
-public void created(Report report) {
+    Map<String, String> placeholders =
+        Map.of(
+            "id", String.valueOf(report.id()),
+            "target", report.targetName(),
+            "reporter", report.reporterName(),
+            "category", plugin.categoryDisplay(report.category()),
+            "status", messages.plain(statusKey(report.status())),
+            "staff", staffName == null ? "" : staffName);
 
+    List<WebhookPayload.Field> fields = new ArrayList<>();
 
+    fields.add(
+        new WebhookPayload.Field(
+            messages.plain(MessageKeys.WEBHOOK_FIELD_ID), String.valueOf(report.id()), true));
 
- send("created", report, "");
+    fields.add(
+        new WebhookPayload.Field(
+            messages.plain(MessageKeys.WEBHOOK_FIELD_TARGET), report.targetName(), true));
 
- }
+    fields.add(
+        new WebhookPayload.Field(
+            messages.plain(MessageKeys.WEBHOOK_FIELD_REPORTER), report.reporterName(), true));
 
+    fields.add(
+        new WebhookPayload.Field(
+            messages.plain(MessageKeys.WEBHOOK_FIELD_CATEGORY),
+            plugin.categoryDisplay(report.category()),
+            true));
 
-public void claimed(Report report, String staffName) {
+    fields.add(
+        new WebhookPayload.Field(
+            messages.plain(MessageKeys.WEBHOOK_FIELD_STATUS),
+            messages.plain(statusKey(report.status())),
+            true));
 
+    fields.add(
+        new WebhookPayload.Field(
+            messages.plain(MessageKeys.WEBHOOK_FIELD_STAFF),
+            staffName == null ? "" : staffName,
+            true));
 
+    fields.add(
+        new WebhookPayload.Field(
+            messages.plain(MessageKeys.WEBHOOK_FIELD_SERVER), report.server(), true));
 
- send("claimed", report, staffName);
+    if (!report.detail().isBlank()) {
 
- }
+      fields.add(
+          new WebhookPayload.Field(
+              messages.plain(MessageKeys.WEBHOOK_FIELD_DETAIL), report.detail(), false));
+    }
 
+    WebhookPayload payload =
+        new WebhookPayload(
+            settings.username(),
+            settings.avatarUrl(),
+            messages.plain(contentKey, placeholders),
+            messages.plain(titleKey, placeholders),
+            3447003,
+            fields);
 
-public void closed(Report report, String staffName) {
+    String body = gson.toJson(payload.toMap());
 
+    try {
 
+      HttpRequest request =
+          HttpRequest.newBuilder(URI.create(settings.url().trim()))
+              .timeout(Duration.ofSeconds(settings.timeoutSeconds()))
+              .header("Content-Type", "application/json; charset=utf-8")
+              .header("User-Agent", "ReportDesk/1.0")
+              .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+              .build();
 
- send("closed", report, staffName);
+      client
+          .sendAsync(request, HttpResponse.BodyHandlers.discarding())
+          .orTimeout(settings.timeoutSeconds() + 2L, java.util.concurrent.TimeUnit.SECONDS)
+          .whenComplete(
+              (response, throwable) -> {
+                if (throwable != null) {
 
- }
+                  warning.accept("send failed: " + throwable.getMessage());
 
+                } else if (response.statusCode() >= 400) {
 
-private void send(String event, Report report, String staffName) {
+                  warning.accept("Discord returned HTTP " + response.statusCode());
+                }
+              });
 
+    } catch (RuntimeException exception) {
 
+      warning.accept("invalid request: " + exception.getMessage());
+    }
+  }
 
- PluginConfig.Webhook settings = plugin.config().notifications().webhook();
+  private String statusKey(com.reportdesk.core.ReportStatus status) {
 
+    return switch (status) {
+      case OPEN -> MessageKeys.STATUS_OPEN;
 
+      case CLAIMED -> MessageKeys.STATUS_CLAIMED;
 
- if (!settings.enabled() || report == null) {
+      case RESOLVED -> MessageKeys.STATUS_RESOLVED;
 
+      case REJECTED -> MessageKeys.STATUS_REJECTED;
 
+      case DUPLICATE -> MessageKeys.STATUS_DUPLICATE;
 
-
-
- return;
-
-
-
- }
-
-
-
- boolean enabledForEvent = switch (event) {
-
-
-
-
-
- case "created" -> settings.eventCreated();
-
-
-
-
-
- case "claimed" -> settings.eventClaimed();
-
-
-
-
-
- case "closed" -> settings.eventClosed();
-
-
-
-
-
- default -> false;
-
-
-
- };
-
-
-
- if (!enabledForEvent) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
- if (settings.url() == null || settings.url().isBlank()) {
-
-
-
-
-
- return;
-
-
-
- }
-
-
-
-
-Messages messages = plugin.messages();
-
-
-
- String titleKey = switch (event) {
-
-
-
-
-
- case "created" -> MessageKeys.WEBHOOK_TITLE_CREATED;
-
-
-
-
-
- case "claimed" -> MessageKeys.WEBHOOK_TITLE_CLAIMED;
-
-
-
-
-
- default -> MessageKeys.WEBHOOK_TITLE_CLOSED;
-
-
-
- };
-
-
-
- String contentKey = switch (event) {
-
-
-
-
-
- case "created" -> MessageKeys.WEBHOOK_CONTENT_CREATED;
-
-
-
-
-
- case "claimed" -> MessageKeys.WEBHOOK_CONTENT_CLAIMED;
-
-
-
-
-
- default -> MessageKeys.WEBHOOK_CONTENT_CLOSED;
-
-
-
- };
-
-
-
- Map<String, String> placeholders = Map.of(
-
-
-
-
-
- "id", String.valueOf(report.id()),
-
-
-
-
-
- "target", report.targetName(),
-
-
-
-
-
- "reporter", report.reporterName(),
-
-
-
-
-
- "category", plugin.categoryDisplay(report.category()),
-
-
-
-
-
- "status", messages.plain(statusKey(report.status())),
-
-
-
-
-
- "staff", staffName == null ? "" : staffName
-
-
-
- );
-
-
-
-
-List<WebhookPayload.Field> fields = new ArrayList<>();
-
-
-
- fields.add(new WebhookPayload.Field(messages.plain(MessageKeys.WEBHOOK_FIELD_ID), String.valueOf(report.id()), true));
-
-
-
- fields.add(new WebhookPayload.Field(messages.plain(MessageKeys.WEBHOOK_FIELD_TARGET), report.targetName(), true));
-
-
-
- fields.add(new WebhookPayload.Field(messages.plain(MessageKeys.WEBHOOK_FIELD_REPORTER), report.reporterName(), true));
-
-
-
- fields.add(new WebhookPayload.Field(messages.plain(MessageKeys.WEBHOOK_FIELD_CATEGORY),
-
-
-
-
-
- plugin.categoryDisplay(report.category()), true));
-
-
-
- fields.add(new WebhookPayload.Field(messages.plain(MessageKeys.WEBHOOK_FIELD_STATUS),
-
-
-
-
-
- messages.plain(statusKey(report.status())), true));
-
-
-
- fields.add(new WebhookPayload.Field(messages.plain(MessageKeys.WEBHOOK_FIELD_STAFF),
-
-
-
-
-
- staffName == null ? "" : staffName, true));
-
-
-
- fields.add(new WebhookPayload.Field(messages.plain(MessageKeys.WEBHOOK_FIELD_SERVER), report.server(), true));
-
-
-
- if (!report.detail().isBlank()) {
-
-
-
-
-
- fields.add(new WebhookPayload.Field(messages.plain(MessageKeys.WEBHOOK_FIELD_DETAIL), report.detail(), false));
-
-
-
- }
-
-
-
-
-WebhookPayload payload = new WebhookPayload(
-
-
-
-
-
- settings.username(),
-
-
-
-
-
- settings.avatarUrl(),
-
-
-
-
-
- messages.plain(contentKey, placeholders),
-
-
-
-
-
- messages.plain(titleKey, placeholders),
-
-
-
-
-
- 3447003,
-
-
-
-
-
- fields
-
-
-
- );
-
-
-
- String body = gson.toJson(payload.toMap());
-
-
-
- try {
-
-
-
-
-
- HttpRequest request = HttpRequest.newBuilder(URI.create(settings.url().trim()))
-
-
-
-
-
-
-
- .timeout(Duration.ofSeconds(settings.timeoutSeconds()))
-
-
-
-
-
-
-
- .header("Content-Type", "application/json; charset=utf-8")
-
-
-
-
-
-
-
- .header("User-Agent", "ReportDesk/1.0")
-
-
-
-
-
-
-
- .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
-
-
-
-
-
-
-
- .build();
-
-
-
-
-
- client.sendAsync(request, HttpResponse.BodyHandlers.discarding())
-
-
-
-
-
-
-
- .orTimeout(settings.timeoutSeconds() + 2L, java.util.concurrent.TimeUnit.SECONDS)
-
-
-
-
-
-
-
- .whenComplete((response, throwable) -> {
-
-
-
-
-
-
-
-
-
- if (throwable != null) {
-
-
-
-
-
-
-
-
-
-
-
- warning.accept("send failed: " + throwable.getMessage());
-
-
-
-
-
-
-
-
-
- } else if (response.statusCode() >= 400) {
-
-
-
-
-
-
-
-
-
-
-
- warning.accept("Discord returned HTTP " + response.statusCode());
-
-
-
-
-
-
-
-
-
- }
-
-
-
-
-
-
-
- });
-
-
-
- } catch (RuntimeException exception) {
-
-
-
-
-
- warning.accept("invalid request: " + exception.getMessage());
-
-
-
- }
-
- }
-
-
-private String statusKey(com.reportdesk.core.ReportStatus status) {
-
-
-
- return switch (status) {
-
-
-
-
-
- case OPEN -> MessageKeys.STATUS_OPEN;
-
-
-
-
-
- case CLAIMED -> MessageKeys.STATUS_CLAIMED;
-
-
-
-
-
- case RESOLVED -> MessageKeys.STATUS_RESOLVED;
-
-
-
-
-
- case REJECTED -> MessageKeys.STATUS_REJECTED;
-
-
-
-
-
- case DUPLICATE -> MessageKeys.STATUS_DUPLICATE;
-
-
-
-
-
- case AUTO_CLOSED -> MessageKeys.STATUS_AUTO_CLOSED;
-
-
-
- };
-
- } }
+      case AUTO_CLOSED -> MessageKeys.STATUS_AUTO_CLOSED;
+    };
+  }
+}

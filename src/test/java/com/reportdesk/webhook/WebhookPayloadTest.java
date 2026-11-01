@@ -17,226 +17,118 @@
  */
 
 package com.reportdesk.webhook;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
-import java.util.List; import java.util.Map;
-import static org.junit.jupiter.api.Assertions.assertEquals; import static org.junit.jupiter.api.Assertions.assertFalse; import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class WebhookPayloadTest {
 
+  @Test
+  void defaultsAndBlankAvatarAreHandled() {
 
-@Test
+    WebhookPayload payload = new WebhookPayload(null, " ", null, null, 0, null);
 
- void defaultsAndBlankAvatarAreHandled() {
+    Map<String, Object> map = payload.toMap();
 
+    assertEquals("ReportDesk", map.get("username"));
 
+    assertFalse(map.containsKey("avatar_url"));
 
- WebhookPayload payload = new WebhookPayload(null, " ", null, null, 0, null);
+    assertEquals("", map.get("content"));
+  }
 
+  @Test
+  void avatarIsIncludedWhenPresent() {
 
+    WebhookPayload payload =
+        new WebhookPayload("Desk", "https://example.com/a.png", "", "Title", 1, List.of());
 
- Map<String, Object> map = payload.toMap();
+    assertEquals("https://example.com/a.png", payload.toMap().get("avatar_url"));
+  }
 
+  @Test
+  void longTextIsTruncatedToPlatformLimits() {
 
+    String longContent = "x".repeat(2_000);
 
+    String longTitle = "t".repeat(300);
 
-assertEquals("ReportDesk", map.get("username"));
+    WebhookPayload payload =
+        new WebhookPayload(
+            "Desk",
+            "",
+            longContent,
+            longTitle,
+            0,
+            List.of(new WebhookPayload.Field("n".repeat(300), "v".repeat(1_100), true)));
 
+    Map<String, Object> map = payload.toMap();
 
+    String content = (String) map.get("content");
 
- assertFalse(map.containsKey("avatar_url"));
+    assertEquals(1_900, content.length());
 
+    assertTrue(content.endsWith("…"));
 
+    @SuppressWarnings("unchecked")
+    Map<String, Object> embed = ((List<Map<String, Object>>) map.get("embeds")).get(0);
 
- assertEquals("", map.get("content"));
+    assertEquals(256, ((String) embed.get("title")).length());
 
- }
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> fields = (List<Map<String, Object>>) embed.get("fields");
 
+    assertEquals(1, fields.size());
 
-@Test
+    assertEquals(256, ((String) fields.get(0).get("name")).length());
 
- void avatarIsIncludedWhenPresent() {
+    assertEquals(1_024, ((String) fields.get(0).get("value")).length());
+  }
 
+  @Test
+  void fieldsWithBlankNamesAreDroppedAndInlinePreserved() {
 
+    WebhookPayload payload =
+        new WebhookPayload(
+            "Desk",
+            "",
+            "",
+            "Title",
+            5,
+            List.of(
+                new WebhookPayload.Field("", "ignored", true),
+                new WebhookPayload.Field(null, "ignored", true),
+                new WebhookPayload.Field("Target", "Bob", false)));
 
- WebhookPayload payload = new WebhookPayload("Desk", "https://example.com/a.png", "", "Title", 1,
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> fields =
+        (List<Map<String, Object>>)
+            ((List<Map<String, Object>>) payload.toMap().get("embeds")).get(0).get("fields");
 
+    assertEquals(1, fields.size());
 
+    assertEquals("Target", fields.get(0).get("name"));
 
+    assertEquals("Bob", fields.get(0).get("value"));
 
+    assertEquals(false, fields.get(0).get("inline"));
+  }
 
- List.of());
+  @Test
+  void nullFieldListBecomesEmptyEmbed() {
 
+    WebhookPayload payload = new WebhookPayload("Desk", "", "", "Title", 0, List.of());
 
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> fields =
+        (List<Map<String, Object>>)
+            ((List<Map<String, Object>>) payload.toMap().get("embeds")).get(0).get("fields");
 
- assertEquals("https://example.com/a.png", payload.toMap().get("avatar_url"));
-
- }
-
-
-@Test
-
- void longTextIsTruncatedToPlatformLimits() {
-
-
-
- String longContent = "x".repeat(2_000);
-
-
-
- String longTitle = "t".repeat(300);
-
-
-
- WebhookPayload payload = new WebhookPayload("Desk", "", longContent, longTitle, 0,
-
-
-
-
-
- List.of(new WebhookPayload.Field("n".repeat(300), "v".repeat(1_100), true)));
-
-
-
-
-Map<String, Object> map = payload.toMap();
-
-
-
- String content = (String) map.get("content");
-
-
-
- assertEquals(1_900, content.length());
-
-
-
- assertTrue(content.endsWith("…"));
-
-
-
-
-@SuppressWarnings("unchecked")
-
-
-
- Map<String, Object> embed = ((List<Map<String, Object>>) map.get("embeds")).get(0);
-
-
-
- assertEquals(256, ((String) embed.get("title")).length());
-
-
-
-
-@SuppressWarnings("unchecked")
-
-
-
- List<Map<String, Object>> fields = (List<Map<String, Object>>) embed.get("fields");
-
-
-
- assertEquals(1, fields.size());
-
-
-
- assertEquals(256, ((String) fields.get(0).get("name")).length());
-
-
-
- assertEquals(1_024, ((String) fields.get(0).get("value")).length());
-
- }
-
-
-@Test
-
- void fieldsWithBlankNamesAreDroppedAndInlinePreserved() {
-
-
-
- WebhookPayload payload = new WebhookPayload("Desk", "", "", "Title", 5, List.of(
-
-
-
-
-
- new WebhookPayload.Field("", "ignored", true),
-
-
-
-
-
- new WebhookPayload.Field(null, "ignored", true),
-
-
-
-
-
- new WebhookPayload.Field("Target", "Bob", false)
-
-
-
- ));
-
-
-
-
-@SuppressWarnings("unchecked")
-
-
-
- List<Map<String, Object>> fields = (List<Map<String, Object>>) ((List<Map<String, Object>>)
-
-
-
-
-
- payload.toMap().get("embeds")).get(0).get("fields");
-
-
-
-
-assertEquals(1, fields.size());
-
-
-
- assertEquals("Target", fields.get(0).get("name"));
-
-
-
- assertEquals("Bob", fields.get(0).get("value"));
-
-
-
- assertEquals(false, fields.get(0).get("inline"));
-
- }
-
-
-@Test
-
- void nullFieldListBecomesEmptyEmbed() {
-
-
-
- WebhookPayload payload = new WebhookPayload("Desk", "", "", "Title", 0, List.of());
-
-
-
- @SuppressWarnings("unchecked")
-
-
-
- List<Map<String, Object>> fields = (List<Map<String, Object>>) ((List<Map<String, Object>>)
-
-
-
-
-
- payload.toMap().get("embeds")).get(0).get("fields");
-
-
-
- assertTrue(fields.isEmpty());
-
- } }
+    assertTrue(fields.isEmpty());
+  }
+}
