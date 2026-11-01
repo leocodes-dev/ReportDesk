@@ -351,10 +351,7 @@ public final class Messages {
       return List.of();
     }
 
-    return lines.stream()
-        .map(line -> plain(render(line, Map.of())))
-        .filter(s -> !s.isBlank())
-        .toList();
+    return lines.stream().map(line -> plain(render(line, Map.of()))).filter(s -> !s.isBlank()).toList();
   }
 
   private static Map<String, Object> read(Path path, Consumer<String> warning) {
