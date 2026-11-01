@@ -13,4 +13,4 @@ All notable changes to this project will be documented in this file.
 - 通知系统：站内通知、离线队列、关注列表提醒、Webhook 推送
 - 游戏内配置编辑：`/reports config` 直接改 `config.yml`
 - 支持 Paper 1.20 – 1.21.x，Java 17+ 运行
-- 许可：GNU Affero General Public License v3.0（AGPL-3.0）
+- 许可：GNU General Public License v3.0（GPL-3.0-or-later）

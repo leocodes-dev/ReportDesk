@@ -99,4 +99,4 @@ ReportDesk 是一个面向 Minecraft 服务器的玩家举报工作台：完整�
 
 ## 许可
 
-本项目采用 [GNU Affero General Public License v3.0](LICENSE)（AGPL-3.0）许可。网络使用被视为分发，任何修改版必须同样开源。
+本项目采用 [GNU General Public License v3.0](LICENSE)（GPL-3.0-or-later）许可。任何修改版必须同样以 GPLv3 发布，并随二进制提供完整源码。
