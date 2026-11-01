@@ -351,7 +351,17 @@ public final class Messages {
       return List.of();
     }
 
-    return lines.stream().map(line -> plain(render(line, Map.of()))).filter(s -> !s.isBlank()).toList();
+    return lines.stream().map(this::renderPlain).filter(s -> !s.isBlank()).toList();
+  }
+
+  /**
+   * Renders a MiniMessage template and strips styling, so plain-text consumers
+   *
+   * <p>(webhooks, punishment commands) see the localized words without tags.
+   */
+  private String renderPlain(String template) {
+
+    return plain(render(template, Map.of()));
   }
 
   private static Map<String, Object> read(Path path, Consumer<String> warning) {
