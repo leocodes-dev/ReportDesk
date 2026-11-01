@@ -1,0 +1,343 @@
+# ============================================================
+# ReportDesk 举报中心
+# ------------------------------------------------------------
+# 所有业务阈值都在本文件中。代码不会硬编码这些值；缺失或非法
+# 的值会自动回退到默认值并在控制台给出警告。
+#
+# 增强层（证据采集 / 轨迹 / 自动检测 / 联动处罚）默认全部关闭，
+# 关闭时不会注册高频事件监听器，也不会产生额外主线程开销。
+# ============================================================
+
+# 服务器名称，仅用于展示、审计与 Webhook。
+server-name: 'ReportDesk Server'
+
+# 消息语言：zh_CN 或 en_US（缺失时使用 zh_CN）。
+language: zh_CN
+
+storage:
+  # 数据目录（相对插件数据目录）。修改后需要重启服务器。
+  directory: data
+  # 每次保存前是否备份 reports.json。
+  backup-on-save: true
+  # 最多保留的备份数量。
+  max-backups: 5
+  # 两次备份之间的最小间隔（分钟）。
+  backup-interval-minutes: 60
+  # 关闭服务器时等待异步写入完成的最长时间（秒）。
+  shutdown-timeout-seconds: 5
+  # 写入日志累计多少条后自动合并（压缩）进 reports.json。
+  # 日常保存只追加到 reports.log（每行一条），达到该条数或下面的时间间隔时
+  # 才全量重写一次 reports.json，避免每次操作都整文件序列化。
+  compact-after-entries: 50
+  # 两次自动合并之间的最大间隔（分钟）。0 表示不按时间合并，只按条数。
+  compact-interval-minutes: 360
+
+limits:
+  # 同一个玩家两次执行 /report 的最小间隔（毫秒）。
+  command-cooldown-millis: 1000
+  # 举报冷却（秒）。0 表示关闭。
+  cooldown-seconds: 60
+  # 每日举报上限。0 表示不限制。
+  daily-limit: 10
+  # 对同一目标重复举报的间隔（秒）。0 表示关闭。
+  same-target-interval-seconds: 300
+  # 同一举报人+目标在多少秒内视为重复举报。0 表示关闭。
+  duplicate-window-seconds: 600
+  # 同一目标最多同时存在多少条未处理举报。0 表示不限制。
+  max-open-per-target: 3
+  # 举报人账号最低注册时长（分钟）。0 表示关闭。
+  min-account-age-minutes: 0
+  # 是否禁止举报自己。
+  block-self-report: true
+  # 是否允许举报离线玩家。
+  allow-offline-target: true
+  # 是否强制要求目标在线（优先于 allow-offline-target）。
+  require-target-online: false
+  # 拥有此权限的玩家不受冷却、每日上限、重复间隔限制。
+  bypass-permission: 'reportdesk.bypass.limits'
+
+reports:
+  # 文本列表每页条数。
+  text-page-size: 10
+  # 管理 GUI 每页条数（最多 28，推荐 28）。
+  gui-page-size: 28
+  # 是否自动关闭长时间未处理的举报。
+  auto-close-enabled: true
+  # 超过多少天未处理自动关闭。
+  auto-close-days: 14
+  # 已结束举报保留天数。0 表示永久保留。
+  retention-days: 90
+  # 后台维护任务间隔（分钟）。
+  maintenance-interval-minutes: 30
+  # /reports stats 展示的被举报最多的目标数量。
+  stats-top-targets: 3
+  # /reports stats 展示的处理量最高的管理员数量。
+  staff-stats-top: 5
+  # 默认分类 ID。
+  default-category: 'other'
+
+  # 举报优先级与处理时限（SLA）。
+  priority:
+    # 是否启用优先级与超时提醒。关闭后所有举报使用分类默认优先级。
+    enabled: true
+    # 目标已有多少条未处理举报时提升优先级。0 表示关闭。
+    repeat-offender-threshold: 3
+    # 达到阈值时提升到的优先级：low / normal / high / urgent。
+    repeat-offender-level: high
+    # 超时检查间隔（分钟）。
+    overdue-check-minutes: 15
+    # 超时后是否提醒在线管理员（每 条举报只提醒一次）。
+    overdue-alert-enabled: true
+    # 各优先级的处理时限（小时）。0 表示不追踪超时。
+    sla-hours:
+      urgent: 2
+      high: 6
+      normal: 24
+      low: 72
+
+  # 举报对话：玩家与管理员可在举报下互相回复。
+  replies:
+    enabled: true
+    # 是否允许举报人回复自己的举报。
+    allow-player-replies: true
+    # 单条回复最大长度。
+    max-length: 300
+    # 每条举报最多保留的回复数量。
+    max-per-report: 50
+    # 新回复时是否通知对方。
+    notify: true
+
+  # 聊天违规多选举报。需要同时开启 evidence.enabled、evidence.capture-on-report 与 evidence.capture.chat-log。
+  chat-report:
+    # 是否启用聊天记录多选举报（默认关闭）。
+    enabled: false
+    # 使用哪个举报分类来触发聊天记录选择（填写分类 ID 或别名）。
+    category: 'chat'
+    # 一次举报最多勾选多少条聊天记录。
+    max-selected: 5
+
+  # 举报分类。键名即分类 ID，可自行增删。
+  # display: 显示名称
+  # icon: Bukkit Material 名称
+  # aliases: 命令别名（/report <玩家> <别名>）
+  # priority: 越大越靠前，仅用于展示
+  categories:
+    cheating:
+      display: '作弊 / 外挂'
+      icon: DIAMOND_SWORD
+      aliases: [cheat, hack, xray, wai_gua]
+      enabled: true
+      priority: 100
+      severity: high
+      description:
+        - '飞行、加速、自动点击、透视等'
+    chat:
+      display: '聊天违规'
+      icon: PAPER
+      aliases: [chat, insult, spam, ma_ren]
+      enabled: true
+      priority: 90
+      severity: normal
+      description:
+        - '辱骂、刷屏、骚扰等'
+    grief:
+      display: '破坏 / 偷窃'
+      icon: IRON_PICKAXE
+      aliases: [grief, steal, po_hui]
+      enabled: true
+      priority: 80
+      severity: high
+      description:
+        - '破坏建筑、偷取物品等'
+    advertising:
+      display: '广告 / 引流'
+      icon: MAP
+      aliases: [ad, advertise, guang_gao]
+      enabled: true
+      priority: 70
+      severity: normal
+      description:
+        - '宣传其他服务器、发布外部链接等'
+    bug:
+      display: '利用漏洞'
+      icon: REDSTONE
+      aliases: [bug, exploit, lou_dong]
+      enabled: true
+      priority: 60
+      severity: normal
+      description:
+        - '复制物品、卡服、利用机制漏洞等'
+    inappropriate:
+      display: '不当内容'
+      icon: BOOK
+      aliases: [skin, name, building]
+      enabled: true
+      priority: 50
+      severity: low
+      description:
+        - '不文明皮肤、昵称或建筑等'
+    other:
+      display: '其他'
+      icon: WRITABLE_BOOK
+      aliases: [other, misc]
+      enabled: true
+      priority: 10
+      severity: low
+      description:
+        - '其他需要管理员处理的问题'
+
+gui:
+  # 是否启用 GUI。关闭后只能使用命令。
+  enabled: true
+  # 是否填充空白槽位。
+  fill-empty-slots: true
+  # 管理操作后是否自动关闭 GUI。
+  close-on-action: false
+  sounds:
+    enabled: true
+    click: 'ui.button.click'
+    success: 'entity.player.levelup'
+    error: 'entity.villager.no'
+  admin:
+    # 是否启用管理员管理台（/reports 无参数时打开，也可用 /reports menu）。
+    enabled: true
+    # 清理、维护等破坏性操作是否需要在 GUI 内二次确认。
+    confirm-destructive: true
+
+notifications:
+  staff:
+    # 新举报时通知在线管理员。
+    enabled: true
+    permission: 'reportdesk.notify'
+    sound-enabled: true
+    sound: 'block.note_block.pling'
+  reporter:
+    # 举报状态变化时通知举报人。
+    enabled: true
+    # 举报人离线时暂存通知，上线后补发。
+    queue-offline: true
+    # 每位玩家最多暂存多少条通知（超出时丢弃最旧的）。
+    max-queued: 20
+    # 暂存通知保留天数。0 表示永久保留。
+    queue-retention-days: 30
+  watchlist:
+    # 管理员可使用 /reports watch <玩家> 关注玩家。
+    enabled: true
+    # 每位管理员最多关注多少玩家。
+    max-targets: 20
+    # 被关注玩家收到新举报时是否立即提醒关注者。
+    notify-on-report: true
+  broadcast:
+    # 是否向全服广播新举报（默认关闭，避免刷屏）。
+    enabled: false
+  webhook:
+    # Discord Webhook（异步发送，默认关闭）。
+    enabled: false
+    url: ''
+    timeout-seconds: 5
+    username: 'ReportDesk'
+    avatar-url: ''
+    events:
+      created: true
+      claimed: true
+      closed: true
+
+evidence:
+  # 证据层总开关。默认 false。
+  enabled: false
+  # 提交举报时自动采集在线目标的快照。
+  capture-on-report: true
+  # 证据保留天数。0 表示永久保留。
+  retention-days: 30
+  # 每个玩家保留的聊天条数。
+  chat-log-size: 20
+  # 单条聊天样本的最大字符数。
+  chat-max-length: 256
+  capture:
+    location: true
+    game-mode: true
+    health: true
+    inventory: true
+    # 最多记录多少个物品栏槽位。
+    inventory-max-items: 41
+    # 物品显示名最多保留的字符数。
+    display-name-max-length: 80
+    chat-log: true
+    ping: true
+  block-break:
+    # 仅采集方块破坏样本，默认 false。启用后才注册 BlockBreakEvent。
+    enabled: false
+    # 每个玩家在内存中最多保留的样本数。
+    max-per-player: 100
+  movement:
+    # 轨迹采样，默认 false。启用后才注册 PlayerMoveEvent。
+    enabled: false
+    # 采样最小间隔（tick）。
+    min-interval-ticks: 20
+    # 每个玩家最多保留的样本数。
+    max-samples: 60
+  auto-detect:
+    # 自动检测默认 false。只生成报告/通知，不会处罚。
+    enabled: false
+    # 检测任务间隔（秒）。
+    check-interval-seconds: 5
+    # 统计窗口（秒）。
+    window-seconds: 10
+    # 窗口内方块破坏次数达到多少触发。
+    block-break-threshold: 40
+    # 同一目标两次自动报告的最小间隔（秒）。
+    cooldown-seconds: 300
+    # 是否生成系统举报（false 时只通知管理员）。
+    create-report: true
+    # 是否通知在线管理员。
+    notify-staff: true
+
+punishments:
+  # 联动处罚默认 false。关闭时不会执行任何命令。
+  enabled: false
+  # 举报被判定为成立时执行的命令（不含前导 /）。
+  # 可用占位符：%player% %reason% %id% %staff% %verdict%
+  resolved-commands: []
+  # 举报被判定为不成立时执行的命令。
+  rejected-commands: []
+
+audit:
+  # 是否记录管理操作审计日志（异步写入）。
+  enabled: true
+  # 审计日志保留天数。
+  retention-days: 180
+  # /reports audit 每页条数。
+  page-size: 10
+
+config-editor:
+  # 是否允许管理员在游戏内通过 /reports config set 修改配置。
+  # 关闭后 /reports config list 与 get 仍可查看，但不能修改。
+  enabled: true
+  # 写入 config.yml 前是否先备份（备份到数据目录的 backups 文件夹）。
+  backup-on-save: true
+  # 最多保留的 config.yml 备份数量。
+  max-backups: 5
+  # 单个配置值允许的最大字符数，防止误粘贴超长内容。
+  max-value-length: 256
+
+security:
+  # 管理操作限流（毫秒）。
+  admin-cooldown-millis: 300
+  # GUI 聊天输入等待超时（秒）。
+  pending-timeout-seconds: 120
+  # 举报详情最短长度。
+  detail-min-length: 2
+  # 举报详情最长长度。
+  detail-max-length: 200
+  # 管理员备注最长长度。
+  note-max-length: 500
+  # 每条举报最多保留的管理员备注数量。
+  max-notes-per-report: 20
+  # 是否强制填写举报详情。
+  detail-required: false
+  # 是否允许 § 颜色代码。
+  allow-color-codes: false
+  # 玩家名校验正则。
+  player-name-pattern: '^[A-Za-z0-9_]{3,16}$'
+  # 举报详情中禁止出现的词（不区分大小写）。
+  blocked-words: []

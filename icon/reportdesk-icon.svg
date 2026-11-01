@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B1F2A"/>
+      <stop offset="1" stop-color="#10131B"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E5484D"/>
+      <stop offset="1" stop-color="#C4353B"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="200" fill="url(#bg)"/>
+  <circle cx="512" cy="540" r="430" fill="#FFFFFF" opacity="0.035"/>
+
+  <!-- shield -->
+  <path d="M512 168 L790 272 V560 C790 762 512 856 512 856 C512 856 234 762 234 560 V272 Z"
+        fill="url(#shield)" stroke="#1B1F2A" stroke-width="40" stroke-linejoin="round"/>
+  <!-- shield bevel highlights + inner outline -->
+  <path d="M280 316 L502 218" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" opacity="0.35"/>
+  <path d="M522 218 L744 316" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" opacity="0.35"/>
+  <path d="M512 216 L748 306 V558 C748 722 512 812 512 812 C512 812 276 722 276 558 V306 Z"
+        fill="none" stroke="#000000" stroke-opacity="0.12" stroke-width="22"/>
+
+  <!-- document -->
+  <g>
+    <rect x="376" y="340" width="272" height="356" rx="32" fill="#F5F6FA"/>
+    <!-- fold corner -->
+    <path d="M548 340 H580 a32 32 0 0 1 32 32 V404 H548 Z" fill="#D3D8E6"/>
+    <!-- lines: title -->
+    <rect x="416" y="412" width="150" height="28" rx="14" fill="#5A6274"/>
+    <!-- lines: body -->
+    <rect x="416" y="464" width="192" height="20" rx="10" fill="#B9C0D2"/>
+    <rect x="416" y="504" width="192" height="20" rx="10" fill="#B9C0D2"/>
+    <rect x="416" y="544" width="130" height="20" rx="10" fill="#B9C0D2"/>
+
+    <!-- signature block: avatar dot + label line + clean rounded check -->
+    <g>
+      <circle cx="438" cy="656" r="22" fill="#2FBF71"/>
+      <rect x="474" y="640" width="96" height="14" rx="7" fill="#B9C0D2"/>
+      <rect x="474" y="664" width="60" height="14" rx="7" fill="#D6DAE5"/>
+      <path d="M568 668 l16 16 28 -32" fill="none" stroke="#2FBF71"
+            stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+
+  <!-- alert badge -->
+  <g>
+    <circle cx="744" cy="300" r="88" fill="#FF5C5C" stroke="#1B1F2A" stroke-width="16"/>
+    <rect x="730" y="248" width="28" height="60" rx="14" fill="#FFFFFF"/>
+    <circle cx="744" cy="340" r="16" fill="#FFFFFF"/>
+  </g>
+</svg>

@@ -1,0 +1,6 @@
+name: ReportDesk
+version: '1.0.0'
+main: com.reportdesk.ReportDeskPlugin
+api-version: '1.20'
+description: 'A full-featured player reporting desk: report GUI, admin workflow, async storage, audit log and optional evidence layer.'
+authors: [ReportDesk]

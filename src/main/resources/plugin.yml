@@ -1,0 +1,55 @@
+# Legacy command/permission declarations. paper-plugin.yml is the authoritative
+# plugin descriptor (api-version '1.20'). This file is kept so /report and
+# /reports keep working on servers that still resolve commands from plugin.yml;
+# the plugin also has a runtime CommandMap fallback.
+name: ReportDesk
+version: '1.0.0'
+main: com.reportdesk.ReportDeskPlugin
+api-version: '1.20'
+description: 'A full-featured player reporting desk.'
+authors: [ReportDesk]
+
+commands:
+  report:
+    description: Open the report desk or report a player.
+    usage: /report [player] [category] [details...]
+    aliases: [rdreport, jb]
+  reports:
+    description: Manage player reports.
+    usage: /reports help
+    aliases: [reportdesk, rd]
+
+permissions:
+  reportdesk.report:
+    description: Allows creating reports.
+    default: true
+  reportdesk.admin:
+    description: Allows the admin report desk.
+    default: op
+  reportdesk.admin.close:
+    description: Allows closing reports.
+    default: op
+  reportdesk.admin.delete:
+    description: Allows deleting and purging reports.
+    default: op
+  reportdesk.notify:
+    description: Receives new report notifications.
+    default: op
+  reportdesk.evidence:
+    description: Allows reading captured evidence.
+    default: op
+  reportdesk.reload:
+    description: Allows reloading ReportDesk.
+    default: op
+  reportdesk.config:
+    description: Allows viewing and editing ReportDesk settings in game.
+    default: op
+  reportdesk.watch:
+    description: Allows following players with the report watchlist.
+    default: op
+  reportdesk.bypass.limits:
+    description: Bypasses report cooldowns and daily limits.
+    default: false
+  reportdesk.bypass.evidence:
+    description: Excluded from the optional evidence layer.
+    default: false
