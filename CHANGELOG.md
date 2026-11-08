@@ -7,7 +7,7 @@
 
 ## Release 1.0.0
 
-**发布日期** 2026-11-01 · **标签** `v1.0.0` · **产物** `ReportDesk-1.0.0.jar` · **许可证** GPL-3.0-or-later
+**发布日期** 2026-11-01 · **标签** `v1.0.0` · **产物** `ReportDesk-1.0.0.jar` · **许可证** GNU General Public License v3.0 only
 
 > 本条目为项目**首个版本**：所有条目均为首次引入的功能与基线设计，因此不设「优化」「修复」分类
 >（无既有版本可作为对比基线）。
@@ -16,13 +16,13 @@
 
 ReportDesk 1.0.0 是项目首个正式发布版本，完整实现了「玩家举报 → 管理员受理 → 结案归档」工作流：玩家端举报 GUI 与 `/report` 命令、管理端 `/reports` 工作台式受理流程（20 余个子命令与 54 格管理 GUI）、四级优先级与 SLA 超时提醒、举报回复串、关注列表与离线举报人补发队列、Discord Webhook 推送、可整体开关的证据采集增强层（方块破坏采样、移动轨迹、聊天记录、自动检测）与联动处罚（均默认关闭），以及游戏内配置编辑器。所有业务阈值集中于 `config.yml`，代码中无任何硬编码魔法数；举报记录、证据、审计日志全部在专用异步线程上持久化，主线程零文件 IO、零数据库 IO；所有增强功能默认 `false`，关闭路径入口仅一次开关判断即短路返回。本版本兼容 Paper 1.20–1.21.x（`api-version` 锁定为 `'1.20'`，Java 17 字节码），并随附 27 个测试类覆盖配置加载与校验、限流、输入校验、举报状态机、存储 WAL 回放、审计日志、CSV 导出、Webhook 载荷与 i18n 键完整性。
 
-1.0.0 同时确立了工程基线：`AGENTS.md` 十项开发硬约束（`api-version` 锁定、阈值配置驱动、高频事件限制、权限/限流/输入校验、异步存储、固定构建命令、Git 备份流程、更新日志强制记录）、GPLv3 许可证、README 与 ROADMAP 文档，以及官方图标资产。
+1.0.0 同时确立了工程基线：`AGENTS.md` 十项开发硬约束（`api-version` 锁定、阈值配置驱动、高频事件限制、权限/限流/输入校验、异步存储、固定构建命令、Git 备份流程、更新日志强制记录）、GNU General Public License v3.0 only 许可证、README 与 ROADMAP 文档，以及官方图标资产。
 
 ### Summary
 
 ReportDesk 1.0.0 is the first official release, delivering the complete "report → triage → closure" workflow: a player-facing report GUI and `/report` command, an admin `/reports` desk with 20+ subcommands and a 54-slot admin GUI, four-tier report priority with SLA overdue alerts, per-report reply threads, a staff watchlist with an offline reporter notice queue, Discord Webhook push, an opt-in evidence layer (block-break sampling, movement trails, chat capture, auto-detection) and opt-in linked punishments — all disabled by default — plus an in-game configuration editor. Every business threshold lives in `config.yml` with no hardcoded values in code; report, evidence and audit data are persisted on dedicated asynchronous threads, keeping the main thread free of file and database IO; every enhancement feature defaults to `false` and short-circuits on a single switch check when disabled. This release targets Paper 1.20–1.21.x (`api-version` pinned to `'1.20'`, Java 17 bytecode) and ships 27 test classes covering configuration loading and validation, rate limiting, input validation, the report state machine, storage WAL replay, audit logging, CSV export, Webhook payloads and i18n key parity.
 
-The 1.0.0 release also establishes the project's engineering baseline: the ten hard constraints of `AGENTS.md` (pinned `api-version`, config-driven thresholds, high-frequency event restrictions, permission/rate-limit/input validation, asynchronous storage, a fixed build command, a mandatory git backup workflow and a mandatory changelog), GPLv3 licensing, README/ROADMAP documentation, and the official icon assets.
+The 1.0.0 release also establishes the project's engineering baseline: the ten hard constraints of `AGENTS.md` (pinned `api-version`, config-driven thresholds, high-frequency event restrictions, permission/rate-limit/input validation, asynchronous storage, a fixed build command, a mandatory git backup workflow and a mandatory changelog), the GNU General Public License v3.0 only, README/ROADMAP documentation, and the official icon assets.
 
 ### 亮点
 
@@ -152,7 +152,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 
 - 新增 `AGENTS.md`：十项开发硬约束与「变更日志强制记录」规则（本文件的格式与提交顺序即其产物）。
 - 新增 `README.md`：功能总览、指令与权限速查表、安装说明与支持版本说明；新增 `ROADMAP.md`：v1.1.0 的 P0（数据迁移框架、`Report` 字段扩展、已知缺陷清单）、P1（指派/转派、SLA 报表、双 Webhook、数据看板、审计防篡改）、P2（更多入口、富文本、轨迹回放、策略插件化、生态互通、批量操作、语言热加载）规划及「明确不做」边界（不引入数据库、不做网页面板、不做跨服同步、不自动处罚、不兼容 1.20 以下）。
-- 许可证改为 GNU GPLv3（`GPL-3.0-or-later`），随附 `LICENSE`；新增官方图标资产（`icon/reportdesk-icon.png` / `.svg`）。
+- 项目以 GNU General Public License v3.0 only 发布，随附 `LICENSE` 全文；新增官方图标资产（`icon/reportdesk-icon.png` / `.svg`）。
 
 #### 兼容性
 
