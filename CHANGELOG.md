@@ -16,13 +16,13 @@
 
 ReportDesk 1.0.0 是项目首个正式发布版本，完整实现了「玩家举报 → 管理员受理 → 结案归档」工作流：玩家端举报 GUI 与 `/report` 命令、管理端 `/reports` 工作台式受理流程（20 余个子命令与 54 格管理 GUI）、四级优先级与 SLA 超时提醒、举报回复串、关注列表与离线举报人补发队列、Discord Webhook 推送、可整体开关的证据采集增强层（方块破坏采样、移动轨迹、聊天记录、自动检测）与联动处罚（均默认关闭），以及游戏内配置编辑器。所有业务阈值集中于 `config.yml`，代码中无任何硬编码魔法数；举报记录、证据、审计日志全部在专用异步线程上持久化，主线程零文件 IO、零数据库 IO；所有增强功能默认 `false`，关闭路径入口仅一次开关判断即短路返回。本版本兼容 Paper 1.20–1.21.x（`api-version` 锁定为 `'1.20'`，Java 17 字节码），并随附 27 个测试类覆盖配置加载与校验、限流、输入校验、举报状态机、存储 WAL 回放、审计日志、CSV 导出、Webhook 载荷与 i18n 键完整性。
 
-1.0.0 同时确立了工程基线：`AGENTS.md` 十项开发硬约束（`api-version` 锁定、阈值配置驱动、高频事件限制、权限/限流/输入校验、异步存储、固定构建命令、Git 备份流程、更新日志强制记录）、GPLv3 许可证、README 与 ROADMAP 文档、`docs/` 文档站（9 个章节 + 索引），以及官方图标资产。
+1.0.0 同时确立了工程基线：`AGENTS.md` 十项开发硬约束（`api-version` 锁定、阈值配置驱动、高频事件限制、权限/限流/输入校验、异步存储、固定构建命令、Git 备份流程、更新日志强制记录）、GPLv3 许可证、README 与 ROADMAP 文档，以及官方图标资产。
 
 ### Summary
 
 ReportDesk 1.0.0 is the first official release, delivering the complete "report → triage → closure" workflow: a player-facing report GUI and `/report` command, an admin `/reports` desk with 20+ subcommands and a 54-slot admin GUI, four-tier report priority with SLA overdue alerts, per-report reply threads, a staff watchlist with an offline reporter notice queue, Discord Webhook push, an opt-in evidence layer (block-break sampling, movement trails, chat capture, auto-detection) and opt-in linked punishments — all disabled by default — plus an in-game configuration editor. Every business threshold lives in `config.yml` with no hardcoded values in code; report, evidence and audit data are persisted on dedicated asynchronous threads, keeping the main thread free of file and database IO; every enhancement feature defaults to `false` and short-circuits on a single switch check when disabled. This release targets Paper 1.20–1.21.x (`api-version` pinned to `'1.20'`, Java 17 bytecode) and ships 27 test classes covering configuration loading and validation, rate limiting, input validation, the report state machine, storage WAL replay, audit logging, CSV export, Webhook payloads and i18n key parity.
 
-The 1.0.0 release also establishes the project's engineering baseline: the ten hard constraints of `AGENTS.md` (pinned `api-version`, config-driven thresholds, high-frequency event restrictions, permission/rate-limit/input validation, asynchronous storage, a fixed build command, a mandatory git backup workflow and a mandatory changelog), GPLv3 licensing, README/ROADMAP documentation, a nine-section documentation site under `docs/` (10 files, 933 lines), and the official icon assets.
+The 1.0.0 release also establishes the project's engineering baseline: the ten hard constraints of `AGENTS.md` (pinned `api-version`, config-driven thresholds, high-frequency event restrictions, permission/rate-limit/input validation, asynchronous storage, a fixed build command, a mandatory git backup workflow and a mandatory changelog), GPLv3 licensing, README/ROADMAP documentation, and the official icon assets.
 
 ### 亮点
 
@@ -30,7 +30,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 - **主线程零存储 IO**：高频操作经 WAL 追加一行即返回（O(1) 持久化），落盘、压缩、审计与导出全部在专用线程执行。
 - **阈值零硬编码**：全部业务参数由 `config.yml` 驱动，缺失或非法值自动回退默认值并输出控制台警告。
 - **默认安全的增强层**：证据采集、自动检测、联动处罚、轨迹采样默认关闭；关闭状态下零监听器注册、零事件开销。
-- **全程可审计**：10 个权限节点 + 玩家侧 8 重限流 + 管理侧节流，所有管理操作与自动维护动作写入按天分文件的异步审计日志。
+- **全程可审计**：11 个权限节点 + 玩家侧 8 重限流 + 管理侧节流，所有管理操作与自动维护动作写入按天分文件的异步审计日志。
 - **工程约束固化**：`AGENTS.md` 十项硬约束 + 固定构建命令 `./gradlew test build` + 27 个测试类。
 
 ### 1.0.0 更新一览（2026-11-01）
@@ -40,10 +40,10 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 *玩家侧*
 
 - **举报入口**（`/report`，别名 `rdreport`/`jb`，权限 `reportdesk.report` 默认所有人）：
-  - 无参数打开举报 GUI：选择被举报对象（在线玩家分页列表）→ 选择分类 → 聊天输入详情（默认 120 秒自动过期，`/report cancel` 随时取消）→ 确认页提交；GUI 关闭时自动切换聊天输入模式。
+  - 无参数打开举报 GUI：选择被举报对象（在线玩家分页列表）→ 选择分类 → 聊天输入详情（默认 120 秒自动过期，`/report cancel` 随时取消）→ 确认页提交；GUI 由配置关闭（`gui.enabled`）时，`/report <玩家>` 直接按默认分类提交、跳过详情输入。
   - `/report <玩家>` 直接对指定玩家发起举报；`/report <玩家> <分类> [详情...]` 命令行提交，分类支持配置别名（如 `cheat`/`xray`/`wai_gua`）。
   - 玩家自助子命令：`status [页码]` 分页查看本人举报列表（每页条数由 `reports.text-page-size` 控制，默认 10）、`view`/`info <id>` 查看详情（同时标记未读回复为已读）、`reply <id> <内容>`、`replies`/`thread <id>`、`help`。
-  - 聊天记录多选举报（`reports.chat-report`，默认关闭）：启用证据层聊天日志采集后，可在举报流程中勾选目标最近至多 5 条聊天消息作为证据随单提交，管理端 GUI 提供「聊天记录审阅」分页页。
+  - 聊天记录多选举报（`reports.chat-report`，默认关闭）：启用证据层聊天日志采集后，可在举报流程中勾选目标最近至多 5 条聊天消息作为证据随单提交，管理端 GUI 提供「聊天记录审阅」分页界面。
 - **举报分类体系**：内置 7 个默认分类——`cheating`（high）、`grief`（high）、`chat`（normal）、`advertising`（normal）、`bug`（normal）、`inappropriate`（low）、`other`（low）——每个分类可独立配置显示名、图标（Bukkit Material）、命令别名、启用开关、展示优先级与默认严重度，并支持在 `config.yml` 中增删；语言文件可本地化覆盖分类名与描述（覆盖 `config.yml` 的 `display` 值）。
 
 *管理侧*
@@ -57,7 +57,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
   - 首页（hub）：数据概览与入口——举报列表、下一条未处理举报快捷入口、玩家搜索、统计面板、关注列表、设置、审计日志等。
   - 举报列表页：按状态、分类、关键字、认领人、优先级、仅超时（`overdueOnly`）组合筛选，三种排序（`NEWEST` 默认 / `OLDEST` / `PRIORITY`），分页浏览。
   - 详情页：状态、优先级、SLA 截止与超时标记、认领/关闭时间线、备注、证据概要、回复串快捷入口，以及认领、关闭、重开、删除（二次确认）、备注、回复等操作按钮。
-  - 玩家搜索页：在线/离线玩家检索与按目标聚合的未处理举报数；审计分页页；统计页（总量、状态/裁决分布、平均处理时长、分类分布、Top 目标 3 名、Top 管理员 5 名）；设置页（配置「区段 → 键 → 值」三级浏览，查看当前值与默认值）。
+  - 玩家搜索页：在线/离线玩家检索与按目标聚合的未处理举报数；审计日志分页页；统计页（总量、状态/裁决分布、平均处理时长、分类分布、Top 目标 3 名、Top 管理员 5 名）；设置页（配置「区段 → 键 → 值」三级浏览，查看当前值与默认值）。
   - 底部统一导航栏（上页 / 返回 / 刷新 / 关闭 / 首页 / 下页）；破坏性操作默认二次确认（`gui.admin.confirm-destructive`）；点击/成功/错误音效可配置。
 
 *工作流增强*
@@ -65,7 +65,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 - **四级优先级与 SLA**（`reports.priority`，默认启用）：
   - 优先级 `urgent` / `high` / `normal` / `low`，处理时限默认 2 / 6 / 24 / 72 小时（`sla-hours`，0 表示不追踪）。
   - 分类默认严重度（`severity`）作为初始优先级；同一目标未处理举报达到 `repeat-offender-threshold`（默认 3）时自动提升至 `repeat-offender-level`（默认 `high`）。
-  - 超时检查任务每 `overdue-check-minutes`（默认 15）分钟异步运行，超期举报对在线管理员每条仅提醒一次（`sla-alerted-at` 去重）。
+  - 超时检查任务默认每 15 分钟（`overdue-check-minutes`，可配置）异步运行一次，超期举报对在线管理员每条仅提醒一次（`sla-alerted-at` 去重）。
 - **举报回复串**（`reports.replies`，默认启用）：玩家与管理员在同一举报下交错回复；单条最长 300 字符、每条举报最多保留 50 条；新回复可通知对方（`notify`）；玩家侧独立开关（`allow-player-replies`）；玩家打开详情即标记已读（`reporter-read-at`）。
 - **关注列表**（`WatchlistService`，`notifications.watchlist` 默认启用）：`/reports watch <玩家>` 关注目标，每管理员默认上限 20（`max-targets`）；被关注玩家收到新举报时立即站内提醒关注者（`notify-on-report`）；列表持久化为 `watchlist.json`，启动时异步加载、按目标名去重并按上限裁剪。
 - **离线举报人通知队列**（`PendingNoticeService`）：举报人离线期间的状态变更（认领 / 关闭 / 重开 / 新回复）暂存为待办通知，每人最多 20 条（`max-queued`）、默认保留 30 天（`queue-retention-days`），超出丢弃最旧；上线时由 `PlayerSessionListener` 触发补发。
@@ -98,7 +98,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 
 *本地化与数据模型*
 
-- **双语 i18n**：随附 `lang/zh_CN.yml` 与 `lang/en_US.yml`（各约 940 个键，`MessagesTest` 保证两文件键完整性一致）；`language` 配置切换；主文件缺失键自动回退 `en_US`；合并顺序为内置默认 < 服务器覆盖文件 < 语言文件，旧版本拷出的语言文件升级后仍可渲染全部文案。
+- **双语 i18n**：随附 `lang/zh_CN.yml` 与 `lang/en_US.yml`（各约 940 个键，`MessagesTest` 保证两文件键完整性一致）；`language` 配置切换；主文件缺失键自动回退 `en_US`；合并顺序为内置默认 < 服务器覆盖文件 < 语言文件，自定义语言文件缺失的键自动回退内置文案，升级后全部文案保持可渲染。
 - **举报数据模型**（`Report`，28 字段）：举报人/目标（UUID + 名称）、分类、详情、状态、创建/更新时间、认领人/时间、关闭人/时间、裁决、关闭备注、管理备注（每条举报最多 20 条）、证据元数据、系统生成标记、服务器名、优先级、SLA 截止/提醒时间、回复串（最多 50 条）、玩家已读时间、聊天勾选列表；状态机为 `OPEN` / `CLAIMED`（未处理）→ `RESOLVED` / `REJECTED` / `DUPLICATE` / `AUTO_CLOSED`（终态）。
 
 #### 存储与性能（首次引入的设计）
@@ -106,7 +106,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 - **主线程零存储 IO**：举报记录、证据、待办通知、关注列表、配置文本的读写全部运行在单线程执行器 `ReportDesk-Storage`；审计写入运行在独立的 `ReportDesk-Audit` 线程；主线程的 GUI 渲染与命令处理只读内存 `ReportRepository`，打开 GUI、提交举报与受理操作均不因存储 IO 阻塞。
 - **WAL 写前日志 + 周期压缩**：单条举报的保存/删除只向 `reports.log` 追加一行紧凑 JSON（高频操作 O(1)），累计 50 条（`compact-after-entries`）或距上次压缩达 360 分钟（`compact-interval-minutes`）时自动合并进 `reports.json` 并清空日志；插件关闭时强制最终压缩（默认等待 5 秒），超时未完成的部分保留在日志中，下次启动与快照合并重放，崩溃后不丢失已确认的写入。
 - **原子写入与备份轮转**：`reports.json`、证据文件与 `config.yml` 一律经临时文件 + 原子 move 写入（文件系统不支持时降级为普通 move）；`reports.json` 保存前按 60 分钟间隔备份至 `backups/`（默认最多保留 5 份）。
-- **schema 版本号**：报告文件标记 v2，旧 v1 快照可直接读入，为后续版本的数据迁移框架（`ROADMAP` P0 #1）预留。
+- **schema 版本号**：报告文件带版本号（v2），旧 v1 快照可直接读入；版本号为数据迁移预留扩展点。
 - **低频维护任务**（默认每 30 分钟、异步）：自动关闭超过 14 天未处理的举报（裁决 `AUTO_CLOSED`，操作人 `SYSTEM`）、清除超过 90 天保留期的已结案举报及其证据文件、按保留期清理证据（30 天）与审计文件（180 天）；全部清理动作的数量写入审计日志。
 - **高频事件隔离**：基础举报流程只注册 `PlayerJoin` / `PlayerQuit`、聊天输入与 GUI 点击；`BlockBreakEvent`、`PlayerMoveEvent` 仅属于证据增强层且默认不注册，监听器入口一次开关判断即返回，事件内只做轻量采样入队，无文件/数据库 IO 与大范围统计。
 - **聊天输入隔离**（`ChatInputService`）：每玩家至多一个挂起输入（举报详情、搜索关键字、管理备注共用），超时任务只操作内存 map，不触碰存储。
@@ -118,7 +118,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 随附带中文注释的完整默认 `config.yml`（约 344 行），各命名空间默认值如下（均可修改，缺失或非法值自动回退并警告）：
 
 - `storage`：数据目录 `data`；保存前备份开启（最多 5 份、间隔 60 分钟）；WAL 压缩条数 50、时间间隔 360 分钟；关机等待异步写入完成 5 秒；数据目录变更需重启服务器。
-- `limits`：命令冷却 1000 毫秒；举报冷却 60 秒；每日上限 10 条；同目标重复间隔 300 秒；重复窗口 600 秒；同目标未处理上限 3 条；账号最低注册时长 0 分钟（关闭）；禁止举报自己；允许举报离线目标；强制目标在线关闭；`reportdesk.bypass.limits` 可绕过全部限制。
+- `limits`：命令冷却 1000 毫秒；举报冷却 60 秒；每日上限 10 条；同目标重复间隔 300 秒；重复窗口 600 秒；同目标未处理上限 3 条；账号最低注册时长 0 分钟（关闭）；禁止举报自己；允许举报离线目标；未启用「强制目标在线」（`require-target-online`）；`reportdesk.bypass.limits` 可绕过全部限制。
 - `reports`：文本页 10 条、GUI 页 28 条；自动关闭开启（14 天）；已结案保留 90 天；维护间隔 30 分钟；统计面板 Top 目标 3 名 / Top 管理员 5 名；默认分类 `other`。
 - `reports.priority`：启用；重复违规阈值 3 条提升至 `high`；超时检查间隔 15 分钟、提醒开启；SLA 时限 `urgent=2` / `high=6` / `normal=24` / `low=72` 小时。
 - `reports.replies`：启用；玩家可回复；单条 300 字符、每条举报 50 条；新回复通知开启。
@@ -137,7 +137,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 - **玩家侧限流**（`/report` 提交管线）：命令级防刷冷却 1000 毫秒（可配 0 关闭）；举报冷却 60 秒；每日 10 条上限；同目标 300 秒重复间隔；同举报人+目标 600 秒重复窗口；同目标未处理 3 条上限；账号注册时长阈值；禁止举报自己；全部限制可被 `reportdesk.bypass.limits` 权限绕过。
 - **管理侧限流**：`/reports` 管理操作对每位操作者按 300 毫秒节流（`security.admin-cooldown-millis`），防止 GUI 连点与脚本式批量操作。
 - **输入校验**：玩家名按可配正则校验（`security.player-name-pattern`）；举报详情、管理员备注、回复串执行空值与长度校验；控制字符与 § 颜色码默认拒绝（`security.allow-color-codes`）；`blocked-words` 违禁词表不区分大小写过滤；搜索关键字同样受限。
-- **权限体系**：注册 10 个权限节点——`reportdesk.report`（默认所有人）、`reportdesk.admin` / `admin.close` / `admin.delete` / `notify` / `watch` / `evidence` / `reload` / `config`（默认 op）、`reportdesk.bypass.limits` / `bypass.evidence`（默认 false）；无对应权限的管理操作一律拒绝并提示。
+- **权限体系**：注册 11 个权限节点——`reportdesk.report`（默认所有人）、`reportdesk.admin` / `admin.close` / `admin.delete` / `notify` / `watch` / `evidence` / `reload` / `config`（默认 op）、`reportdesk.bypass.limits` / `bypass.evidence`（默认 false）；无对应权限的管理操作一律拒绝并提示。
 - **审计覆盖**：全部管理操作与自动维护动作异步写审计日志，按天分文件、按保留期自动清理，不阻塞主线程。
 - **默认安全姿态**：Webhook、全服广播、自动检测、联动处罚、方块破坏与移动轨迹采样默认全部关闭；自动检测只生成系统举报或通知、不执行任何处罚；处罚仅在管理员结案后按裁决执行预设命令。
 - **渲染防注入**：所有玩家输入在 MiniMessage 渲染前以 `Placeholder.unparsed` 注入，无法携带标签、颜色码或可点击组件；处罚命令占位符归一化换行与制表符，防止通过举报详情拼接命令。
@@ -152,7 +152,6 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 
 - 新增 `AGENTS.md`：十项开发硬约束与「变更日志强制记录」规则（本文件的格式与提交顺序即其产物）。
 - 新增 `README.md`：功能总览、指令与权限速查表、安装说明与支持版本说明；新增 `ROADMAP.md`：v1.1.0 的 P0（数据迁移框架、`Report` 字段扩展、已知缺陷清单）、P1（指派/转派、SLA 报表、双 Webhook、数据看板、审计防篡改）、P2（更多入口、富文本、轨迹回放、策略插件化、生态互通、批量操作、语言热加载）规划及「明确不做」边界（不引入数据库、不做网页面板、不做跨服同步、不自动处罚、不兼容 1.20 以下）。
-- 新增 `docs/` 文档站（10 个文件、933 行：9 个章节 + 索引——总览 / 安装 / 指令 / 权限 / 配置 / 增强层 / i18n / 架构 / 开发指南），作为随仓库分发的完整使用与开发文档。
 - 许可证改为 GNU GPLv3（`GPL-3.0-or-later`），随附 `LICENSE`；新增官方图标资产（`icon/reportdesk-icon.png` / `.svg`）。
 
 #### 兼容性
