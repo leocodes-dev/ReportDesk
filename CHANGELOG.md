@@ -16,13 +16,13 @@
 
 ReportDesk 1.0.0 是项目首个正式发布版本，完整实现了「玩家举报 → 管理员受理 → 结案归档」工作流：玩家端举报 GUI 与 `/report` 命令、管理端 `/reports` 工作台式受理流程（20 余个子命令与 54 格管理 GUI）、四级优先级与 SLA 超时提醒、举报回复串、关注列表与离线举报人补发队列、Discord Webhook 推送、可整体开关的证据采集增强层（方块破坏采样、移动轨迹、聊天记录、自动检测）与联动处罚（均默认关闭），以及游戏内配置编辑器。所有业务阈值集中于 `config.yml`，代码中无任何硬编码魔法数；举报记录、证据、审计日志全部在专用异步线程上持久化，主线程零文件 IO、零数据库 IO；所有增强功能默认 `false`，关闭路径入口仅一次开关判断即短路返回。本版本兼容 Paper 1.20–1.21.x（`api-version` 锁定为 `'1.20'`，Java 17 字节码），并随附 27 个测试类覆盖配置加载与校验、限流、输入校验、举报状态机、存储 WAL 回放、审计日志、CSV 导出、Webhook 载荷与 i18n 键完整性。
 
-1.0.0 同时确立了工程基线：`AGENTS.md` 十项开发硬约束（`api-version` 锁定、阈值配置驱动、高频事件限制、权限/限流/输入校验、异步存储、固定构建命令、Git 备份流程、更新日志强制记录）、GPLv3 许可证、README 与 ROADMAP 文档、GitHub Wiki（9 个章节），以及官方图标资产。
+1.0.0 同时确立了工程基线：`AGENTS.md` 十项开发硬约束（`api-version` 锁定、阈值配置驱动、高频事件限制、权限/限流/输入校验、异步存储、固定构建命令、Git 备份流程、更新日志强制记录）、GPLv3 许可证、README 与 ROADMAP 文档、`docs/` 文档站（9 个章节 + 索引），以及官方图标资产。
 
 ### Summary
 
 ReportDesk 1.0.0 is the first official release, delivering the complete "report → triage → closure" workflow: a player-facing report GUI and `/report` command, an admin `/reports` desk with 20+ subcommands and a 54-slot admin GUI, four-tier report priority with SLA overdue alerts, per-report reply threads, a staff watchlist with an offline reporter notice queue, Discord Webhook push, an opt-in evidence layer (block-break sampling, movement trails, chat capture, auto-detection) and opt-in linked punishments — all disabled by default — plus an in-game configuration editor. Every business threshold lives in `config.yml` with no hardcoded values in code; report, evidence and audit data are persisted on dedicated asynchronous threads, keeping the main thread free of file and database IO; every enhancement feature defaults to `false` and short-circuits on a single switch check when disabled. This release targets Paper 1.20–1.21.x (`api-version` pinned to `'1.20'`, Java 17 bytecode) and ships 27 test classes covering configuration loading and validation, rate limiting, input validation, the report state machine, storage WAL replay, audit logging, CSV export, Webhook payloads and i18n key parity.
 
-The 1.0.0 release also establishes the project's engineering baseline: the ten hard constraints of `AGENTS.md` (pinned `api-version`, config-driven thresholds, high-frequency event restrictions, permission/rate-limit/input validation, asynchronous storage, a fixed build command, a mandatory git backup workflow and a mandatory changelog), GPLv3 licensing, README/ROADMAP documentation, a nine-section GitHub Wiki, and the official icon assets.
+The 1.0.0 release also establishes the project's engineering baseline: the ten hard constraints of `AGENTS.md` (pinned `api-version`, config-driven thresholds, high-frequency event restrictions, permission/rate-limit/input validation, asynchronous storage, a fixed build command, a mandatory git backup workflow and a mandatory changelog), GPLv3 licensing, README/ROADMAP documentation, a nine-section documentation site under `docs/` (10 files, 933 lines), and the official icon assets.
 
 ### 亮点
 
@@ -30,7 +30,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 - **主线程零存储 IO**：高频操作经 WAL 追加一行即返回（O(1) 持久化），落盘、压缩、审计与导出全部在专用线程执行。
 - **阈值零硬编码**：全部业务参数由 `config.yml` 驱动，缺失或非法值自动回退默认值并输出控制台警告。
 - **默认安全的增强层**：证据采集、自动检测、联动处罚、轨迹采样默认关闭；关闭状态下零监听器注册、零事件开销。
-- **全程可审计**：10 个权限节点 + 玩家侧 7 重限流 + 管理侧节流，所有管理操作与自动维护动作写入按天分文件的异步审计日志。
+- **全程可审计**：10 个权限节点 + 玩家侧 8 重限流 + 管理侧节流，所有管理操作与自动维护动作写入按天分文件的异步审计日志。
 - **工程约束固化**：`AGENTS.md` 十项硬约束 + 固定构建命令 `./gradlew test build` + 27 个测试类。
 
 ### 1.0.0 更新一览（2026-11-01）
@@ -98,7 +98,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 
 *本地化与数据模型*
 
-- **双语 i18n**：随附 `lang/zh_CN.yml` 与 `lang/en_US.yml`（各 940 个键，`MessagesTest` 保证两文件键完整性一致）；`language` 配置切换；主文件缺失键自动回退 `en_US`；合并顺序为内置默认 < 服务器覆盖文件 < 语言文件，旧版本拷出的语言文件升级后仍可渲染全部文案。
+- **双语 i18n**：随附 `lang/zh_CN.yml` 与 `lang/en_US.yml`（各约 940 个键，`MessagesTest` 保证两文件键完整性一致）；`language` 配置切换；主文件缺失键自动回退 `en_US`；合并顺序为内置默认 < 服务器覆盖文件 < 语言文件，旧版本拷出的语言文件升级后仍可渲染全部文案。
 - **举报数据模型**（`Report`，28 字段）：举报人/目标（UUID + 名称）、分类、详情、状态、创建/更新时间、认领人/时间、关闭人/时间、裁决、关闭备注、管理备注（每条举报最多 20 条）、证据元数据、系统生成标记、服务器名、优先级、SLA 截止/提醒时间、回复串（最多 50 条）、玩家已读时间、聊天勾选列表；状态机为 `OPEN` / `CLAIMED`（未处理）→ `RESOLVED` / `REJECTED` / `DUPLICATE` / `AUTO_CLOSED`（终态）。
 
 #### 存储与性能（首次引入的设计）
@@ -152,7 +152,7 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 
 - 新增 `AGENTS.md`：十项开发硬约束与「变更日志强制记录」规则（本文件的格式与提交顺序即其产物）。
 - 新增 `README.md`：功能总览、指令与权限速查表、安装说明与支持版本说明；新增 `ROADMAP.md`：v1.1.0 的 P0（数据迁移框架、`Report` 字段扩展、已知缺陷清单）、P1（指派/转派、SLA 报表、双 Webhook、数据看板、审计防篡改）、P2（更多入口、富文本、轨迹回放、策略插件化、生态互通、批量操作、语言热加载）规划及「明确不做」边界（不引入数据库、不做网页面板、不做跨服同步、不自动处罚、不兼容 1.20 以下）。
-- 新增 GitHub Wiki（9 个章节：总览 / 安装 / 指令 / 权限 / 配置 / 增强层 / i18n / 架构 / 开发指南）。
+- 新增 `docs/` 文档站（10 个文件、933 行：9 个章节 + 索引——总览 / 安装 / 指令 / 权限 / 配置 / 增强层 / i18n / 架构 / 开发指南），作为随仓库分发的完整使用与开发文档。
 - 许可证改为 GNU GPLv3（`GPL-3.0-or-later`），随附 `LICENSE`；新增官方图标资产（`icon/reportdesk-icon.png` / `.svg`）。
 
 #### 兼容性
