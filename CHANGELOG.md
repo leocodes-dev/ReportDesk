@@ -10,7 +10,7 @@
 **发布日期** 2026-11-01 · **标签** `v1.0.0` · **产物** `ReportDesk-1.0.0.jar` · **许可证** GPL-3.0-or-later
 
 > 本条目为项目**首个版本**：所有条目均为首次引入的功能与基线设计，因此不设「优化」「修复」分类
->（无既有版本可作为对比基线）；已知缺陷列入「已知问题」，作为 v1.1.0 的明确开发目标。
+>（无既有版本可作为对比基线）。
 
 ### 概述
 
@@ -161,9 +161,5 @@ The 1.0.0 release also establishes the project's engineering baseline: the ten h
 - **运行时**：Java 17+（产物为 Java 17 字节码；1.20 的默认 JDK 17 与 1.21 的 JDK 21 服务端均可直接加载）。
 - **构建**：Gradle 9.6.1 Wrapper，固定命令 `./gradlew test build`；编译目标 Java 17、验证基于 Paper 1.21.11 API。
 - **数据文件**（均位于插件数据目录，拷目录即可迁移）：`data/reports.json`（schema v2 + `reports.log` WAL）、`data/pending-notices.json`、`data/watchlist.json`、`data/evidence/evidence-<id>.json`、`data/export/*.csv`、`audit/audit-YYYY-MM-DD.log`、`backups/` 备份轮转目录。
-
-#### 已知问题（v1.1.0 计划修复）
-
-- `/reports list` 筛选条件在带空格关键字下的解析；GUI 证据页在快照缺失时的空指针兜底；Webhook 失败时缺少重试与告警；`server-name` 修改后审计日志仍写旧文件名的边角情况；`YamlDocument` 对带引号 key 的替换偶发破坏注释。以上五项已列入 `ROADMAP.md` v1.1.0 P0 清单，将各配一个回归测试在下个版本修复；v1.1.0 承诺对 `reports.json` 既有记录无损加载。
 
 ---
