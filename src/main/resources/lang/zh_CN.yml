@@ -846,6 +846,8 @@ gui:
           retry-count: 'Webhook 重试次数'
           retry-base-seconds: 'Webhook 重试基础间隔'
           failure-alert-enabled: 'Webhook 失败时告警管理组'
+          secondary-url: '备用 Webhook URL'
+          sla-events-enabled: 'SLA 事件推送 Webhook'
         sla:
           weekly-enabled: 'SLA 周报'
           interval-hours: 'SLA 周报间隔'
@@ -879,6 +881,8 @@ gui:
           cooldown-seconds: '自动检测冷却（秒）'
           create-report: '自动创建举报'
           notify-staff: '通知管理员'
+          chat-spam-enabled: '检测刷屏 / 广告'
+          chat-spam-threshold: '刷屏阈值（窗口内消息数）'
       punishments:
         enabled: '启用联动处罚'
       audit:
@@ -1012,6 +1016,8 @@ gui:
           retry-count: 'Webhook 发送失败后的重试次数（指数退避），0 表示不重试。'
           retry-base-seconds: 'Webhook 重试的基础间隔（秒），实际间隔按 2 的幂次递增。'
           failure-alert-enabled: 'Webhook 重试耗尽后向在线管理组发一次站内告警。'
+          secondary-url: '可选的第二 Webhook 地址；配置后 SLA 超期摘要与失败告警将发送到此地址。'
+          sla-events-enabled: '启用后，SLA 超期摘要事件会发送到已配置的 Webhook。'
         sla:
           weekly-enabled: '周期性把 SLA 逾期摘要推送到 Webhook。默认关闭。'
           interval-hours: 'SLA 摘要推送间隔（小时），168 即每周。'
@@ -1045,6 +1051,8 @@ gui:
           cooldown-seconds: '同一玩家两次自动检测之间的最小间隔（秒）。'
           create-report: '检测到异常行为时自动创建举报记录。'
           notify-staff: '检测到异常行为时通知在线管理员。'
+          chat-spam-enabled: '可选的高频聊天检测（增强层，默认关闭）。玩家在窗口内超过阈值时触发。'
+          chat-spam-threshold: '自动检测窗口内触发刷屏检测的聊天消息数。'
       punishments:
         enabled: '举报结案时允许执行配置的处罚命令。'
       audit:
@@ -1233,6 +1241,7 @@ admin:
   help-reply: '<gray>/reports reply <编号> <内容...> <dark_gray>- <gray>回复举报人'
   help-replies: '<gray>/reports replies <编号> [页码] <dark_gray>- <gray>查看举报对话'
   help-overdue: '<gray>/reports overdue [页码] <dark_gray>- <gray>查看超时举报'
+  help-sla: '<gray>/reports sla [days] <dark_gray>- <gray>处理时限（SLA）超期报表'
   help-watch: '<gray>/reports watch <玩家> <dark_gray>- <gray>关注玩家，被举报时提醒'
   help-unwatch: '<gray>/reports unwatch <玩家> <dark_gray>- <gray>取消关注'
   help-watching: '<gray>/reports watching [页码] <dark_gray>- <gray>查看关注列表'
@@ -1299,6 +1308,9 @@ admin:
   banned-word: '<red>输入包含禁止使用的词：%word%。'
   console-actor: '控制台'
 
+  sla-report-header: '<gold>===== 处理时限（SLA）报表 ====='
+  sla-report-line: '<gray>%dimension%：<white>%count% <dark_gray>（平均超时 %avg%）'
+  sla-report-empty: '<gray>所选时间范围内没有超期举报。'
 config:
   list-header: '<gold>===== 可在线修改的配置（%count% 项，第 %page%/%pages% 页）====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'
@@ -1336,6 +1348,8 @@ evidence:
   chat-empty: '<gray>（无聊天记录）'
   auto-report-detail: '自动检测：%seconds% 秒内破坏 %count% 个方块。'
   auto-report-staff: '<gold>[自动检测] <white>%target%</white> <gray>在 %seconds% 秒内破坏 %count% 个方块，已生成举报 <white>#%id%</white>。'
+  chat-spam-detail: '自动检测：%seconds% 秒内发送 %count% 条聊天消息。'
+  chat-spam-staff: '<gold>【自动检测】<white>%target%</white> <gray>在 %seconds% 秒内发送了 %count% 条聊天消息，已创建举报 <white>#%id%</white>。'
 
 webhook:
   title-created: '新举报 #%id%'
@@ -1356,6 +1370,8 @@ webhook:
   test-title: 'ReportDesk Webhook 测试'
   test-content: '这是一条来自 ReportDesk 的通道测试消息。'
 
+  title-sla-breach: 'SLA 超时摘要'
+  content-sla-breach: 'SLA 摘要——%overdue% 条超期，平均超时 %avg%。分布：%breakdown%'
 time:
   now: '刚刚'
   seconds-ago: '%value% 秒前'

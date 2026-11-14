@@ -248,6 +248,10 @@ notifications:
     retry-base-seconds: 5
     # 重试耗尽后向在线管理员发一次站内告警。
     failure-alert-enabled: true
+    # 可选的第二 Webhook 地址；配置后 SLA 超期摘要与失败告警将发送到此地址（分流）。
+    secondary-url: ''
+    # 启用后将 SLA 超期摘要事件发送到 Webhook 通道。
+    sla-events-enabled: true
   # SLA 周报（增强层，默认关闭）：周期性把超时统计摘要推送到 Webhook。
   sla:
     weekly-enabled: false
@@ -303,6 +307,10 @@ evidence:
     create-report: true
     # 是否通知在线管理员。
     notify-staff: true
+    # 可选的高频聊天（刷屏/广告）检测，默认 false（增强层）。
+    chat-spam-enabled: false
+    # 窗口内一条玩家的消息数达到多少触发刷屏检测。
+    chat-spam-threshold: 60
 
 punishments:
   # 联动处罚默认 false。关闭时不会执行任何命令。

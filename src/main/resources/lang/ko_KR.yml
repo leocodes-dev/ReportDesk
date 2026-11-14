@@ -846,6 +846,8 @@ gui:
           retry-count: '웹훅 재시도 횟수'
           retry-base-seconds: '웹훅 재시도 기본 간격'
           failure-alert-enabled: '웹훅 실패 시 스태프 알림'
+          secondary-url: '보조 Webhook URL'
+          sla-events-enabled: 'SLA 이벤트를 Webhook으로 전송'
         sla:
           weekly-enabled: 'SLA 주간 보고서'
           interval-hours: 'SLA 보고서 간격'
@@ -879,6 +881,8 @@ gui:
           cooldown-seconds: '감지 쿨타임 (초)'
           create-report: '신고 자동 생성'
           notify-staff: '감지 시 운영진 알림'
+          chat-spam-enabled: '채팅 스팸/광고 감지'
+          chat-spam-threshold: '스팸 임계값(시간당 메시지 수)'
       punishments:
         enabled: '징계 사용'
       audit:
@@ -1012,6 +1016,8 @@ gui:
           retry-count: '웹훅 전송 실패 후 재시도 횟수 (지수 백오프). 0이면 재시도 없음.'
           retry-base-seconds: '웹훅 재시도 기본 간격(초). 2의 거듭제곱으로 증가합니다.'
           failure-alert-enabled: '웹훅이 모든 재시도 후 실패하면 온라인 스태프에게 게임 내 알림을 보냅니다.'
+          secondary-url: '선택적인 두 번째 Webhook URL. 설정 시 SLA 초과 요약 및 실패 알림이 이 주소로 전송됩니다.'
+          sla-events-enabled: '활성화 시 SLA 초과 요약 이벤트가 Webhook으로 전송됩니다.'
         sla:
           weekly-enabled: 'SLA 요약을 매주 웹훅으로 전송합니다. 기본 꺼짐.'
           interval-hours: 'SLA 요약 전송 간격(시간). 168은 주 1회.'
@@ -1045,6 +1051,8 @@ gui:
           cooldown-seconds: '같은 플레이어의 두 자동 감지 사이 최소 초.'
           create-report: '의심 동작이 감지되면 신고를 자동 생성합니다.'
           notify-staff: '의심 동작이 감지되면 온라인 운영진에게 알림합니다.'
+          chat-spam-enabled: '선택적 고빈도 채팅 감지(확장 레이어, 기본적으로 꺼짐). 플레이어가 윈도우에서 임계값을 초과하면 발동됩니다.'
+          chat-spam-threshold: '자동 감지 윈도우 내에서 채팅 스팸 감지를 트리거하는 메시지 수.'
       punishments:
         enabled: '신고 종료 시 구성된 징계 명령을 실행할 수 있습니다.'
       audit:
@@ -1233,6 +1241,7 @@ admin:
   help-reply: '<gray>/reports reply <id> [텍스트...] <dark_gray>- <gray>신고자에게 응답'
   help-replies: '<gray>/reports replies <id> [페이지] <dark_gray>- <gray>대화 보기'
   help-overdue: '<gray>/reports overdue [페이지] <dark_gray>- <gray>기한 초과 목록'
+  help-sla: '<gray>/reports sla [days] <dark_gray>- <gray>SLA 초과 보고서'
   help-watch: '<gray>/reports watch <플레이어> <dark_gray>- <gray>플레이어 감시 및 알림'
   help-unwatch: '<gray>/reports unwatch <플레이어> <dark_gray>- <gray>플레이어 감시 해제'
   help-watching: '<gray>/reports watching [페이지] <dark_gray>- <gray>감시 중인 플레이어 목록'
@@ -1299,6 +1308,9 @@ admin:
   banned-word: '<red>입력에 금지 단어가 포함되어 있습니다: %word%.'
   console-actor: '콘솔'
 
+  sla-report-header: '<gold>===== SLA 보고서 ====='
+  sla-report-line: '<gray>%dimension%: <white>%count% <dark_gray>(평균 초과 %avg%)'
+  sla-report-empty: '<gray>선택된 기간에 기한 초과 보고가 없습니다.'
 config:
   list-header: '<gold>===== 편집 가능한 설정 (%count%개 키, 페이지 %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'
@@ -1336,6 +1348,8 @@ evidence:
   chat-empty: '<gray>(채팅 로그 없음)'
   auto-report-detail: '자동 감지: %seconds%초 동안 %count%개 블록 파괴.'
   auto-report-staff: '<gold>[자동 감지] <white>%target%</white>가(이) %seconds%초 동안 %count%개 블록을 파괴했습니다. 신고 <white>#%id%</white> 생성됨.'
+  chat-spam-detail: '자동 감지: %seconds%초 동안 %count%개 채팅 메시지.'
+  chat-spam-staff: '<gold>[자동 감지] <white>%target%</white> <gray>가 %seconds%초 동안 %count%개 채팅을 보냈습니다. 신고 <white>#%id%</white> 생성.'
 
 webhook:
   title-created: '새 신고 #%id%'
@@ -1356,6 +1370,8 @@ webhook:
   test-title: 'ReportDesk 웹훅 테스트'
   test-content: '이것은 ReportDesk의 채널 테스트입니다.'
 
+  title-sla-breach: 'SLA 초과 요약'
+  content-sla-breach: 'SLA 요약 — %overdue%건 초과, 평균 초과 %avg%. 구성: %breakdown%'
 time:
   now: '방금'
   seconds-ago: '%value%초 전'

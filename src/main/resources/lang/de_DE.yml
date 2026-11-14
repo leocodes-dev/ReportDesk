@@ -846,6 +846,8 @@ gui:
           retry-count: 'Webhook-Wiederholungen'
           retry-base-seconds: 'Webhook-Basisabstand'
           failure-alert-enabled: 'Meldung bei Webhook-Fehler'
+          secondary-url: 'Sekundärer Webhook-URL'
+          sla-events-enabled: 'SLA-Ereignisse an Webhook senden'
         sla:
           weekly-enabled: 'Wöchentlicher SLA-Report'
           interval-hours: 'SLA-Report-Intervall'
@@ -879,6 +881,8 @@ gui:
           cooldown-seconds: 'Erkennungs-Cooldown (Sekunden)'
           create-report: 'Meldungen automatisch anlegen'
           notify-staff: 'Team bei Erkennung benachrichtigen'
+          chat-spam-enabled: 'Chat-Spam/Werbung erkennen'
+          chat-spam-threshold: 'Spam-Schwelle (Nachrichten pro Fenster)'
       punishments:
         enabled: 'Strafen aktiv'
       audit:
@@ -1012,6 +1016,8 @@ gui:
           retry-count: 'Wie oft ein fehlgeschlagener Webhook-Versand wiederholt wird (exponentielles Backoff). 0 = keine Wiederholung.'
           retry-base-seconds: 'Basisintervall in Sekunden für die Webhook-Wiederholungen; verdoppelt sich pro Versuch.'
           failure-alert-enabled: 'Online-Mitglieder im Spiel warnen, wenn ein Webhook nach allen Wiederholungen fehlschlägt.'
+          secondary-url: 'Optionale zweite Webhook-URL; bei Konfiguration werden SLA-Überschreitungen und Fehleralarme dorthin gesendet.'
+          sla-events-enabled: 'Wenn aktiviert, werden SLA-Überschreitungsereignisse an den Webhook gesendet.'
         sla:
           weekly-enabled: 'Schiebt wöchentlich eine SLA-Zusammenfassung an den Webhook. Standardmäßig aus.'
           interval-hours: 'Stunden zwischen den SLA-Reports (168 = wöchentlich).'
@@ -1045,6 +1051,8 @@ gui:
           cooldown-seconds: 'Mindestsekunden zwischen zwei Erkennungen desselben Spielers.'
           create-report: 'Meldung automatisch anlegen, wenn verdächtig Verhalten erkannt wird.'
           notify-staff: 'Online-Team bei verdächtig Verhalten benachrichtigen.'
+          chat-spam-enabled: 'Optionale Hochfrequenz-Chat-Erkennung (Erweiterungsschicht, standardmäßig aus). Löst aus, wenn ein Spieler den Schwellwert im Fenster übersteigt.'
+          chat-spam-threshold: 'Anzahl der Chatnachrichten im Auto-Detect-Fenster, die eine Spam-Erkennung auslösen.'
       punishments:
         enabled: 'Konfigurierte Strafbefehle beim Schließen einer Meldung ausführen.'
       audit:
@@ -1233,6 +1241,7 @@ admin:
   help-reply: '<gray>/reports reply <id> [text...] <dark_gray>- <gray>Den Melder antworten'
   help-replies: '<gray>/reports replies <id> [seite] <dark_gray>- <gray>Gespräch lesen'
   help-overdue: '<gray>/reports overdue [seite] <dark_gray>- <gray>Überfällige auflisten'
+  help-sla: '<gray>/reports sla [days] <dark_gray>- <gray>SLA-Verspätungsbericht'
   help-watch: '<gray>/reports watch [spieler] <dark_gray>- <gray>Spieler beobachten'
   help-unwatch: '<gray>/reports unwatch [spieler] <dark_gray>- <gray>Beobachtung beenden'
   help-watching: '<gray>/reports watching [seite] <dark_gray>- <gray>Beobachtete auflisten'
@@ -1299,6 +1308,9 @@ admin:
   banned-word: '<red>Die Eingabe enthält ein gesperrtes Wort: %word%.'
   console-actor: 'Konsole'
 
+  sla-report-header: '<gold>===== SLA-Bericht ====='
+  sla-report-line: '<gray>%dimension%: <white>%count% <dark_gray>(Ø Verspätung %avg%)'
+  sla-report-empty: '<gray>Keine überfälligen Berichte im gewählten Zeitraum.'
 config:
   list-header: '<gold>===== Konfigurations-Schalter (%count% Schlüssel, Seite %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'
@@ -1336,6 +1348,8 @@ evidence:
   chat-empty: '<gray>(keine Chat-Logs)'
   auto-report-detail: 'Automatische Erkennung: %count% Blöcke in %seconds% Sekunden abgebrochen.'
   auto-report-staff: '<gold>[Auto-Erkennung] <white>%target%</white> hat %count% Blöcke in %seconds% Sekunden abgebrochen. Meldung <white>#%id%</white> angelegt.'
+  chat-spam-detail: 'Auto-Erkennung: %count% Chatnachrichten innerhalb von %seconds% Sekunden.'
+  chat-spam-staff: '<gold>[Auto-Erkennung] <white>%target%</white> <gray>hat %count% Chatnachrichten in %seconds% Sekunden gesendet. Bericht <white>#%id%</white> erstellt.'
 
 webhook:
   title-created: 'Neue Meldung #%id%'
@@ -1356,6 +1370,8 @@ webhook:
   test-title: 'ReportDesk Webhook-Test'
   test-content: 'Dies ist ein Kanaltest von ReportDesk.'
 
+  title-sla-breach: 'SLA-Überschreitung – Zusammenfassung'
+  content-sla-breach: 'SLA – %overdue% überfällig, Ø Verspätung %avg%. Aufteilung: %breakdown%'
 time:
   now: 'gerade eben'
   seconds-ago: 'vor %value%s'

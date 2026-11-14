@@ -146,6 +146,11 @@ class ConfigLoaderTest {
 
     assertFalse(config.evidence().autoDetect().enabled());
 
+    // Chat-spam detection (roadmap P2 #16): enhancement layer, off by default.
+    assertFalse(config.evidence().autoDetect().chatSpamEnabled());
+
+    assertEquals(60, config.evidence().autoDetect().chatSpamThreshold());
+
     assertFalse(config.punishments().enabled());
   }
 
@@ -183,6 +188,17 @@ class ConfigLoaderTest {
     assertEquals(1, config.categories().size());
 
     assertEquals("other", config.defaultCategory());
+
+    // New webhook / SLA / audit defaults (roadmap P1 #5, P1 #7, P2 #10).
+    assertEquals("", config.notifications().webhook().secondaryUrl());
+
+    assertTrue(config.notifications().webhook().slaEventsEnabled());
+
+    assertFalse(config.notifications().sla().weeklyEnabled());
+
+    assertEquals(168, config.notifications().sla().weeklyIntervalHours());
+
+    assertEquals(0, config.audit().maxFileSizeMb());
 
     assertFalse(warnings.isEmpty());
   }

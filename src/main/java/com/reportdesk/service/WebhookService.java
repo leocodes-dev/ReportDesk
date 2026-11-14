@@ -119,6 +119,55 @@ public final class WebhookService {
   }
 
   /**
+   * Pushes an SLA breach summary to the webhook channel. When a secondary URL is configured it is
+   * routed there (traffic split: SLA/alerts to a second group); otherwise it goes to the primary
+   * channel. Gated by the live {@code notifications.webhook.sla-events-enabled} switch so the
+   * {@code /reports sla} command and the optional weekly task share one toggle. No-op when the
+   * report has nothing overdue or the webhook is disabled.
+   */
+  public void slaBreach(com.reportdesk.core.SlaStats.SlaReport report) {
+
+    PluginConfig.Webhook settings = config.get().notifications().webhook();
+
+    if (!settings.enabled() || report == null || report.isEmpty() || !settings.slaEventsEnabled()) {
+
+      return;
+    }
+
+    String targetUrl =
+        settings.secondaryUrl() != null && !settings.secondaryUrl().isBlank()
+            ? settings.secondaryUrl().trim()
+            : settings.url().trim();
+
+    if (targetUrl == null || targetUrl.isBlank()) {
+
+      return;
+    }
+
+    Messages text = messages.get();
+
+    String breakdown = report.breakdownSummary();
+
+    WebhookPayload payload =
+        new WebhookPayload(
+            settings.username(),
+            settings.avatarUrl(),
+            text.plain(
+                MessageKeys.WEBHOOK_CONTENT_SLA_BREACH,
+                Map.of(
+                    "overdue", String.valueOf(report.totalOverdue()),
+                    "avg",
+                        com.reportdesk.util.TimeText.duration(
+                            report.averageOverdueMillis(), text),
+                    "breakdown", breakdown.isBlank() ? "-" : breakdown)),
+            text.plain(MessageKeys.WEBHOOK_TITLE_SLA_BREACH, Map.of()),
+            15158720,
+            List.of());
+
+    post(gson.toJson(payload.toMap()), 0, "sla", targetUrl, null);
+  }
+
+  /**
    * Sends a small test payload to the configured channel so an administrator can verify the
    * webhook works. Runs the same retry chain as event sends; completes with {@code true} when
    * the channel finally accepts a message. No staff alert is raised for a failed test — the
@@ -150,7 +199,7 @@ public final class WebhookService {
 
     CompletableFuture<Boolean> outcome = new CompletableFuture<>();
 
-    post(gson.toJson(payload.toMap()), 0, "test", outcome::complete);
+    post(gson.toJson(payload.toMap()), 0, "test", settings.url().trim(), outcome::complete);
 
     return outcome;
   }
@@ -264,21 +313,23 @@ public final class WebhookService {
             3447003,
             fields);
 
-    post(gson.toJson(payload.toMap()), 0, event, null);
+    post(gson.toJson(payload.toMap()), 0, event, settings.url().trim(), null);
   }
 
   /**
-   * One attempt of the bounded retry chain. {@code finalOutcome} is completed exactly once:
-   * {@code true} when a channel accepts the payload, {@code false} when the retries exhaust.
+   * One attempt of the bounded retry chain against {@code targetUrl}. {@code finalOutcome} is
+   * completed exactly once: {@code true} when a channel accepts the payload, {@code false} when the
+   * retries exhaust.
    */
-  private void post(String body, int attempt, String label, Consumer<Boolean> finalOutcome) {
+  private void post(
+      String body, int attempt, String label, String targetUrl, Consumer<Boolean> finalOutcome) {
 
     PluginConfig.Webhook settings = config.get().notifications().webhook();
 
     try {
 
       HttpRequest request =
-          HttpRequest.newBuilder(URI.create(settings.url().trim()))
+          HttpRequest.newBuilder(URI.create(targetUrl))
               .timeout(Duration.ofSeconds(settings.timeoutSeconds()))
               .header("Content-Type", "application/json; charset=utf-8")
               .header("User-Agent", "ReportDesk/1.0")
@@ -309,20 +360,21 @@ public final class WebhookService {
                             ? String.valueOf(throwable.getMessage())
                             : "HTTP " + response.statusCode()));
 
-                scheduleNext(body, attempt + 1, label, settings, finalOutcome);
+                scheduleNext(body, attempt + 1, label, targetUrl, settings, finalOutcome);
               });
 
     } catch (RuntimeException exception) {
 
       warning.accept(label + " attempt " + (attempt + 1) + " invalid request: " + exception);
 
-      scheduleNext(body, attempt + 1, label, settings, finalOutcome);
+      scheduleNext(body, attempt + 1, label, targetUrl, settings, finalOutcome);
     }
   }
 
   /** Bounded by {@code retry-count}; each pending retry is a single scheduled task. */
   private void scheduleNext(
-      String body, int nextAttempt, String label, PluginConfig.Webhook settings,
+      String body, int nextAttempt, String label, String targetUrl,
+      PluginConfig.Webhook settings,
       Consumer<Boolean> finalOutcome) {
 
     if (nextAttempt > settings.retryCount()) {
@@ -345,7 +397,7 @@ public final class WebhookService {
     }
 
     CompletableFuture.delayedExecutor(delayMillis(settings, nextAttempt), TimeUnit.MILLISECONDS)
-        .execute(() -> post(body, nextAttempt, label, finalOutcome));
+        .execute(() -> post(body, nextAttempt, label, targetUrl, finalOutcome));
   }
 
   /** Exponential backoff: base × 2^(attempt-1), capped so the shift cannot overflow. */

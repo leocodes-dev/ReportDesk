@@ -1136,6 +1136,8 @@ public final class MessageKeys {
 
   public static final String ADMIN_HELP_OVERDUE = "admin.help-overdue";
 
+  public static final String ADMIN_HELP_SLA = "admin.help-sla";
+
   public static final String ADMIN_HELP_WATCH = "admin.help-watch";
 
   public static final String ADMIN_HELP_UNWATCH = "admin.help-unwatch";
@@ -1328,6 +1330,10 @@ public final class MessageKeys {
 
   public static final String EVIDENCE_AUTO_REPORT_STAFF = "evidence.auto-report-staff";
 
+  public static final String EVIDENCE_CHAT_SPAM_DETAIL = "evidence.chat-spam-detail";
+
+  public static final String EVIDENCE_CHAT_SPAM_STAFF = "evidence.chat-spam-staff";
+
   public static final String WEBHOOK_TITLE_CREATED = "webhook.title-created";
 
   public static final String WEBHOOK_TITLE_CLAIMED = "webhook.title-claimed";
@@ -1377,6 +1383,16 @@ public final class MessageKeys {
   public static final String TIME_SECOND = "time.second";
 
   public static final String TIME_FORMAT_DATE = "time-format.date";
+
+  public static final String ADMIN_SLA_REPORT_HEADER = "admin.sla-report-header";
+
+  public static final String ADMIN_SLA_REPORT_LINE = "admin.sla-report-line";
+
+  public static final String ADMIN_SLA_REPORT_EMPTY = "admin.sla-report-empty";
+
+  public static final String WEBHOOK_TITLE_SLA_BREACH = "webhook.title-sla-breach";
+
+  public static final String WEBHOOK_CONTENT_SLA_BREACH = "webhook.content-sla-breach";
 
   // Bedrock form adaptation (Geyser + Floodgate + Cumulus).
 

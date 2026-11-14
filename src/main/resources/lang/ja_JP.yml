@@ -846,6 +846,8 @@ gui:
           retry-count: 'Webhook 再試行数'
           retry-base-seconds: 'Webhook 再試行基礎間隔'
           failure-alert-enabled: 'Webhook 失敗時のスタッフ通知'
+          secondary-url: 'セカンダリWebhook URL'
+          sla-events-enabled: 'SLAイベントをWebhookに送信'
         sla:
           weekly-enabled: 'SLA 週次レポート'
           interval-hours: 'SLA レポート間隔'
@@ -879,6 +881,8 @@ gui:
           cooldown-seconds: '検出クールダウン (秒)'
           create-report: '通報を自動作成'
           notify-staff: '検出時に運営へ通知'
+          chat-spam-enabled: 'チャットスパム／広告の検出'
+          chat-spam-threshold: 'スパム閾値（ウィンドウ内のメッセージ数）'
       punishments:
         enabled: '制裁を有効'
       audit:
@@ -1012,6 +1016,8 @@ gui:
           retry-count: 'Webhook 送信失敗後の再試行回数（指数バックオフ）。0 は再試行なし。'
           retry-base-seconds: 'Webhook 再試行の基礎間隔（秒）。2 の幂乗で増加します。'
           failure-alert-enabled: 'Webhook が全再試行に失敗した後、オンラインのスタッフにゲーム内で通知します。'
+          secondary-url: '任意の第二Webhook URL。設定するとSLA期限超過サマリーと失敗アラートがここに送信されます。'
+          sla-events-enabled: '有効にするとSLA期限超過サマリーイベントがWebhookに送信されます。'
         sla:
           weekly-enabled: 'SLA 概要を週次で Webhook に送信します。既定はオフ。'
           interval-hours: 'SLA 概要の送信間隔（時間）。168 で週次。'
@@ -1045,6 +1051,8 @@ gui:
           cooldown-seconds: '同一プレイヤーの2回の自動検出間の最小秒数。'
           create-report: '疑わしい行動を検出したら通報を自動作成。'
           notify-staff: '疑わしい行動を検出したらオンラインの運営に通知。'
+          chat-spam-enabled: '任意の高頻度チャット検出（拡張層、既定無効）。プレイヤーがウィンドウ内で閾値を超えると発生。'
+          chat-spam-threshold: '自動検出ウィンドウ内でチャットスパム検出をトリガーするメッセージ数。'
       punishments:
         enabled: '通報クローズ時に設定済み制裁コマンドを実行できます。'
       audit:
@@ -1233,6 +1241,7 @@ admin:
   help-reply: '<gray>/reports reply <id> [text...] <dark_gray>- <gray>通報者に返信'
   help-replies: '<gray>/reports replies <id> [page] <dark_gray>- <gray>やり取りを読む'
   help-overdue: '<gray>/reports overdue [page] <dark_gray>- <gray>期限超過の一覧'
+  help-sla: '<gray>/reports sla [days] <dark_gray>- <gray>SLA 期限超過レポート'
   help-watch: '<gray>/reports watch <player> <dark_gray>- <gray>プレイヤーをウォッチしてアラート受信'
   help-unwatch: '<gray>/reports unwatch <player> <dark_gray>- <gray>プレイヤーのウォッチ解除'
   help-watching: '<gray>/reports watching [page] <dark_gray>- <gray>ウォッチ中のプレイヤー一覧'
@@ -1299,6 +1308,9 @@ admin:
   banned-word: '<red>入力に禁止ワードが含まれています: %word%。'
   console-actor: 'コンソール'
 
+  sla-report-header: '<gold>===== SLA レポート ====='
+  sla-report-line: '<gray>%dimension%：<white>%count% <dark_gray>（平均遅延 %avg%）'
+  sla-report-empty: '<gray>選択期間内に期限超過の報告はありません。'
 config:
   list-header: '<gold>===== 編集可能な設定 (%count% 項目、ページ %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'
@@ -1336,6 +1348,8 @@ evidence:
   chat-empty: '<gray>(チャットログなし)'
   auto-report-detail: '自動検出: %seconds% 秒間で %count% 個のブロック破壊。'
   auto-report-staff: '<gold>[自動検出] <white>%target%</white> が %seconds% 秒間で %count% 個のブロックを破壊しました。通報 <white>#%id%</white> を作成しました。'
+  chat-spam-detail: '自動検出：%seconds%秒間で%count%件のチャットメッセージ。'
+  chat-spam-staff: '<gold>【自動検出】<white>%target%</white> <gray>が%seconds%秒間で%count%件のチャットを送信。報告<white>#%id%</white>を作成。'
 
 webhook:
   title-created: '新通報 #%id%'
@@ -1356,6 +1370,8 @@ webhook:
   test-title: 'ReportDesk Webhook テスト'
   test-content: 'これは ReportDesk からのチャンネルテストです。'
 
+  title-sla-breach: 'SLA 期限超過サマリー'
+  content-sla-breach: 'SLA サマリー — %overdue% 件期限超過、平均遅延 %avg%。内訳: %breakdown%'
 time:
   now: 'たった今'
   seconds-ago: '%value% 秒前'

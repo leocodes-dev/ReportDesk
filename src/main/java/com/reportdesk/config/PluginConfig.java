@@ -311,7 +311,9 @@ public record PluginConfig(
       boolean eventClosed,
       int retryCount,
       int retryBaseSeconds,
-      boolean failureAlertEnabled) {}
+      boolean failureAlertEnabled,
+      String secondaryUrl,
+      boolean slaEventsEnabled) {}
 
   public record Evidence(
       boolean enabled,
@@ -342,7 +344,14 @@ public record PluginConfig(
       int blockBreakThreshold,
       int cooldownSeconds,
       boolean createReport,
-      boolean notifyStaff) {}
+      boolean notifyStaff,
+      boolean chatSpamEnabled,
+      int chatSpamThreshold) {
+
+    public AutoDetect {
+      chatSpamThreshold = Math.max(1, chatSpamThreshold);
+    }
+  }
 
   public record Punishments(
       boolean enabled, List<String> resolvedCommands, List<String> rejectedCommands) {}

@@ -26,10 +26,13 @@ import com.reportdesk.core.Report;
 import com.reportdesk.core.ReportFilter;
 
 import com.reportdesk.core.ReportReply;
+import com.reportdesk.core.SlaStats;
+import com.reportdesk.core.SlaStats.SlaReport;
 import com.reportdesk.core.ReportStatus;
 import com.reportdesk.core.Verdict;
 import com.reportdesk.core.WatchEntry;
 import com.reportdesk.i18n.MessageKeys;
+import com.reportdesk.i18n.Messages;
 import com.reportdesk.service.ConfigEditService;
 import com.reportdesk.service.ReportService;
 import com.reportdesk.util.TimeText;
@@ -75,6 +78,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
           "delete",
           "purge",
           "overdue",
+          "sla",
           "stats",
           "export",
           "audit",
@@ -160,6 +164,8 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
       case "purge" -> purge(sender, args);
 
       case "overdue" -> overdue(sender, args);
+
+      case "sla" -> sla(sender, args);
 
       case "watch" -> watch(sender, args);
 
@@ -772,6 +778,131 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
     plugin.view().sendList(sender, result, filter);
   }
 
+  /**
+   * {@code /reports sla [days]} — aggregates overdue (past SLA) reports by priority, category and
+   * the admin they are claimed by. The optional {@code days} argument bounds the window to reports
+   * created within the last N days (omitted = all open reports). Pure in-memory aggregation over a
+   * single snapshot; no storage IO on the main thread.
+   */
+  private void sla(CommandSender sender, String[] args) {
+
+    if (!allowAction(sender)) {
+
+      return;
+    }
+
+    if (!plugin.repository().isReady()) {
+
+      sender.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+
+      return;
+    }
+
+    int days = 0;
+
+    if (args.length >= 2) {
+
+      Integer parsed = parseInteger(args[1]);
+
+      if (parsed == null || parsed < 0) {
+
+        sender.sendMessage(
+            plugin
+                .messages()
+                .prefixed(MessageKeys.GENERAL_INVALID_INPUT, Map.of("reason", "invalid_days")));
+
+        return;
+      }
+
+      days = parsed;
+    }
+
+    long now = System.currentTimeMillis();
+
+    List<Report> snapshot = plugin.repository().snapshot();
+
+    List<Report> window = new ArrayList<>();
+
+    if (days > 0) {
+
+      long windowStart = now - days * 86_400_000L;
+
+      for (Report report : snapshot) {
+
+        if (report.createdAt() >= windowStart) {
+
+          window.add(report);
+        }
+      }
+    } else {
+
+      window = snapshot;
+    }
+
+    SlaReport report = SlaStats.compute(window, now);
+
+    Messages messages = plugin.messages();
+
+    sender.sendMessage(
+        messages.prefixed(
+            MessageKeys.ADMIN_SLA_REPORT_HEADER,
+            Map.of("days", String.valueOf(days), "total", String.valueOf(report.totalOverdue()))));
+
+    if (report.isEmpty()) {
+
+      sender.sendMessage(messages.prefixed(MessageKeys.ADMIN_SLA_REPORT_EMPTY, Map.of()));
+
+      return;
+    }
+
+    Map<String, String> avg =
+        Map.of("avg", TimeText.duration(report.averageOverdueMillis(), messages));
+
+    sendSlaBlock(sender, messages, "priority", report.byPriority(), avg);
+
+    sendSlaBlock(sender, messages, "category", report.byCategory(), avg);
+
+    sendSlaBlock(sender, messages, "staff", report.byAdmin(), avg);
+  }
+
+  /** Renders one SLA dimension (label resolved per language); skips dimensions with no overdue. */
+  private void sendSlaBlock(
+      CommandSender sender, Messages messages, String dimension,
+      List<SlaStats.DimensionStats> stats, Map<String, String> basePlaceholders) {
+
+    for (SlaStats.DimensionStats stat : stats) {
+
+      if (!stat.hasOverdue()) {
+
+        continue;
+      }
+
+      Map<String, String> placeholders = new LinkedHashMap<>(basePlaceholders);
+
+      placeholders.put("dimension", dimensionLabel(messages, dimension));
+
+      placeholders.put("count", String.valueOf(stat.overdueCount()));
+
+      placeholders.put("avg", TimeText.duration(stat.averageOverdueMillis(), messages));
+
+      sender.sendMessage(
+          messages.prefixed(MessageKeys.ADMIN_SLA_REPORT_LINE, placeholders));
+    }
+  }
+
+  private String dimensionLabel(Messages messages, String dimension) {
+
+    return switch (dimension) {
+      case "priority" -> messages.plain(MessageKeys.GENERAL_PRIORITY);
+
+      case "category" -> messages.plain(MessageKeys.GENERAL_CATEGORY);
+
+      case "staff" -> messages.plain(MessageKeys.GENERAL_STAFF);
+
+      default -> dimension;
+    };
+  }
+
   private void watch(CommandSender sender, String[] args) {
 
     if (args.length < 2) {
@@ -1151,6 +1282,26 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
       return;
     }
 
+    // Sub-commands first: "audit search <keyword...>" and "audit export".
+    if (args.length >= 2) {
+
+      String sub = args[1].toLowerCase(Locale.ROOT);
+
+      if ("search".equals(sub)) {
+
+        auditSearch(sender, args);
+
+        return;
+      }
+
+      if ("export".equals(sub)) {
+
+        auditExport(sender);
+
+        return;
+      }
+    }
+
     int page = 1;
 
     if (args.length >= 2) {
@@ -1192,6 +1343,88 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
                       }
 
                       plugin.view().sendAudit(sender, requested, lines);
+                    }));
+  }
+
+  /** {@code /reports audit search <keyword...>} — newest audit lines matching the keyword. */
+  private void auditSearch(CommandSender sender, String[] args) {
+
+    String keyword =
+        args.length >= 3 ? String.join(" ", Arrays.copyOfRange(args, 2, args.length)) : "";
+
+    int pageSize = plugin.config().audit().pageSize();
+
+    plugin
+        .auditStorage()
+        .search(keyword, pageSize)
+        .whenComplete(
+            (lines, throwable) ->
+                runOnMain(
+                    () -> {
+                      if (throwable != null) {
+
+                        plugin
+                            .getLogger()
+                            .warning("Audit search failed: " + throwable.getMessage());
+
+                        sender.sendMessage(
+                            plugin
+                                .messages()
+                                .prefixed(MessageKeys.GENERAL_UNKNOWN_ERROR, Map.of()));
+
+                        return;
+                      }
+
+                      plugin.view().sendAudit(sender, 1, lines);
+                    }));
+  }
+
+  /** {@code /reports audit export} — write the full audit log to a CSV in the export directory. */
+  private void auditExport(CommandSender sender) {
+
+    if (!allowAction(sender)) {
+
+      return;
+    }
+
+    sender.sendMessage(plugin.messages().prefixed(MessageKeys.ADMIN_EXPORT_STARTED, Map.of()));
+
+    plugin
+        .auditStorage()
+        .exportCsv(plugin.storage().exportDirectory())
+        .whenComplete(
+            (path, throwable) ->
+                runOnMain(
+                    () -> {
+                      if (throwable != null) {
+
+                        plugin
+                            .getLogger()
+                            .warning("Audit export failed: " + throwable.getMessage());
+
+                        sender.sendMessage(
+                            plugin.messages().prefixed(MessageKeys.ADMIN_EXPORT_FAILED, Map.of()));
+
+                        return;
+                      }
+
+                      String display;
+
+                      try {
+
+                        display = plugin.getDataFolder().toPath().relativize(path).toString();
+
+                      } catch (IllegalArgumentException exception) {
+
+                        display = path.getFileName().toString();
+                      }
+
+                      sender.sendMessage(
+                          plugin
+                              .messages()
+                              .prefixed(MessageKeys.ADMIN_EXPORT_DONE, Map.of("file", display)));
+
+                      plugin.audit("AUDIT_EXPORT", actor(sender), 0L, display);
                     }));
   }
 
@@ -1518,6 +1751,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
             MessageKeys.ADMIN_HELP_DELETE,
             MessageKeys.ADMIN_HELP_PURGE,
             MessageKeys.ADMIN_HELP_OVERDUE,
+            MessageKeys.ADMIN_HELP_SLA,
             MessageKeys.ADMIN_HELP_WATCH,
             MessageKeys.ADMIN_HELP_UNWATCH,
             MessageKeys.ADMIN_HELP_WATCHING,

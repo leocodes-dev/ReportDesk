@@ -21,8 +21,8 @@ package com.reportdesk.service;
 import com.reportdesk.ReportDeskPlugin;
 import com.reportdesk.core.Report;
 import com.reportdesk.core.ReportCategory;
-import com.reportdesk.i18n.MessageKeys;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +33,10 @@ import org.bukkit.entity.Player;
 /**
  * Optional auto-detection. Disabled by default and never punishes: it either creates a system
  * report or alerts staff.
+ *
+ * <p>Detection is driven by a fixed list of {@link DetectPolicy} strategies (block-break and
+ * chat-spam). Each policy carries its own switch; when a policy is off its check is skipped and no
+ * resources are allocated. Adding a new policy does not change the block-break default behaviour.
  */
 public final class AutoDetectService {
 
@@ -42,71 +46,89 @@ public final class AutoDetectService {
 
   private final Map<UUID, Long> cooldownUntil = new ConcurrentHashMap<>();
 
+  private final List<DetectPolicy> policies;
+
   public AutoDetectService(ReportDeskPlugin plugin, EvidenceService evidence) {
 
     this.plugin = plugin;
 
     this.evidence = evidence;
+
+    this.policies = List.of(new BlockBreakDetectPolicy(), new ChatSpamDetectPolicy());
   }
 
+  /**
+   * One detection tick. Short-circuits when the evidence layer or the auto-detect master switch
+   * is off. Otherwise walks the registered policies; each policy short-circuits on its own switch.
+   */
   public void check() {
 
-    if (!plugin.config().evidence().autoDetect().enabled()) {
+    var auto = plugin.config().evidence().autoDetect();
+
+    if (!auto.enabled()) {
 
       return;
     }
 
-    var settings = plugin.config().evidence().autoDetect();
-
-    if (!plugin.config().evidence().enabled()
-        || !plugin.config().evidence().blockBreak().enabled()) {
+    if (!plugin.config().evidence().enabled()) {
 
       return;
     }
 
     long now = System.currentTimeMillis();
 
-    for (EvidenceService.BreakStats stats :
-        evidence.recentBreakStats(settings.windowSeconds(), settings.blockBreakThreshold())) {
+    int windowSeconds = auto.windowSeconds();
 
-      long cooldown = settings.cooldownSeconds() * 1000L;
+    long cooldownMillis = auto.cooldownSeconds() * 1000L;
 
-      Long until = cooldownUntil.get(stats.playerId());
+    for (DetectPolicy policy : policies) {
 
-      if (until != null && until > now) {
+      if (!policy.enabled(plugin.config())) {
 
         continue;
       }
 
-      cooldownUntil.put(stats.playerId(), now + cooldown);
+      for (DetectPolicy.Detection detection :
+          policy.check(evidence, plugin.config(), windowSeconds)) {
 
-      Bukkit.getScheduler().runTask(plugin, () -> handle(stats, settings.windowSeconds()));
+        Long until = cooldownUntil.get(detection.playerId());
+
+        if (until != null && until > now) {
+
+          continue;
+        }
+
+        cooldownUntil.put(detection.playerId(), now + cooldownMillis);
+
+        DetectPolicy capturedPolicy = policy;
+
+        Bukkit.getScheduler().runTask(plugin, () -> handle(capturedPolicy, detection));
+      }
     }
   }
 
-  private void handle(EvidenceService.BreakStats stats, int windowSeconds) {
+  private void handle(DetectPolicy policy, DetectPolicy.Detection detection) {
 
-    Player target = Bukkit.getPlayer(stats.playerId());
+    Player target = Bukkit.getPlayer(detection.playerId());
 
-    String targetName = target != null ? target.getName() : stats.playerName();
+    String targetName =
+        target != null ? target.getName() : detection.playerName();
 
     if (targetName == null || targetName.isBlank()) {
 
       return;
     }
 
-    var settings = plugin.config().evidence().autoDetect();
+    var auto = plugin.config().evidence().autoDetect();
+
+    var registry = plugin.config().categoryRegistry();
 
     ReportCategory category =
-        plugin
-            .config()
-            .categoryRegistry()
-            .find("cheating")
+        registry
+            .find(policy.targetCategory())
             .orElseGet(
                 () ->
-                    plugin
-                        .config()
-                        .categoryRegistry()
+                    registry
                         .find(plugin.config().defaultCategory())
                         .orElseThrow());
 
@@ -114,35 +136,38 @@ public final class AutoDetectService {
         plugin
             .messages()
             .plain(
-                MessageKeys.EVIDENCE_AUTO_REPORT_DETAIL,
+                policy.detailKey(),
                 Map.of(
-                    "count", String.valueOf(stats.count()),
-                    "seconds", String.valueOf(windowSeconds)));
+                    "count", String.valueOf(detection.count()),
+                    "seconds", String.valueOf(detection.windowSeconds())));
 
-    if (settings.createReport()) {
+    if (auto.createReport()) {
 
       Optional<Report> created =
           plugin.reportService().submitSystem(targetName, category.id(), detail);
 
       created.ifPresent(
-          report -> plugin.notification().onAutoDetected(report, stats.count(), windowSeconds));
+          report ->
+              plugin
+                  .notification()
+                  .onAutoDetected(
+                      report, detection.count(), detection.windowSeconds()));
 
-    } else if (settings.notifyStaff()) {
+    } else if (auto.notifyStaff()) {
 
       Map<String, String> placeholders = new LinkedHashMap<>();
 
       placeholders.put("target", targetName);
 
-      placeholders.put("count", String.valueOf(stats.count()));
+      placeholders.put("count", String.valueOf(detection.count()));
 
-      placeholders.put("seconds", String.valueOf(windowSeconds));
+      placeholders.put("seconds", String.valueOf(detection.windowSeconds()));
 
       placeholders.put("id", "-");
 
       plugin
           .notification()
-          .staffAlert(
-              plugin.messages().prefixed(MessageKeys.EVIDENCE_AUTO_REPORT_STAFF, placeholders));
+          .staffAlert(plugin.messages().prefixed(policy.staffKey(), placeholders));
     }
   }
 

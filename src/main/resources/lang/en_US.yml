@@ -846,6 +846,8 @@ gui:
           retry-count: 'Webhook Retry Count'
           retry-base-seconds: 'Webhook Retry Base Interval'
           failure-alert-enabled: 'Alert Staff On Webhook Failure'
+          secondary-url: 'Secondary Webhook URL'
+          sla-events-enabled: 'Route SLA Events To Webhook'
         sla:
           weekly-enabled: 'Weekly SLA Report'
           interval-hours: 'SLA Report Interval'
@@ -879,6 +881,8 @@ gui:
           cooldown-seconds: 'Auto Detection Cooldown (seconds)'
           create-report: 'Auto Create Reports'
           notify-staff: 'Notify Staff on Detection'
+          chat-spam-enabled: 'Detect Chat Spam / Advertising'
+          chat-spam-threshold: 'Chat Spam Threshold (messages per window)'
       punishments:
         enabled: 'Enable Punishments'
       audit:
@@ -1012,6 +1016,8 @@ gui:
           retry-count: 'How many times a failed webhook send is retried before giving up (exponential backoff).'
           retry-base-seconds: 'Base seconds of the exponential backoff between webhook retries.'
           failure-alert-enabled: 'Notify online staff in game when a webhook send fails after all retries.'
+          secondary-url: 'Optional second webhook URL; SLA breach summaries and failure alerts route here when configured.'
+          sla-events-enabled: 'When enabled, SLA breach summary events are sent to the configured webhook channel.'
         sla:
           weekly-enabled: 'Push a weekly SLA summary to the webhook. Off by default.'
           interval-hours: 'Hours between SLA summary pushes (168 = weekly).'
@@ -1045,6 +1051,8 @@ gui:
           cooldown-seconds: 'Minimum seconds between two auto detections for one player.'
           create-report: 'Create a report automatically when suspicious behaviour is detected.'
           notify-staff: 'Notify online staff when suspicious behaviour is detected.'
+          chat-spam-enabled: 'Optional high-frequency chat detection (enhancement layer, off by default). Triggers when a player exceeds the threshold within the window.'
+          chat-spam-threshold: 'Number of chat messages inside the auto-detect window that trigger a chat-spam detection.'
       punishments:
         enabled: 'Allow configured punishment commands to run when a report is closed.'
       audit:
@@ -1233,6 +1241,7 @@ admin:
   help-reply: '<gray>/reports reply <id> <text...> <dark_gray>- <gray>Reply to the reporter'
   help-replies: '<gray>/reports replies <id> [page] <dark_gray>- <gray>Read the conversation'
   help-overdue: '<gray>/reports overdue [page] <dark_gray>- <gray>List overdue reports'
+  help-sla: '<gray>/reports sla [days] <dark_gray>- <gray>SLA overdue report by priority, category and admin'
   help-watch: '<gray>/reports watch <player> <dark_gray>- <gray>Follow a player and get alerts'
   help-unwatch: '<gray>/reports unwatch <player> <dark_gray>- <gray>Stop following a player'
   help-watching: '<gray>/reports watching [page] <dark_gray>- <gray>List followed players'
@@ -1299,6 +1308,9 @@ admin:
   banned-word: '<red>Input contains a blocked word: %word%.'
   console-actor: 'Console'
 
+  sla-report-header: '<gold>===== SLA Report ====='
+  sla-report-line: '<gray>%dimension%: <white>%count% <dark_gray>(avg overdue %avg%)'
+  sla-report-empty: '<gray>No reports over SLA in the selected period.'
 config:
   list-header: '<gold>===== Editable settings (%count% keys, page %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'
@@ -1336,6 +1348,8 @@ evidence:
   chat-empty: '<gray>(no chat records)'
   auto-report-detail: 'Auto-detection: %count% blocks broken within %seconds% seconds.'
   auto-report-staff: '<gold>[Auto-detect] <white>%target%</white> <gray>broke %count% blocks within %seconds% seconds. Report <white>#%id%</white> created.'
+  chat-spam-detail: 'Auto-detection: %count% chat messages within %seconds% seconds.'
+  chat-spam-staff: '<gold>[Auto-detect] <white>%target%</white> <gray>sent %count% chat messages within %seconds% seconds. Report <white>#%id%</white> created.'
 
 webhook:
   title-created: 'New report #%id%'
@@ -1356,6 +1370,8 @@ webhook:
   test-title: 'ReportDesk Webhook Test'
   test-content: 'This is a channel test from ReportDesk.'
 
+  title-sla-breach: 'SLA breach summary'
+  content-sla-breach: 'SLA summary — %overdue% overdue reports, average overrun %avg%. Breakdown: %breakdown%'
 time:
   now: 'just now'
   seconds-ago: '%value%s ago'

@@ -242,6 +242,306 @@ public final class AuditStorage {
         executor);
   }
 
+  /**
+   * Case-insensitive substring search over audit lines, newest first. Bounded by {@code limit}
+   * result lines; the scan stops as soon as enough matches are collected. Runs off the main
+   * thread.
+   *
+   * @param keyword the search text; an empty/blank keyword returns the newest {@code limit} lines
+   * @param limit maximum number of matching lines to return
+   */
+  public CompletableFuture<List<String>> search(String keyword, int limit) {
+
+    String needle = keyword == null ? "" : keyword.trim().toLowerCase(java.util.Locale.ROOT);
+
+    int cap = Math.max(1, limit);
+
+    return CompletableFuture.supplyAsync(
+        () -> {
+          if (!Files.isDirectory(directory)) {
+
+            return List.<String>of();
+          }
+
+          List<Path> files;
+
+          try (var stream = Files.list(directory)) {
+
+            files =
+                stream
+                    .filter(path -> path.getFileName().toString().endsWith(".log"))
+                    .sorted(
+                        Comparator.comparing(
+                            path -> path.getFileName().toString(), Comparator.reverseOrder()))
+                    .toList();
+
+          } catch (IOException exception) {
+
+            warn("Failed to list audit logs for search: " + exception.getMessage());
+
+            return List.of();
+          }
+
+          List<String> matches = new ArrayList<>();
+
+          for (Path file : files) {
+
+            List<String> lines;
+
+            try {
+
+              lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+
+            } catch (IOException exception) {
+
+              warn("Failed to read audit log " + file.getFileName() + ": " + exception.getMessage());
+
+              continue;
+            }
+
+            // Newest entries live at the bottom of the per-day file, so scan backwards.
+            for (int index = lines.size() - 1; index >= 0; index--) {
+
+              String line = lines.get(index);
+
+              if (!line.isBlank()
+                  && (needle.isEmpty() || line.toLowerCase(java.util.Locale.ROOT).contains(needle))) {
+
+                matches.add(line);
+
+                if (matches.size() >= cap) {
+
+                  return matches;
+                }
+              }
+            }
+          }
+
+          return matches;
+        },
+        executor);
+  }
+
+  /**
+   * Writes every audit entry (all days, newest first) to a UTF-8 CSV file with a BOM, in the same
+   * style as the report export. Runs off the main thread; the caller supplies the destination
+   * folder.
+   *
+   * @param outputDirectory folder in which {@code audit-export-*.csv} is written
+   * @return the written file, or a failed future when the directory cannot be created
+   */
+  public CompletableFuture<Path> exportCsv(Path outputDirectory) {
+
+    return CompletableFuture.supplyAsync(
+        () -> {
+          if (!Files.isDirectory(directory)) {
+
+            throw new CompletionException(new IOException("no audit data to export"));
+          }
+
+          List<String> all = new ArrayList<>();
+
+          try (var stream = Files.list(directory)) {
+
+            List<Path> files =
+                stream
+                    .filter(path -> path.getFileName().toString().endsWith(".log"))
+                    .sorted(
+                        Comparator.comparing(
+                            path -> path.getFileName().toString(), Comparator.reverseOrder()))
+                    .toList();
+
+            for (Path file : files) {
+
+              try {
+
+                all.addAll(Files.readAllLines(file, StandardCharsets.UTF_8));
+
+              } catch (IOException exception) {
+
+                warn(
+                    "Failed to read audit log "
+                        + file.getFileName()
+                        + ": "
+                        + exception.getMessage());
+              }
+            }
+
+          } catch (IOException exception) {
+
+            warn("Failed to scan audit directory: " + exception.getMessage());
+          }
+
+          java.util.Collections.reverse(all);
+
+          try {
+
+            Files.createDirectories(outputDirectory);
+
+            String stamp = java.time.Instant.now().toString().replace(":", "").replace("-", "");
+
+            Path target =
+                outputDirectory.resolve("audit-export-" + stamp + ".csv");
+
+            StringBuilder builder = new StringBuilder();
+
+            builder.append('\ufeff').append("timestamp,actor,action,report_id,detail\n");
+
+            for (String line : all) {
+
+              com.reportdesk.core.AuditEntry entry =
+                  com.reportdesk.core.AuditEntry.fromLine(line);
+
+              if (entry == null) {
+
+                continue;
+              }
+
+              builder
+                  .append(csv(entry.timestamp()))
+                  .append(',')
+                  .append(csv(entry.actorName()))
+                  .append(',')
+                  .append(csv(entry.action()))
+                  .append(',')
+                  .append(entry.reportId() <= 0 ? "-" : entry.reportId())
+                  .append(',')
+                  .append(csv(entry.detail()))
+                  .append('\n');
+            }
+
+            Files.writeString(
+                target,
+                builder.toString(),
+                StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE);
+
+            return target;
+
+          } catch (IOException exception) {
+
+            throw new CompletionException(exception);
+          }
+        },
+        executor);
+  }
+
+  /**
+   * Deletes the oldest audit files until the total on-disk size falls at or under {@code
+   * maxBytes}, complementing the time-based {@link #purgeBefore(long)}. A non-positive limit
+   * disables the size cap and deletes nothing.
+   *
+   * @return the number of files deleted
+   */
+  public CompletableFuture<Integer> purgeOverSize(long maxBytes) {
+
+    if (maxBytes <= 0L) {
+
+      return CompletableFuture.completedFuture(0);
+    }
+
+    return CompletableFuture.supplyAsync(
+        () -> {
+          if (!Files.isDirectory(directory)) {
+
+            return 0;
+          }
+
+          List<java.util.AbstractMap.SimpleEntry<Path, Long>> files = new ArrayList<>();
+
+          long total = 0L;
+
+          try (var stream = Files.list(directory)) {
+
+            for (Path file :
+                stream.filter(path -> path.getFileName().toString().endsWith(".log")).toList()) {
+
+              long size;
+
+              try {
+
+                size = Files.size(file);
+
+              } catch (IOException exception) {
+
+                warn("Failed to size audit file " + file.getFileName() + ": " + exception);
+
+                continue;
+              }
+
+              files.add(new java.util.AbstractMap.SimpleEntry<>(file, size));
+
+              total += size;
+            }
+
+          } catch (IOException exception) {
+
+            warn("Failed to scan audit directory: " + exception.getMessage());
+
+            return 0;
+          }
+
+          if (total <= maxBytes) {
+
+            return 0;
+          }
+
+          // Delete from the oldest file first (ascending by name == ascending by date).
+          files.sort(
+              java.util.Comparator.comparing(
+                  java.util.AbstractMap.SimpleEntry<Path, Long>::getKey,
+                  Comparator.comparing(path -> path.getFileName().toString())));
+
+          int deleted = 0;
+
+          for (java.util.AbstractMap.SimpleEntry<Path, Long> entry : files) {
+
+            if (total <= maxBytes) {
+
+              break;
+            }
+
+            try {
+
+              if (Files.deleteIfExists(entry.getKey())) {
+
+                total -= entry.getValue();
+
+                deleted++;
+              }
+
+            } catch (IOException exception) {
+
+              warn(
+                  "Failed to delete oversized audit file "
+                      + entry.getKey().getFileName()
+                      + ": "
+                      + exception.getMessage());
+            }
+          }
+
+          return deleted;
+        },
+        executor);
+  }
+
+  private static String csv(Object value) {
+
+    String text = value == null ? "" : String.valueOf(value);
+
+    text = text.replace('\r', ' ').replace('\n', ' ').replace('\t', ' ');
+
+    boolean quote = text.indexOf(',') >= 0 || text.indexOf('"') >= 0;
+
+    if (quote) {
+
+      return "\"" + text.replace("\"", "\"\"") + "\"";
+    }
+
+    return text;
+  }
+
   public void shutdown() {
 
     executor.shutdown();

@@ -846,6 +846,8 @@ gui:
           retry-count: 'Nouveaux essais de webhook'
           retry-base-seconds: 'Intervalle de base des essais'
           failure-alert-enabled: 'Alerte staff si échec du webhook'
+          secondary-url: 'URL Webhook secondaire'
+          sla-events-enabled: 'Routage des événements SLA vers Webhook'
         sla:
           weekly-enabled: 'Rapport SLA hebdomadaire'
           interval-hours: 'Intervalle du rapport SLA'
@@ -879,6 +881,8 @@ gui:
           cooldown-seconds: 'Cooldown de la détection (secondes)'
           create-report: 'Créer des signalements automatiquement'
           notify-staff: 'Notifier l''équipe à la détection'
+          chat-spam-enabled: 'Détecter le spam / la publicité en chat'
+          chat-spam-threshold: 'Seuil de spam (messages par fenêtre)'
       punishments:
         enabled: 'Punitions activées'
       audit:
@@ -1012,6 +1016,8 @@ gui:
           retry-count: 'Nombre de nouvelles tentatives après un échec de webhook (recul exponentiel).'
           retry-base-seconds: 'Secondes de base du recul exponentiel entre les tentatives de webhook.'
           failure-alert-enabled: 'Avertir le staff en ligne dans le jeu quand un webhook échoue après toutes les tentatives.'
+          secondary-url: 'Deuxième URL webhook facultative ; les résumés SLA et les alertes de défaillance y sont routés si configuré.'
+          sla-events-enabled: 'Lorsqu activé, les événements de dépassement SLA sont envoyés au webhook.'
         sla:
           weekly-enabled: 'Envoie un résumé SLA hebdomadaire au webhook. Désactivé par défaut.'
           interval-hours: 'Heures entre les envois du résumé SLA (168 = hebdomadaire).'
@@ -1045,6 +1051,8 @@ gui:
           cooldown-seconds: 'Secondes minimum entre deux détections automatiques d''un joueur.'
           create-report: 'Crée un signalement automatiquement quand un comportement suspect est détecté.'
           notify-staff: 'Notifie l''équipe en ligne quand un comportement suspect est détecté.'
+          chat-spam-enabled: 'Détection de chat haute fréquence optionnelle (couche d extension, désactivée par défaut). Déclenchée quand un joueur dépasse le seuil dans la fenêtre.'
+          chat-spam-threshold: 'Nombre de messages dans la fenêtre d auto-détection qui déclenche la détection de spam.'
       punishments:
         enabled: 'Permet d''exécuter les punitions configurées à la fermeture d''un signalement.'
       audit:
@@ -1233,6 +1241,7 @@ admin:
   help-reply: '<gray>/reports reply [id] [texte...] <dark_gray>- <gray>Répondre au signalant'
   help-replies: '<gray>/reports replies [id] [page] <dark_gray>- <gray>Lire la conversation'
   help-overdue: '<gray>/reports overdue [page] <dark_gray>- <gray>Lister les signalements en retard'
+  help-sla: '<gray>/reports sla [days] <dark_gray>- <gray>Rapport de dépassement SLA'
   help-watch: '<gray>/reports watch [joueur] <dark_gray>- <gray>Suivre un joueur et recevoir des alertes'
   help-unwatch: '<gray>/reports unwatch [joueur] <dark_gray>- <gray>Cesser de suivre un joueur'
   help-watching: '<gray>/reports watching [page] <dark_gray>- <gray>Lister les joueurs suivis'
@@ -1299,6 +1308,9 @@ admin:
   banned-word: '<red>La saisie contient un mot interdit : %word%.'
   console-actor: 'Console'
 
+  sla-report-header: '<gold>===== Rapport SLA ====='
+  sla-report-line: '<gray>%dimension% : <white>%count% <dark_gray>(délai moyen %avg%)'
+  sla-report-empty: '<gray>Aucun rapport en retard sur la période sélectionnée.'
 config:
   list-header: '<gold>===== Configurations éditables (%count% clés, page %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'
@@ -1336,6 +1348,8 @@ evidence:
   chat-empty: '<gray>(pas de journal de chat)'
   auto-report-detail: 'Détection automatique : %count% blocs détruits en %seconds% secondes.'
   auto-report-staff: '<gold>[Détection auto] <white>%target%</white> <gray>a détruit %count% blocs en %seconds% secondes. Signalement <white>#%id%</white> créé.'
+  chat-spam-detail: 'Détection auto : %count% messages de chat en %seconds% secondes.'
+  chat-spam-staff: '<gold>[Détection auto] <white>%target%</white> <gray>a envoyé %count% messages en %seconds% secondes. Rapport <white>#%id%</white> créé.'
 
 webhook:
   title-created: 'Nouveau signalement #%id%'
@@ -1356,6 +1370,8 @@ webhook:
   test-title: 'Test de webhook ReportDesk'
   test-content: 'C''est un test de canal de ReportDesk.'
 
+  title-sla-breach: 'Résumé des dépassements SLA'
+  content-sla-breach: 'SLA — %overdue% en retard, délai moyen %avg%. Détail : %breakdown%'
 time:
   now: 'à l''instant'
   seconds-ago: 'il y a %value%s'

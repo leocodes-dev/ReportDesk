@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.reportdesk.config.ConfigLoader;
 import com.reportdesk.config.MapConfigSource;
 import com.reportdesk.config.PluginConfig;
+import com.reportdesk.core.SlaStats;
 import com.reportdesk.i18n.Messages;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -193,6 +194,141 @@ class WebhookServiceTest {
     List<String> warnings = new ArrayList<>();
 
     return new ConfigLoader(warnings::add).load(new MapConfigSource(source));
+  }
+
+  private static PluginConfig configWithSecondaryUrl(
+      String primaryUrl, String secondaryUrl, boolean slaEventsEnabled, boolean enabled) {
+
+    Map<String, Object> webhook = new LinkedHashMap<>();
+
+    webhook.put("enabled", enabled);
+
+    webhook.put("url", primaryUrl);
+
+    webhook.put("secondary-url", secondaryUrl);
+
+    webhook.put("sla-events-enabled", slaEventsEnabled);
+
+    Map<String, Object> notifications = Map.of("webhook", webhook);
+
+    Map<String, Object> source = Map.of("notifications", notifications);
+
+    List<String> warnings = new ArrayList<>();
+
+    return new ConfigLoader(warnings::add).load(new MapConfigSource(source));
+  }
+
+  @Test
+  void slaBreachIsARoutingNoOpWhenDisabledOrEmpty() {
+
+    PluginConfig offEvents = configWithSecondaryUrl("http://127.0.0.1:1", "", false, true);
+
+    WebhookService serviceOff =
+        new WebhookService(
+            null,
+            () -> offEvents,
+            messages(),
+            Function.identity(),
+            msg -> {},
+            msg -> {},
+            testClient());
+
+    SlaStats.SlaReport nonEmpty =
+        SlaStats.compute(
+            java.util.List.of(
+                com.reportdesk.test.TestFixtures.open(
+                        1L,
+                        com.reportdesk.test.TestFixtures.ALICE,
+                        "Alice",
+                        "Bob",
+                        "chat",
+                        1_000L)
+                    .withPriority(com.reportdesk.core.ReportPriority.NORMAL, 900L, 1_000L)),
+            2_000L);
+
+    assertTrue(nonEmpty.totalOverdue() > 0, "fixture must be overdue so the gate is exercised");
+
+    // sla-events-enabled=false -> the switch check short-circuits before any allocation.
+    serviceOff.slaBreach(nonEmpty);
+
+    // Empty report and null report are both no-ops even with the switch on.
+    PluginConfig enabled = configWithSecondaryUrl("http://127.0.0.1:1", "", true, true);
+
+    WebhookService serviceOn =
+        new WebhookService(
+            null,
+            () -> enabled,
+            messages(),
+            Function.identity(),
+            msg -> {},
+            msg -> {},
+            testClient());
+
+    serviceOn.slaBreach(SlaStats.compute(java.util.List.of(), 2_000L));
+
+    serviceOn.slaBreach(null);
+  }
+
+  @Test
+  void slaBreachRoutesToSecondaryUrlWhenConfigured() throws Exception {
+
+    HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+
+    AtomicInteger hits = new AtomicInteger();
+
+    server.createContext("/", exchange -> {
+
+      hits.incrementAndGet();
+
+      exchange.sendResponseHeaders(200, -1);
+
+      exchange.close();
+    });
+
+    server.start();
+
+    try {
+
+      PluginConfig config =
+          configWithSecondaryUrl(
+              "http://127.0.0.1:1",
+              "http://127.0.0.1:" + server.getAddress().getPort(),
+              true,
+              true);
+
+      WebhookService service =
+          new WebhookService(
+              null,
+              () -> config,
+              messages(),
+              Function.identity(),
+              msg -> {},
+              msg -> {},
+              testClient());
+
+      SlaStats.SlaReport report =
+          SlaStats.compute(
+              java.util.List.of(
+                  com.reportdesk.test.TestFixtures.open(
+                          1L,
+                          com.reportdesk.test.TestFixtures.ALICE,
+                          "Alice",
+                          "Bob",
+                          "chat",
+                          1_000L)
+                      .withPriority(com.reportdesk.core.ReportPriority.NORMAL, 900L, 1_000L)),
+              2_000L);
+
+      service.slaBreach(report);
+
+      Thread.sleep(400L);
+
+      assertEquals(1, hits.get(), "SLA breach must hit the secondary channel");
+
+    } finally {
+
+      server.stop(0);
+    }
   }
 
   private static Supplier<Messages> messages() {

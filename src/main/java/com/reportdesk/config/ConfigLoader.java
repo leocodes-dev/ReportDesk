@@ -286,7 +286,9 @@ public final class ConfigLoader {
             bool(webhook, "events.closed", true),
             integer(webhook, "retry-count", 2, 0, 5),
             integer(webhook, "retry-base-seconds", 5, 1, 300),
-            bool(webhook, "failure-alert-enabled", true));
+            bool(webhook, "failure-alert-enabled", true),
+            string(webhook, "secondary-url", ""),
+            bool(webhook, "sla-events-enabled", true));
 
     PluginConfig.Notifications notificationSettings =
         new PluginConfig.Notifications(
@@ -336,7 +338,9 @@ public final class ConfigLoader {
                 integer(autoDetect, "block-break-threshold", 40, 1, 100_000),
                 integer(autoDetect, "cooldown-seconds", 300, 0, 86_400),
                 bool(autoDetect, "create-report", true),
-                bool(autoDetect, "notify-staff", true)));
+                bool(autoDetect, "notify-staff", true),
+                bool(autoDetect, "chat-spam-enabled", false),
+                integer(autoDetect, "chat-spam-threshold", 60, 2, 1_000)));
 
     PluginConfig.Punishments punishmentSettings =
         new PluginConfig.Punishments(

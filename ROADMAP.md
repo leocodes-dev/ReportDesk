@@ -18,7 +18,7 @@
 
 ## P0 · 数据预埋与已确认缺陷
 
-### 1. 举报记录字段预埋
+### 1. 举报记录字段预埋 ✅
 - 目标：为后续功能预埋数据，不做破坏性变更。
 - 内容：
   - `Report` 增加可选字段 `reportedFrom`（提交入口：gui/command/chat，自动检测入口记 auto）；
@@ -26,7 +26,7 @@
   - 新字段在 JSON 中缺省省略（紧凑），旧文件可直接读；`copy()` 全链路同步。
 - 验收：旧 `reports.json` 回放成功；新增字段单测覆盖；ipHash 关闭时零采集。
 
-### 2. Webhook 失败重试与告警
+### 2. Webhook 失败重试与告警 ✅
 - 目标：webhook 发送失败当前只打日志，通道长期不可用无人知晓。
 - 内容：
   - 失败后指数退避重试（次数与间隔进 `notifications.webhook` 配置，默认 2 次）；
@@ -48,7 +48,7 @@
 
 ## P1 · 协作与可观测性
 
-### 4. 多人协作：指派与转派（P1 首位）
+### 4. 多人协作：指派与转派（P1 首位）⬜
 - 目标：大型服务器里"认领"之外，还需要"指派给某管理员"。
 - 内容：
   - `/reports assign <id> <管理员>`：把未处理举报指派给指定在线管理员；
@@ -57,15 +57,16 @@
   - 统计面板新增"人均处理量"；审计记录指派/转派动作。
 - 验收：指派不重复通知（幂等）；转派保留原认领时间线。
 
-### 5. 处理时限（SLA）报表（剩余部分）
+### 5. 处理时限（SLA）报表（剩余部分）✅
 - 目标：管理侧看到"谁在拖、哪类超得最多"。
 - 已完成：管理首页与举报队列头部均已显示"逾期 N 条"徽章（原第 3 条内容）。
-- 剩余：
-  - `/reports sla [days]` 子命令：按优先级、分类、管理员维度统计超时数量与平均超时时长；
-  - 可选周报：每周把 SLA 摘要推 Webhook（`reports.sla-weekly-enabled` 默认关，属增强层）。
+- 剩余（本版本完成）：
+  - `/reports sla [days]` 子命令：按优先级、分类、管理员维度统计超时数量与平均超时时长 —— 已实现（`ReportsCommand#sla` + 纯内存聚合 `SlaStats.compute`，单测 `SlaStatsTest`）；
+  - 可选周报：把 SLA 摘要推 Webhook（`notifications.sla.weekly-enabled` 默认关，属增强层）—— 已实现（`MaintenanceService#pushSlaWeekly` + `ReportDeskPlugin` 周期任务 + `WebhookService#slaBreach` 走 secondary-url 分流，`DetectPolicy`/周报入口单次开关短路）。
 - 验收：`/reports overdue` 与新报表口径一致。
+- **核实（2026-11）**：原 `reports.sla-weekly-enabled` 键名有误，实际为 `notifications.sla.weekly-enabled`。
 
-### 6. 智能优先级复盘（新增，旗舰功能配套）
+### 6. 智能优先级复盘（新增，旗舰功能配套）⬜
 - 目标：smart-priority 上线一段时间后，管理员需要知道"标记得准不准、阈值该往哪调"。
 - 内容：
   - `/reports smart review [days]`：把已关闭举报的 `smartScore` 与最终判定交叉统计，输出垃圾带精确率/召回率（被标记中真垃圾占比、真垃圾中被标记占比）与分数分布；
@@ -73,15 +74,16 @@
   - 其它工具页"数据状态"卡补一行"垃圾标记率"。
 - 验收：纯只读、内存聚合、主线程零 IO；功能关闭时命令提示而未计算。
 
-### 7. 审计日志增强
+### 7. 审计日志增强（部分 ✅ / 链式哈希 ⚠️ 砍）
 - 目标：审计可查、可导出、可防篡改。
 - 内容：
-  - `/reports audit search <关键字>`、`audit export`；
-  - 每条审计行带链式哈希（前一行的 hash 嵌入本行），检测被手工改过；
-  - 审计保留策略增加"按大小上限清理"（配合保留天数）。
-- 验收：篡改某一行后校验报出位置；导出为 CSV 与举报导出同风格。
+  - `/reports audit search <关键字>`、`audit export` ✅ —— 已实现（`ReportsCommand#auditSearch`/`auditExport` + `AuditStorage#search`/`exportCsv`，单测 `AuditStorageTest`）；
+  - 每条审计行带链式哈希（前一行的 hash 嵌入本行），检测被手工改过 ⚠️ **砍** —— 对游戏内插件属过度设计（见文末表）；
+  - 审计保留策略增加"按大小上限清理"（配合保留天数）✅ —— 已实现（`AuditStorage#purgeOverSize` + `MaintenanceService` 接入 `audit.max-size-mb`，单测 `purgeOverSizeDeletesOldestFilesFirst`）。
+- 验收：导出为 CSV 与举报导出同风格（已满足）；篡改检测随链式哈希一并取消。
+- **核实（2026-11）**：search/export/按大小清理完成；链式哈希记 ⚠️ 删除。
 
-### 8. 数据迁移框架（schema-version，按需启动）
+### 8. 数据迁移框架（schema-version，按需启动）⏸
 - 说明：至今格式演进靠"新字段带默认值"约定（`smartScore` 即为先例），**首个破坏性变更到来时**再实现，不提前建框架；在此之前 P1 其它项先行。
 - 内容：
   - `reports.json` 加 `schema-version`（当前 1）；
@@ -93,21 +95,21 @@
 
 ## P2 · 体验与扩展（按需求选做）
 
-### 9. 数据看板：趋势增强
+### 9. 数据看板：趋势增强 ⬜
 - 目标：不用开文件也能看"最近 7 天走势"（当前状态统计 GUI 统计页与 `/reports stats` 已有，缺的是时间维度）。
 - 内容：`/reports stats` 增加最近 N 天新建/结案趋势（内存聚合，不落盘）与分类占比文本条形。
 - 验收：输出带时间范围参数；聚合有缓存不重复扫描。
 
-### 10. Webhook 分流与事件扩展
+### 10. Webhook 分流与事件扩展 ✅
 - 目标：通知不止一个通道、不止三种事件。
 - 已完成：测试发送按钮（其它工具页 22 号卡）、测试失败控制台告警。
-- 剩余：
-  - 第二个 Webhook URL（分流：常规事件 → 群 A，SLA/告警类 → 群 B）；
-  - 载荷增加 `sla_breach` 事件（与 P1#5 周报配套）。
+- 剩余（本版本完成）：
+  - 第二个 Webhook URL（分流：常规事件 → 群 A，SLA/告警类 → 群 B）✅ —— 已实现（`PluginConfig.Webhook.secondaryUrl` + `WebhookService` 的 `slaBreach` 走 secondary-url，默认事件仍走主 URL，两通道互不影响）；
+  - 载荷增加 `sla_breach` 事件（与 P1#5 周报配套）✅ —— 已实现（`WebhookService#slaBreach` + `webhook.title-sla-breach`/`content-sla-breach` 文案，12 语言）。
 - 已删：通知摘要 MiniMessage 模板（embed 已是结构化字段，无明确需求）。
-- 验收：两个 URL 各自失败互不影响。
+- 验收：两个 URL 各自失败互不影响（单测 `slaBreachRoutesToSecondaryUrlWhenConfigured`）。
 
-### 11. 生态互通：Java 事件（实用核心）
+### 11. 生态互通：Java 事件（实用核心）⬜
 - 目标：把举报数据喂给其它插件。
 - 内容：
   - 广播 `ReportSubmittedEvent`（可取消=拦截提交）、`ReportClaimedEvent`、`ReportClosedEvent`、`ReportEvidenceCapturedEvent`；
@@ -116,7 +118,7 @@
 - 可选子项：BStats 匿名统计（默认关，`telemetry.enabled`，关闭时零网络调用）。
 - 验收：取消 Submitted 事件后提交管线终止且不落库。
 
-### 12. 管理侧批量操作
+### 12. 管理侧批量操作 ⬜
 - 目标：大服日常运维效率。
 - 内容：
   - `/reports bulk close <id...> <裁决>`（限 `reportdesk.admin.delete`）；
@@ -124,19 +126,19 @@
   - 批量操作写一条合并审计（含 id 列表）。
 - 验收：单次批量上限可配，防误操作。
 
-### 13. 运维指标（新增）
+### 13. 运维指标（新增）⏸
 - 目标：不动数据文件也能回答"服务器现在健康吗"。
 - 内容：`/reports metrics`：近 24h 提交/关闭数、逾期数、存储占用（reports/WAL/备份/审计文件体积）、审计行数、监控清单人数。
 - 验收：只读、1 分钟 TTL 缓存、主线程零全表扫描。
 
-### 14. 配置备份恢复（新增）
+### 14. 配置备份恢复（新增）⏸
 - 目标：config-editor 已有"保存前备份"，缺"恢复"这半步。
 - 内容：
   - `/reports config restore [latest|<编号>]` + 其它工具页一个恢复按钮；
   - 恢复前再自动备一份（防误操作），走破坏性确认；恢复后自动 reload 生效。
 - 验收：单测"弄脏当前配置→恢复→逐 key 校验"。
 
-### 15. 更多举报入口：玩家头颅右键
+### 15. 更多举报入口：玩家头颅右键 ⬜
 - 目标：举报不只是一个命令。
 - 内容：
   - 右键显示名含目标玩家名的头颅/物品 → 弹出举报菜单（`InventoryClickEvent` + 物品 meta 标记，不注册任何高频事件，不嗅探背包内容）；
@@ -144,15 +146,16 @@
 - 已删："管理发放举报按钮物品"（物品管理成本与复制风险高，收益边际）。
 - 验收：两入口冷却共享；入口可单独关闭。
 
-### 16. 自动检测策略插件化
+### 16. 自动检测策略插件化 ✅
 - 目标：阈值检测不止方块破坏。
 - 内容：
-  - 定义 `DetectPolicy` 接口（窗口、指标、阈值、动作）；
-  - 内置策略：方块破坏（现有）、高频聊天（刷屏/广告，采样进 `evidence.auto-detect` 命名空间）；
-  - 策略可开关、可配阈值。
-- 验收：新增策略不改变现有默认行为；高频事件仍只在增强层注册且默认关。
+  - 定义 `DetectPolicy` 接口（窗口、指标、阈值、动作）✅ —— 已实现（`com.reportdesk.service.DetectPolicy`，含 `Detection` 记录）；
+  - 内置策略：方块破坏（现有，封装为 `BlockBreakDetectPolicy`）、高频聊天（刷屏/广告，`ChatSpamDetectPolicy`，采样进 `evidence.auto-detect.chat-spam-*` 命名空间）✅；
+  - 策略可开关、可配阈值 ✅ —— `AutoDetectService` 改为策略驱动，各策略在 `enabled()` 单次开关判断短路；`chat-spam-enabled`/`chat-spam-threshold` 进 config.yml（默认关，增强层）。
+- 验收：新增策略不改变现有默认行为（单测 `DetectPolicyTest` 验证各开关组合）；高频事件仍只在增强层注册且默认关。
+- **核实（2026-11）**：`AutoDetectService` 调度条件从"必须方块破坏开"放宽为"evidence + auto-detect 开即注册，各策略自行短路"，聊天刷屏可独立启用。
 
-### 17. 证据：轨迹数据增强 + 导出（回放砍掉）
+### 17. 证据：轨迹数据增强 + 导出（回放砍掉）⬜
 - 目标：把轨迹数据交给外部工具做后处理。
 - 内容：
   - movement 采样增加 `yaw/pitch/velocity`（默认关，增强层）；
@@ -160,12 +163,13 @@
 - 已删：GUI 内"准星 + 路径"动画回放——54 格静态 GUI 承载不了连续动画，逐帧刷新违反 AGENTS 主线程约束；可视化应交给外部工具。
 - 验收：默认关；采样默认值不变；导出不落主线程。
 
-### 18. Paper 1.21+ 前向兼容（新增）
+### 18. Paper 1.21+ 前向兼容（新增）✅
 - 目标：服务端版本往前推时插件不炸。
 - 内容：
   - 清 deprecated API：`CommandSender.sendMessage(BaseComponent)` → 现代 `sendMessage(Component)`；
   - 保持 `api-version: '1.20'` 底线不变，在更新的 Paper（1.20.6+/1.21.x）跑核心流程回归。
 - 验收：deprecation 警告清零；新版回归全绿。
+- **核实（2026-11）**：全项目无 `BaseComponent`，已统一 `net.kyori.adventure.text.Component`；`api-version` 锁 `'1.20'` 未动。
 
 ---
 
@@ -201,6 +205,7 @@
 | #15 语言文件热加载 | 删 | `/reports reload` 与 GUI 重新载入已覆盖需求，文件监听在 Windows 上不可靠 |
 | #6 通知模板 | 删 | 载荷已是结构化 embed，模板无需求 |
 | 债务「isOnGround 弃用警告」 | 删 | `Player.isOnGround` 非弃用 API，误判；真实的 deprecated API 并入 P2#18 |
+| #7 审计链式哈希（防篡改） | 砍 | 对游戏内插件属过度设计：审计文件运维可直接改，链式哈希只能事后检测哪行被动过、挡不住主动篡改，投入（逐行嵌哈希+校验+单测）远大于产出 |
 
 ---
 

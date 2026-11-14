@@ -193,4 +193,158 @@ class AuditStorageTest {
       storage.shutdown();
     }
   }
+
+  @Test
+  void searchReturnsCaseInsensitiveSubstringMatchesNewestFirst() {
+
+    AuditStorage storage = new AuditStorage(temp, true, 5, warnings::add);
+
+    try {
+
+      long now = System.currentTimeMillis();
+
+      storage.append(new AuditEntry(now - 3_000L, UUID.randomUUID(), "Alice", "CLAIM", 1L, "first")).join();
+
+      storage.append(new AuditEntry(now - 2_000L, UUID.randomUUID(), "Bob", "CLOSE", 1L, "resolved")).join();
+
+      storage.append(new AuditEntry(now - 1_000L, UUID.randomUUID(), "Carol", "CLAIM", 2L, "claimed")).join();
+
+      List<String> claims = storage.search("claim", 10).join();
+
+      assertEquals(2, claims.size());
+
+      // Newest match first.
+      assertTrue(claims.get(0).contains("CLAIM") && claims.get(0).contains("Carol"));
+
+      assertTrue(claims.get(1).contains("CLAIM") && claims.get(1).contains("Alice"));
+
+      // Blank keyword returns the newest limit lines regardless of content.
+      assertEquals(3, storage.search("", 10).join().size());
+
+      assertTrue(storage.search("nonsense-that-matches-nothing", 10).join().isEmpty());
+
+    } finally {
+
+      storage.shutdown();
+    }
+  }
+
+  @Test
+  void exportCsvWritesBomAndOneRowPerEntry() throws IOException {
+
+    AuditStorage storage = new AuditStorage(temp, true, 5, warnings::add);
+
+    try {
+
+      long now = System.currentTimeMillis();
+
+      storage.append(new AuditEntry(now - 1_000L, UUID.randomUUID(), "Alice", "CLAIM", 7L, "note")).join();
+
+      storage.append(new AuditEntry(now, UUID.randomUUID(), "Bob", "EXPORT", 0L, "")).join();
+
+      Path out = temp.resolve("export");
+
+      Path written = storage.exportCsv(out).join();
+
+      assertEquals(out, written.getParent());
+
+      String content = Files.readString(written, java.nio.charset.StandardCharsets.UTF_8);
+
+      assertTrue(content.startsWith("\ufeff"));
+
+      assertTrue(content.startsWith("\ufefftimestamp,actor,action,report_id,detail\n"));
+
+      // Two entries: one with report id 7, one rendered as '-' (reportId <= 0).
+      assertTrue(content.contains("CLAIM"));
+
+      assertTrue(content.contains("EXPORT"));
+
+      assertTrue(content.contains(",7,"));
+
+      assertTrue(content.contains("EXPORT,-,"), "report id 0 renders as '-'");
+
+    } finally {
+
+      storage.shutdown();
+    }
+  }
+
+  @Test
+  void exportCsvFailsWhenNoAuditDirectoryExists() {
+
+    AuditStorage storage = new AuditStorage(temp, true, 5, warnings::add);
+
+    try {
+
+      java.util.concurrent.CompletableFuture<Path> future =
+          storage.exportCsv(temp.resolve("export"));
+
+      try {
+
+        future.join();
+
+        org.junit.jupiter.api.Assertions.fail("expected export to fail with no audit data");
+
+      } catch (java.util.concurrent.CompletionException expected) {
+
+        // No audit files yet; exportCsv must fail rather than write an empty export.
+      }
+
+    } finally {
+
+      storage.shutdown();
+    }
+  }
+
+  @Test
+  void purgeOverSizeDeletesOldestFilesFirst() throws IOException {
+
+    AuditStorage storage = new AuditStorage(temp, true, 5, warnings::add);
+
+    try {
+
+      Path auditDir = temp.resolve("audit");
+
+      Files.createDirectories(auditDir);
+
+      // Three files, each 1 KiB; cap at 2 KiB => oldest is deleted.
+      Files.writeString(auditDir.resolve("audit-2020-01-01.log"), "x".repeat(1024));
+
+      Files.writeString(auditDir.resolve("audit-2020-01-02.log"), "x".repeat(1024));
+
+      Files.writeString(auditDir.resolve("audit-2020-01-03.log"), "x".repeat(1024));
+
+      int deleted = storage.purgeOverSize(2 * 1024).join();
+
+      assertEquals(1, deleted);
+
+      // The oldest file is the one removed.
+      assertFalse(Files.exists(auditDir.resolve("audit-2020-01-01.log")));
+
+      assertTrue(Files.exists(auditDir.resolve("audit-2020-01-02.log")));
+
+      assertTrue(Files.exists(auditDir.resolve("audit-2020-01-03.log")));
+
+    } finally {
+
+      storage.shutdown();
+    }
+  }
+
+  @Test
+  void purgeOverSizeIsDisabledForNonPositiveLimit() {
+
+    AuditStorage storage = new AuditStorage(temp, true, 5, warnings::add);
+
+    try {
+
+      assertEquals(0, storage.purgeOverSize(0).join());
+
+      assertEquals(0, storage.purgeOverSize(-1).join());
+
+    } finally {
+
+      storage.shutdown();
+    }
+  }
 }

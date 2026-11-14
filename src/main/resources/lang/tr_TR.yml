@@ -846,6 +846,8 @@ gui:
           retry-count: 'Webhook tekrar sayısı'
           retry-base-seconds: 'Webhook tekrar taban aralığı'
           failure-alert-enabled: 'Webhook hatasında staff alarmı'
+          secondary-url: 'İkincil Webhook URL'
+          sla-events-enabled: "SLA Olaylarını Webhook'a Yönlendir"
         sla:
           weekly-enabled: 'Haftalık SLA raporu'
           interval-hours: 'SLA raporu aralığı'
@@ -879,6 +881,8 @@ gui:
           cooldown-seconds: 'Algılama Soğuma Süresi (saniye)'
           create-report: 'Otomatik Şikayet Oluştur'
           notify-staff: 'Algılama Üzerinde Ekibi Bildir'
+          chat-spam-enabled: 'Sohbet Spam/Tanıtımını Tespit Et'
+          chat-spam-threshold: 'Spam Eşiği (pencere başına mesaj)'
       punishments:
         enabled: 'Cezalar Etkin'
       audit:
@@ -1012,6 +1016,8 @@ gui:
           retry-count: 'Başarısız webhook gönderiminde kaç kez tekrar deneneceği (üstel geri çekilme).'
           retry-base-seconds: 'Webhook tekrarları arasındaki üstel geri çekilmenin taban saniyesi.'
           failure-alert-enabled: 'Webhook tüm tekrarlar bitince başarısız kalırsa çevrimiçi ekibe oyun içi uyarı gönderilir.'
+          secondary-url: 'Opsiyonel ikinci Webhook URL; yapılandırıldığında SLA aşımı özetleri ve hata uyarıları buraya yönlendirilir.'
+          sla-events-enabled: "Etkinleştirildiğinde SLA ihlali özeti olayları Webhook'a gönderilir."
         sla:
           weekly-enabled: 'Haftalık SLA özeti webhooka gönderir. Varsayılan olarak kapalı.'
           interval-hours: 'SLA özeti gönderimleri arasındaki saat (168 = haftalık).'
@@ -1045,6 +1051,8 @@ gui:
           cooldown-seconds: 'Aynı oyuncunun iki otomatik algılaması arasındaki minimum saniye.'
           create-report: 'Şüpheli davranış algılandığında otomatik şikayet oluştur.'
           notify-staff: 'Şüpheli davranış algılandığında çevrimiçi ekibi bilgilendir.'
+          chat-spam-enabled: 'İsteğe bağlı yüksek frekanslı sohbet algılama (geliştirme katmanı, varsayılanı kapalı). Bir oyuncu pencerede eşiği aştığında tetiklenir.'
+          chat-spam-threshold: 'Otomatik algılama penceresinde spam algılamayı tetikleyen mesaj sayısı.'
       punishments:
         enabled: 'Bir şikayet kapatıldığında yapılandırılmış ceza komutlarının çalıştırılmasına izin verir.'
       audit:
@@ -1233,6 +1241,7 @@ admin:
   help-reply: '<gray>/reports reply [id] [metin...] <dark_gray>- <gray>Bildirene yanıt ver'
   help-replies: '<gray>/reports replies [id] [sayfa] <dark_gray>- <gray>Sohbeti oku'
   help-overdue: '<gray>/reports overdue [sayfa] <dark_gray>- <gray>Gecikmiş şikayetleri listele'
+  help-sla: '<gray>/reports sla [days] <dark_gray>- <gray>SLA gecikme raporu'
   help-watch: '<gray>/reports watch [oyuncu] <dark_gray>- <gray>Bir oyuncuyu izle ve uyarı al'
   help-unwatch: '<gray>/reports unwatch [oyuncu] <dark_gray>- <gray>Bir oyuncuyu izlemeyi bırak'
   help-watching: '<gray>/reports watching [sayfa] <dark_gray>- <gray>İzlenen oyuncuları listele'
@@ -1299,6 +1308,9 @@ admin:
   banned-word: '<red>Girdi yasaklı bir kelime içeriyor: %word%.'
   console-actor: 'Konsol'
 
+  sla-report-header: '<gold>===== SLA Raporu ====='
+  sla-report-line: '<gray>%dimension%: <white>%count% <dark_gray>(ortalama gecikme %avg%)'
+  sla-report-empty: '<gray>Seçilen dönem içinde gecikmeli rapor yok.'
 config:
   list-header: '<gold>===== Düzenlenebilir Yapılandırmalar (%count% anahtar, sayfa %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'
@@ -1336,6 +1348,8 @@ evidence:
   chat-empty: '<gray>(sohbet günlüğü yok)'
   auto-report-detail: 'Otomatik algılama: %seconds% saniye içinde %count% blok kırıldı.'
   auto-report-staff: '<gold>[Otomatik Algılama] <white>%target%</white> %seconds% saniye içinde %count% blok kırdı. Şikayet <white>#%id%</white> oluşturuldu.'
+  chat-spam-detail: 'Otomatik algılama: %seconds% saniyede %count% mesaj.'
+  chat-spam-staff: '<gold>[Otomatik algılama] <white>%target%</white> <gray>%seconds% saniyede %count% mesaj gönderdi. Rapor <white>#%id%</white> oluşturuldu.'
 
 webhook:
   title-created: 'Yeni şikayet #%id%'
@@ -1356,6 +1370,8 @@ webhook:
   test-title: 'ReportDesk Webhook Testi'
   test-content: 'Bu ReportDesk kanal testidir.'
 
+  title-sla-breach: 'SLA aşımı özeti'
+  content-sla-breach: 'SLA — %overdue% gecikme, ortalama %avg%. Dağılım: %breakdown%'
 time:
   now: 'şimdi'
   seconds-ago: '%value% sn önce'

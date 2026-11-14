@@ -151,6 +151,22 @@ public final class MaintenanceService {
                   ? CompletableFuture.completedFuture(0)
                   : plugin.auditStorage().purgeBefore(auditCutoff);
 
+          // Size cap (complements time-based retention; 0 disables).
+          long auditMaxBytes =
+              config.audit().maxFileSizeMb() > 0
+                  ? config.audit().maxFileSizeMb() * 1_048_576L
+                  : 0L;
+
+          if (auditMaxBytes > 0) {
+
+            auditFuture =
+                auditFuture.thenCombine(
+                    plugin.auditStorage().purgeOverSize(auditMaxBytes),
+                    (deleted, sized) ->
+                        Math.max(
+                            deleted, sized)); // both delete audit files; report max
+          }
+
           int finalAutoClosed = autoClosed;
 
           int finalPurgedReports = purgedReports;
@@ -214,6 +230,48 @@ public final class MaintenanceService {
           }
 
           return overdue.size();
+        });
+  }
+
+  /**
+   * Pushes the SLA breach summary to the webhook. This is the weekly SLA report referenced by the
+   * roadmap; it is part of the notification enhancement layer and is a no-op (single switch check,
+   * no allocation) when {@code notifications.sla.weekly-enabled} is off. The window covers the
+   * configured interval and aggregation is a pure in-memory snapshot read.
+   */
+  public CompletableFuture<Void> pushSlaWeekly() {
+
+    if (!plugin.config().notifications().sla().weeklyEnabled()) {
+
+      return CompletableFuture.completedFuture(null);
+    }
+
+    return CompletableFuture.runAsync(
+        () -> {
+          if (!plugin.repository().isReady()) {
+
+            return;
+          }
+
+          int days = Math.max(1, plugin.config().notifications().sla().weeklyIntervalHours() / 24);
+
+          long now = System.currentTimeMillis();
+
+          long windowStart = now - days * 86_400_000L;
+
+          List<Report> window = new ArrayList<>();
+
+          for (Report report : plugin.repository().snapshot()) {
+
+            if (report.createdAt() >= windowStart) {
+
+              window.add(report);
+            }
+          }
+
+          plugin
+              .webhook()
+              .slaBreach(com.reportdesk.core.SlaStats.compute(window, now));
         });
   }
 

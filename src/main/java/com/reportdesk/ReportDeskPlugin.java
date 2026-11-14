@@ -139,6 +139,8 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
   private BukkitTask overdueTask;
 
+  private BukkitTask slaWeeklyTask;
+
   @Override
   public void onEnable() {
 
@@ -692,7 +694,9 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
     PluginConfig.AutoDetect auto = config.evidence().autoDetect();
 
-    if (config.evidence().enabled() && auto.enabled() && config.evidence().blockBreak().enabled()) {
+    if (config.evidence().enabled()
+        && auto.enabled()
+        && (config.evidence().blockBreak().enabled() || auto.chatSpamEnabled())) {
 
       long autoTicks = Math.max(20L, auto.checkIntervalSeconds() * 20L);
 
@@ -713,6 +717,39 @@ public final class ReportDeskPlugin extends JavaPlugin {
                   autoTicks,
                   autoTicks);
     }
+
+    PluginConfig.Sla sla = config.notifications().sla();
+
+    if (sla.weeklyEnabled() && config.notifications().webhook().enabled()) {
+
+      long slaWeeklyTicks =
+          Math.max(20L * 60L, (long) sla.weeklyIntervalHours() * 60L * 60L * 20L);
+
+      slaWeeklyTask =
+          Bukkit.getScheduler()
+              .runTaskTimerAsynchronously(
+                  this,
+                  () -> {
+                    try {
+
+                      maintenance
+                          .pushSlaWeekly()
+                          .whenComplete(
+                              (ignored, throwable) -> {
+                                if (throwable != null) {
+
+                                  warning("SLA weekly push failed: " + rootMessage(throwable));
+                                }
+                              });
+
+                    } catch (RuntimeException exception) {
+
+                      warning("SLA weekly push failed: " + exception.getMessage());
+                    }
+                  },
+                  slaWeeklyTicks,
+                  slaWeeklyTicks);
+    }
   }
 
   private void cancelTasks() {
@@ -725,6 +762,8 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
     cancelTask(overdueTask);
 
+    cancelTask(slaWeeklyTask);
+
     chatExpiryTask = null;
 
     maintenanceTask = null;
@@ -732,6 +771,8 @@ public final class ReportDeskPlugin extends JavaPlugin {
     autoDetectTask = null;
 
     overdueTask = null;
+
+    slaWeeklyTask = null;
   }
 
   private void cancelTask(BukkitTask task) {

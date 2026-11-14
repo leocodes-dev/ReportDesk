@@ -195,6 +195,12 @@ public final class ConfigKeys {
           bool(
               "notifications.webhook.failure-alert-enabled",
               config -> config.notifications().webhook().failureAlertEnabled()),
+          string(
+              "notifications.webhook.secondary-url",
+              config -> config.notifications().webhook().secondaryUrl()),
+          bool(
+              "notifications.webhook.sla-events-enabled",
+              config -> config.notifications().webhook().slaEventsEnabled()),
           bool(
               "notifications.sla.weekly-enabled",
               config -> config.notifications().sla().weeklyEnabled()),
@@ -247,6 +253,12 @@ public final class ConfigKeys {
           bool(
               "evidence.auto-detect.notify-staff",
               config -> config.evidence().autoDetect().notifyStaff()),
+          bool(
+              "evidence.auto-detect.chat-spam-enabled",
+              config -> config.evidence().autoDetect().chatSpamEnabled()),
+          intKey(
+              "evidence.auto-detect.chat-spam-threshold",
+              config -> config.evidence().autoDetect().chatSpamThreshold()),
           bool("punishments.enabled", config -> config.punishments().enabled()),
           bool("audit.enabled", config -> config.audit().enabled()),
           intKey("audit.retention-days", config -> config.audit().retentionDays()),

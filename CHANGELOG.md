@@ -5,6 +5,45 @@
 
 ---
 
+## Release 1.1.0
+
+**发布日期** 2026-11-14 · **标签** `v1.1.0` · **产物** `ReportDesk-1.1.0.jar` · **许可证** GNU General Public License v3.0 only
+
+### 概述
+
+ReportDesk 1.1.0 在 1.0.0 完整举报工作流之上，补齐 ROADMAP 的「可观测性」与「检测深度」两块半成品：新增 `/reports sla [days]` 处理时限（SLA）超期报表（按优先级、分类、管理员三个维度统计超期数量与平均超时，纯内存聚合、主线程零 IO）与可选 SLA 周报推送；审计日志支持关键字检索（`/reports audit search`）与 CSV 导出（`/reports audit export`），并新增按 `audit.max-size-mb` 大小上限的清理策略（与保留天数互补）；Webhook 增加第二通道 `notifications.webhook.secondary-url` 分流与 `sla_breach` 事件载荷；自动检测重构为可插拔的 `DetectPolicy` 策略框架，内置方块破坏与高频聊天刷屏两个策略（均默认关闭，增强层单次开关短路）。同时补齐 P0 缺陷复核的回归测试（证据快照文件缺失/损坏时 GUI 空态兜底无 NPE）。本版本所有新增业务阈值均入 `config.yml` 并提供默认值与非法值校验；新增文案键同步进入全部 12 个 `lang/*.yml`；审计、Webhook、检测策略默认关闭，关闭路径入口一次开关判断即短路，不分配资源、不落主线程。
+
+ReportDesk 1.1.0 completes two ROADMAP workstreams on top of the 1.0.0 reporting workflow: observability and detection depth. It adds an `/reports sla [days]` SLA-overdue report (overdue counts and average overrun across priority, category and assigned-admin dimensions, computed purely in memory with zero main-thread IO) and an opt-in weekly SLA summary push; audit log keyword search (`/reports audit search`) and CSV export (`/reports audit export`) plus a size-cap cleanup strategy (`audit.max-size-mb`) that complements time-based retention; a second webhook channel (`notifications.webhook.secondary-url`) with traffic splitting and a `sla_breach` event payload; and a pluggable `DetectPolicy` framework for auto-detection with built-in block-break and high-frequency chat-spam policies (both off by default, enhancement layer, single switch short-circuit). It also adds regression tests for the P0 defect review (the evidence-snapshot missing/corrupt empty-state fallback must not throw an NPE). Every new business threshold lives in `config.yml` with defaults and invalid-value validation; new message keys are added to all 12 bundled `lang/*.yml` files; auditing, webhook and detection policies default to off and short-circuit on a single switch check when disabled, allocating nothing and performing no main-thread IO.
+
+### 1.1.0 更新一览（2026-11-14）
+
+**新增**
+- `/reports sla [days]` 子命令：按优先级、分类、管理员维度统计超期数量与平均超时；`[days]` 可选限定最近 N 天窗口；纯内存聚合（`SlaStats.compute`），主线程零 IO（单测 `SlaStatsTest`）。
+- SLA 周报推送（增强层，`notifications.sla.weekly-enabled` 默认关）：`MaintenanceService#pushSlaWeekly` 周期任务 + `WebhookService#slaBreach`，关闭时入口单次开关判断短路、零分配。
+- 审计日志关键字检索 `/reports audit search <关键字...>`（大小写不敏感子串、最新优先、有界结果，`AuditStorage#search`）与 CSV 导出 `/reports audit export`（UTF-8 BOM、RFC 4180 引号，与举报导出同风格，`AuditStorage#exportCsv`）。
+- 审计保留策略新增按大小上限清理 `audit.max-size-mb`（`AuditStorage#purgeOverSize`，0 禁用；从最旧文件删起，配合保留天数）。
+- Webhook 第二通道 `notifications.webhook.secondary-url` 分流：SLA 超期摘要在配置后路由到第二通道，常规事件仍走主通道；两通道互不影响。
+- Webhook `sla_breach` 事件载荷（`webhook.title-sla-breach` / `webhook.content-sla-breach`）。
+- 自动检测策略化（`DetectPolicy` 接口 + `BlockBreakDetectPolicy` + `ChatSpamDetectPolicy`）；`AutoDetectService` 改为策略驱动。
+- 高频聊天刷屏检测（增强层，`evidence.auto-detect.chat-spam-enabled` 默认关，`chat-spam-threshold` 默认 60）：`EvidenceService#recentChatStats` 在窗口内按玩家统计聊天消息数并短路。
+
+**优化**
+- `AutoDetectService` 调度条件从「必须方块破坏开」放宽为「证据层 + auto-detect 主开关开即注册，各策略在 `enabled()` 自行短路」，使聊天刷屏可独立启用且不改变方块破坏默认行为（单测 `DetectPolicyTest`）。
+
+**修复**
+- 补齐 P0 #3 缺陷复核回归测试：证据快照文件缺失/损坏时 `FileStorage#loadEvidence` 返回空 Optional 而非 NPE（`FileStorageTest#missingEvidenceSnapshotFileReturnsEmptyWithoutNpe` / `#corruptEvidenceSnapshotFileReturnsEmptyWithoutNpe`）。
+
+**配置**
+- 新增键：`notifications.webhook.secondary-url`、`notifications.webhook.sla-events-enabled`、`evidence.auto-detect.chat-spam-enabled`、`evidence.auto-detect.chat-spam-threshold`；既有 `notifications.sla.*`、`audit.max-size-mb` 由孤儿配置落地为实际功能。均提供默认值与非法值校验，进 `ConfigKeys` 注册并补 12 语言 `config-label`/`config-desc` 本地化。
+
+**安全**
+- 审计导出写文件与清理均在专用异步线程执行，主线程零文件 IO；检测策略关闭时零事件开销、零资源分配。
+
+**文档**
+- `ROADMAP.md` 顶部新增统一图例（✅ 已完成 · 🔧 进行中 · ⚠️ 不合理 · ⏸ 暂缓 · ⬜ 未开始），并逐条核实标注真实完成状态：#1/#2/#3/#5/#10/#16/#18 标 ✅，#7 标「部分 ✅ / 链式哈希 ⚠️ 砍」，#8/#13/#14 标 ⏸，#4/#6/#9/#11/#12/#15/#17 标 ⬜；「已删除/调整项」表新增「#7 审计链式哈希」条目并更正 `reports.sla-weekly-enabled` 为实际键名 `notifications.sla.weekly-enabled`。
+
+---
+
 ## Release 1.0.0
 
 **发布日期** 2026-11-01 · **标签** `v1.0.0` · **产物** `ReportDesk-1.0.0.jar` · **许可证** GNU General Public License v3.0 only

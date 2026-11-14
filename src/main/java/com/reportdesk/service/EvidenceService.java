@@ -52,6 +52,9 @@ public final class EvidenceService {
 
   public record BreakStats(UUID playerId, String playerName, int count) {}
 
+  /** Per-player chat message count inside a detection window (for the chat-spam policy). */
+  public record ChatStats(UUID playerId, String playerName, int count) {}
+
   private final ReportDeskPlugin plugin;
 
   private final Map<UUID, Deque<BreakSample>> breaks = new ConcurrentHashMap<>();
@@ -398,6 +401,59 @@ public final class EvidenceService {
         String name = lastKnownNames.getOrDefault(entry.getKey(), "");
 
         result.add(new BreakStats(entry.getKey(), name, count));
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Per-player chat message counts inside a window, for the chat-spam detection policy.
+   *
+   * <p>Short-circuits to an empty list when the evidence layer or the chat-spam switch is off,
+   * so a disabled enhancement layer allocates nothing.
+   *
+   * @param windowSeconds the detection window in seconds
+   * @param threshold minimum message count to be considered spam
+   * @return players who exceeded the threshold within the window
+   */
+  public List<ChatStats> recentChatStats(int windowSeconds, int threshold) {
+
+    if (!plugin.config().evidence().enabled()) {
+
+      return List.of();
+    }
+
+    if (!plugin.config().evidence().autoDetect().chatSpamEnabled()) {
+
+      return List.of();
+    }
+
+    long cutoff = System.currentTimeMillis() - Math.max(1, windowSeconds) * 1000L;
+
+    List<ChatStats> result = new ArrayList<>();
+
+    for (Map.Entry<UUID, Deque<ChatSample>> entry : chat.entrySet()) {
+
+      Deque<ChatSample> deque = entry.getValue();
+
+      int count = 0;
+
+      synchronized (deque) {
+        for (ChatSample sample : deque) {
+
+          if (sample.createdAt() >= cutoff) {
+
+            count++;
+          }
+        }
+      }
+
+      if (count >= Math.max(2, threshold)) {
+
+        String name = lastKnownNames.getOrDefault(entry.getKey(), "");
+
+        result.add(new ChatStats(entry.getKey(), name, count));
       }
     }
 
