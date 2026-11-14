@@ -1392,3 +1392,14 @@ categories:
   other:
     name: '<gold>其他'
     description: '<gray>其他需要管理組處理的問題。'
+
+bedrock:
+  report-title: '<dark_aqua>提交舉報'
+  report-content: '<gray>請選擇分類並填寫舉報詳情'
+  target-placeholder: '請輸入要舉報的玩家名'
+  detail-placeholder: '請輸入舉報詳情（發生了什麼）'
+  report-submitted: '<green>舉報已透過基岩版表單提交。'
+  history-title: '<dark_aqua>我的舉報'
+  history-content: '<gray>點選一筆舉報查看詳情'
+  admin-title: '<dark_aqua>舉報隊列'
+  admin-content: '<gray>第 %page% 頁 · 共 %total% 條'

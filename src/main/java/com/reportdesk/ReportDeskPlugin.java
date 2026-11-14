@@ -32,6 +32,7 @@ import com.reportdesk.core.ReportRepository;
 import com.reportdesk.core.ReportSubmissionService;
 import com.reportdesk.gui.GuiClickListener;
 import com.reportdesk.gui.GuiService;
+import com.reportdesk.service.BedrockFormBridge;
 import com.reportdesk.i18n.MessageKeys;
 import com.reportdesk.i18n.Messages;
 import com.reportdesk.listener.BlockBreakEvidenceListener;
@@ -124,6 +125,10 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
   private ReportViewService view;
 
+  private BedrockFormBridge bedrockBridge;
+
+  private com.reportdesk.service.BedrockFormService bedrockForm;
+
   private final List<Listener> evidenceListeners = new ArrayList<>();
 
   private BukkitTask chatExpiryTask;
@@ -185,6 +190,12 @@ public final class ReportDeskPlugin extends JavaPlugin {
     gui = new GuiService(this);
 
     view = new ReportViewService(this);
+
+    // Bedrock Forms enhancement layer (default off). The bridge probes Geyser/Floodgate/Cumulus
+    // reflectively; it reports "unavailable" on plain Java servers and all calls no-op.
+    bedrockBridge = new BedrockFormBridge();
+
+    bedrockForm = new com.reportdesk.service.BedrockFormService(this, bedrockBridge);
 
     registerPermissions();
 
@@ -840,6 +851,18 @@ public final class ReportDeskPlugin extends JavaPlugin {
   public ReportViewService view() {
 
     return view;
+  }
+
+  /** Reflective bridge to the GeyserMC Cumulus form stack; reports unavailable on plain Java. */
+  public BedrockFormBridge bedrockBridge() {
+
+    return bedrockBridge;
+  }
+
+  /** Bedrock form dispatch layer for Bedrock clients joining through Geyser + Floodgate. */
+  public com.reportdesk.service.BedrockFormService bedrockForm() {
+
+    return bedrockForm;
   }
 
   public CategoryRegistry categories() {

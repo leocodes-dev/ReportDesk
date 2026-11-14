@@ -85,6 +85,13 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
         return true;
       }
 
+      // Bedrock clients (Geyser + Floodgate) get the native form when the
+      // enhancement is enabled; Java players fall through to the Inventory GUI.
+      if (plugin.bedrockForm().openReportForm(player, null)) {
+
+        return true;
+      }
+
       plugin.gui().beginReport(player);
 
       return true;

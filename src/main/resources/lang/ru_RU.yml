@@ -1392,3 +1392,14 @@ categories:
   other:
     name: '<gold>Другое'
     description: '<gray>Прочие проблемы, требующие внимания команды.'
+
+bedrock:
+  report-title: '<dark_aqua>Подача жалобы'
+  report-content: '<gray>Выберите категорию и опишите проблему'
+  target-placeholder: 'Введите имя игрока'
+  detail-placeholder: 'Опишите, что произошло'
+  report-submitted: '<green>Жалоба отправлена через форму Bedrock.'
+  history-title: '<dark_aqua>Мои жалобы'
+  history-content: '<gray>Нажмите на жалобу, чтобы просмотреть детали'
+  admin-title: '<dark_aqua>Очередь жалоб'
+  admin-content: '<gray>Стр. %page% · всего %total%'

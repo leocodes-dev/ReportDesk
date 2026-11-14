@@ -1377,4 +1377,24 @@ public final class MessageKeys {
   public static final String TIME_SECOND = "time.second";
 
   public static final String TIME_FORMAT_DATE = "time-format.date";
+
+  // Bedrock form adaptation (Geyser + Floodgate + Cumulus).
+
+  public static final String BEDROCK_FORM_REPORT_TITLE = "bedrock.report-title";
+
+  public static final String BEDROCK_FORM_REPORT_CONTENT = "bedrock.report-content";
+
+  public static final String BEDROCK_FORM_TARGET_PLACEHOLDER = "bedrock.target-placeholder";
+
+  public static final String BEDROCK_FORM_DETAIL_PLACEHOLDER = "bedrock.detail-placeholder";
+
+  public static final String BEDROCK_FORM_REPORT_SUBMITTED = "bedrock.report-submitted";
+
+  public static final String BEDROCK_FORM_HISTORY_TITLE = "bedrock.history-title";
+
+  public static final String BEDROCK_FORM_HISTORY_CONTENT = "bedrock.history-content";
+
+  public static final String BEDROCK_FORM_ADMIN_TITLE = "bedrock.admin-title";
+
+  public static final String BEDROCK_FORM_ADMIN_CONTENT = "bedrock.admin-content";
 }

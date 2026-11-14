@@ -45,7 +45,8 @@ public record PluginConfig(
     Security security,
     List<ReportCategory> categories,
     String defaultCategory,
-    SmartPriority smartPriority) {
+    SmartPriority smartPriority,
+    BedrockForms bedrockForms) {
 
   public PluginConfig {
 
@@ -58,6 +59,13 @@ public record PluginConfig(
     defaultCategory = blankTo(defaultCategory, "other");
 
     smartPriority = smartPriority == null ? defaultSmartPriority() : smartPriority;
+
+    bedrockForms = bedrockForms == null ? defaultBedrockForms() : bedrockForms;
+  }
+
+  private static BedrockForms defaultBedrockForms() {
+
+    return new BedrockForms(false);
   }
 
   private static SmartPriority defaultSmartPriority() {
@@ -411,6 +419,19 @@ public record PluginConfig(
       AUTO_CLOSE
     }
   }
+
+  /**
+   * Bedrock Edition form adaptation (enhancement layer, disabled by default).
+   *
+   * <p>When enabled, Bedrock clients that join through Geyser + Floodgate can use native Bedrock
+   * forms (via the GeyserMC Cumulus library) for the report submission and history flows instead
+   * of the Java Inventory GUI. Java Edition players are unaffected and continue to use the
+   * standard GUI.
+   *
+   * <p>Requires GeyserMC (and Floodgate, for Bedrock login) to be installed on the server. The
+   * plugin detects the backend reflectively at startup and degrades gracefully when it is absent.
+   */
+  public record BedrockForms(boolean enabled) {}
 
   private static String blankTo(String value, String fallback) {
 

@@ -24,6 +24,7 @@ import com.reportdesk.config.ConfigKeys;
 import com.reportdesk.core.Page;
 import com.reportdesk.core.Report;
 import com.reportdesk.core.ReportFilter;
+
 import com.reportdesk.core.ReportReply;
 import com.reportdesk.core.ReportStatus;
 import com.reportdesk.core.Verdict;
@@ -205,6 +206,12 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
     if (!plugin.config().gui().admin().enabled()) {
 
       sender.sendMessage(plugin.messages().prefixed(MessageKeys.ADMIN_GUI_DISABLED, Map.of()));
+
+      return;
+    }
+
+    // Bedrock admin clients get the native queue form; Java admins keep the Inventory hub.
+    if (plugin.bedrockForm().openAdminQueueForm(player, ReportFilter.all())) {
 
       return;
     }

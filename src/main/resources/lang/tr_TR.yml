@@ -1392,3 +1392,14 @@ categories:
   other:
     name: '<gold>Diğer'
     description: '<gray> Diğer ekip dikkati gerektiren sorunlar.'
+
+bedrock:
+  report-title: '<dark_aqua>Şikayet Gönder'
+  report-content: '<gray>Bir kategori seçin ve sorunu anlatın'
+  target-placeholder: 'Rapor edilecek oyuncuyu yazın'
+  detail-placeholder: 'Ne olduğunu yazın'
+  report-submitted: '<green>Şikayet Bedrock formu üzerinden gönderildi.'
+  history-title: '<dark_aqua>Şikayetlerim'
+  history-content: '<gray>Detaylar için bir şikayete dokunun'
+  admin-title: '<dark_aqua>Şikayet Kuyruğu'
+  admin-content: '<gray>Sayfa %page% · Toplam %total%'

@@ -1392,3 +1392,14 @@ categories:
   other:
     name: '<gold>その他'
     description: '<gray>運営の対応が必要なその他の問題。'
+
+bedrock:
+  report-title: '<dark_aqua>通報を送信'
+  report-content: '<gray>カテゴリを選択し、問題の詳細を入力してください'
+  target-placeholder: '通報するプレイヤー名を入力'
+  detail-placeholder: '何があったかを入力してください'
+  report-submitted: '<green>Bedrockフォームから通報を送信しました。'
+  history-title: '<dark_aqua>自分の通報'
+  history-content: '<gray>通報をタップして詳細を表示'
+  admin-title: '<dark_aqua>通報キュー'
+  admin-content: '<gray>第 %page% ページ・全 %total% 件'

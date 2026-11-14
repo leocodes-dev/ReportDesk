@@ -1392,3 +1392,14 @@ categories:
   other:
     name: '<gold>Sonstiges'
     description: '<gray>Andere Probleme, die die Aufmerksamkeit des Teams brauchen.'
+
+bedrock:
+  report-title: '<dark_aqua>Meldung einreichen'
+  report-content: '<gray>Kategorie wählen und das Problem beschreiben'
+  target-placeholder: 'Spielername eingeben'
+  detail-placeholder: 'Beschreibe, was passiert ist'
+  report-submitted: '<green>Meldung über das Bedrock-Formular übermittelt.'
+  history-title: '<dark_aqua>Meine Meldungen'
+  history-content: '<gray>Tippe auf eine Meldung für Details'
+  admin-title: '<dark_aqua>Meldungsübersicht'
+  admin-content: '<gray>Seite %page% · %total% gesamt'

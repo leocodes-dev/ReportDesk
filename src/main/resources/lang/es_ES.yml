@@ -1392,3 +1392,14 @@ categories:
   other:
     name: '<gold>Otro'
     description: '<gray>Otros problemas que requieren la atención del equipo.'
+
+bedrock:
+  report-title: '<dark_aqua>Enviar Denuncia'
+  report-content: '<gray>Selecciona una categoría y describe el problema'
+  target-placeholder: 'Escribe al jugador a denunciar'
+  detail-placeholder: 'Describe lo que sucedió'
+  report-submitted: '<green>Denuncia enviada mediante formulario de Bedrock.'
+  history-title: '<dark_aqua>Mis Denuncias'
+  history-content: '<gray>Toca una denuncia para ver los detalles'
+  admin-title: '<dark_aqua>Cola de Denuncias'
+  admin-content: '<gray>Página %page% · %total% en total'

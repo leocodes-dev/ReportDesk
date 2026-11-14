@@ -1368,6 +1368,18 @@ time:
 time-format:
   date: 'yyyy-MM-dd HH:mm'
 
+bedrock:
+  # 基岩版原生表单（Geyser + Floodgate + Cumulus），仅当 bedrock-forms.enabled=true 时启用。
+  report-title: '<dark_aqua>提交举报'
+  report-content: '<gray>请选择分类并填写举报详情'
+  target-placeholder: '请输入要举报的玩家名'
+  detail-placeholder: '请输入举报详情（发生了什么）'
+  report-submitted: '<green>举报已通过基岩版表单提交。'
+  history-title: '<dark_aqua>我的举报'
+  history-content: '<gray>点击一条举报查看详情'
+  admin-title: '<dark_aqua>举报队列'
+  admin-content: '<gray>第 %page% 页 · 共 %total% 条'
+
 categories:
   # 内置分类的本地化名称。config.yml 里的 display 只是兜底，这里优先。
   cheating:

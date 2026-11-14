@@ -1392,3 +1392,14 @@ categories:
   other:
     name: '<gold>Other'
     description: '<gray>Other issues that need staff attention.'
+
+bedrock:
+  report-title: '<dark_aqua>Submit Report'
+  report-content: '<gray>Select a category and describe the issue'
+  target-placeholder: 'Enter the player to report'
+  detail-placeholder: 'Describe what happened'
+  report-submitted: '<green>Report submitted via Bedrock form.'
+  history-title: '<dark_aqua>My Reports'
+  history-content: '<gray>Tap a report to view details'
+  admin-title: '<dark_aqua>Report Queue'
+  admin-content: '<gray>Page %page% · %total% total'

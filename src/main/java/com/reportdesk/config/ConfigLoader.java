@@ -112,6 +112,8 @@ public final class ConfigLoader {
 
     ConfigSource security = root.section("security");
 
+    ConfigSource bedrockForms = root.section("bedrock-forms");
+
     ConfigSource smartRoot = root.section("smart-priority");
 
     ConfigSource smartWeights = smartRoot.section("weights");
@@ -356,6 +358,12 @@ public final class ConfigLoader {
             integer(configEditor, "max-backups", 5, 0, 50),
             integer(configEditor, "max-value-length", 256, 1, 4_096));
 
+    // Bedrock Forms enhancement layer: disabled by default. When enabled, the
+    // plugin routes Bedrock clients (via Geyser + Floodgate) to the native
+    // Cumulus form stack instead of the Java Inventory GUI.
+    PluginConfig.BedrockForms bedrockFormsSettings =
+        new PluginConfig.BedrockForms(bool(bedrockForms, "enabled", false));
+
     String language = string(root, "language", "zh_CN");
 
     if (!language.matches("[A-Za-z0-9_-]+")) {
@@ -387,7 +395,8 @@ public final class ConfigLoader {
         securitySettings,
         categories,
         defaultCategory,
-        smartSettings);
+        smartSettings,
+        bedrockFormsSettings);
   }
 
   private PluginConfig.SmartPriority.GarbageAction parseSmartGarbageAction(String raw) {

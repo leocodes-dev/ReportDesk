@@ -1392,3 +1392,14 @@ categories:
   other:
     name: '<gold>Inne'
     description: '<gray>Inne problemy wymagające uwagi zespołu.'
+
+bedrock:
+  report-title: '<dark_aqua>Zgłoś problem'
+  report-content: '<gray>Wybierz kategorię i opisz problem'
+  target-placeholder: 'Wpisz gracza do zgłoszenia'
+  detail-placeholder: 'Opisz, co się stało'
+  report-submitted: '<green>Zgłoszenie wysłane przez formularz Bedrock.'
+  history-title: '<dark_aqua>Moje zgłoszenia'
+  history-content: '<gray>Dotknij zgłoszenie, aby zobaczyć szczegóły'
+  admin-title: '<dark_aqua>Kolejka zgłoszeń'
+  admin-content: '<gray>Strona %page% · łącznie %total%'
