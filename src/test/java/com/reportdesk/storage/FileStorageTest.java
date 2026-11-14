@@ -390,6 +390,53 @@ class FileStorageTest {
     assertTrue(storage.loadReports().join().isEmpty());
   }
 
+  /**
+   * ROADMAP P0 #3 regression: opening the evidence GUI must not NPE when the evidence snapshot
+   * file does not exist yet. The storage layer returns an empty Optional and the GUI layer maps
+   * that to the "no evidence" empty state; both are asserted here so a regression that turns a
+   * missing snapshot into a null/throw is caught.
+   */
+  @Test
+  void missingEvidenceSnapshotFileReturnsEmptyWithoutNpe() {
+
+    // No evidence has ever been written, so evidence-N.json does not exist on disk.
+    assertFalse(
+        Files.exists(temp.resolve("data").resolve("evidence").resolve("evidence-42.json")));
+
+    // The load must complete normally with an empty value, not throw or resolve to null.
+    java.util.Optional<Evidence> loaded = assertNoThrow(() -> storage.loadEvidence(42L).join());
+
+    assertTrue(loaded.isEmpty());
+  }
+
+  @Test
+  void corruptEvidenceSnapshotFileReturnsEmptyWithoutNpe() throws IOException {
+
+    Path evidenceDir = temp.resolve("data").resolve("evidence");
+
+    Files.createDirectories(evidenceDir);
+
+    Files.writeString(
+        evidenceDir.resolve("evidence-7.json"), "{not json", StandardCharsets.UTF_8);
+
+    java.util.Optional<Evidence> loaded = storage.loadEvidence(7L).join();
+
+    assertTrue(loaded.isEmpty());
+
+    assertFalse(warnings.isEmpty(), "corrupt evidence snapshot should be reported as a warning");
+  }
+
+  private static <T> T assertNoThrow(java.util.function.Supplier<T> supplier) {
+
+    try {
+
+      return supplier.get();
+    } catch (RuntimeException exception) {
+
+      throw new AssertionError("unexpected exception from missing-snapshot load", exception);
+    }
+  }
+
   @Test
   void corruptFileLoadsAsEmptyAndWarns() throws IOException {
 

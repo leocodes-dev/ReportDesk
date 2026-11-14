@@ -1,5 +1,9 @@
 # ReportDesk Roadmap
 
+> **图例**（全篇统一，改动时沿用）：
+> ✅ 已完成 · 🔧 进行中/半成品 · ⚠️ 不合理（建议删除或降级） · ⏸ 暂缓 · ⬜ 未开始
+> 每次修订 ROADMAP 时，把对应条目前缀替换为最新状态；已核实完成的条目标 ✅ 并注明证据位置。
+
 ## v1.1.0
 
 主题：在 v1.0.0 的完整举报工作流之上，补齐"多人协作、可观测性、数据深度"三块，并修复已确认的缺陷。保持向后兼容——`reports.json` 的既有记录可无损加载。
@@ -30,11 +34,15 @@
   - 重试队列内存有界（上限进配置），重启即弃并在日志注明。
 - 验收：单测覆盖"失败→重试→成功"与队列满丢弃；功能关闭时队列不分配。
 
-### 3. 缺陷复核清单（先写复现测试，红→绿）
+### 3. 缺陷复核清单（先写复现测试，红→绿）✅
 - GUI 证据页：补"快照文件缺失"分支的回归测试，确认空态兜底无 NPE；
 - `YamlDocument`：补"替换带引号 key 时保留行尾注释"用例，如复现则修；
 - 原"list 空格解析"与"审计写旧名"两项经复核为误判，已删除（见文末表）。
 - 验收：每条保留项配一个先红后绿的回归测试。
+- **核实（2026-11）**：
+  - `YamlDocument` 引号 key 行尾注释：`YamlDocumentTest#quotedKeyReplacementKeepsQuotingAndTrailingComment` 已存在且通过；`YamlDocument.trailingComment` 保留行尾注释正确。
+  - 证据页快照缺失：新增 `FileStorageTest#missingEvidenceSnapshotFileReturnsEmptyWithoutNpe` 与 `#corruptEvidenceSnapshotFileReturnsEmptyWithoutNpe`，确认缺失/损坏快照均返回空 Optional，GUI 空态兜底无 NPE。
+  - 结论：两项保留项均无实际缺陷，测试已补全。
 
 ---
 
