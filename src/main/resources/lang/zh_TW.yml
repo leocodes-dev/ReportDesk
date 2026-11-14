@@ -1309,7 +1309,7 @@ admin:
   console-actor: '主控台'
 
   sla-report-header: '<gold>===== 處理時限（SLA）報表 ====='
-  sla-report-line: '<gray>%dimension%：<white>%count% <dark_gray>（平均超時 %avg%）'
+  sla-report-line: '<gray>%dimension% <white>%value%<gray>：<white>%count% <dark_gray>（平均超時 %avg%）'
   sla-report-empty: '<gray>所選時間範圍內沒有超期檢舉。'
 config:
   list-header: '<gold>===== 可編輯設定（%count% 項，第 %page%/%pages% 頁）====='

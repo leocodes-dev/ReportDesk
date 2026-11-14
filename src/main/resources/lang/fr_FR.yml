@@ -1309,7 +1309,7 @@ admin:
   console-actor: 'Console'
 
   sla-report-header: '<gold>===== Rapport SLA ====='
-  sla-report-line: '<gray>%dimension% : <white>%count% <dark_gray>(délai moyen %avg%)'
+  sla-report-line: '<gray>%dimension% <white>%value%<gray> : <white>%count% <dark_gray>(délai moyen %avg%)'
   sla-report-empty: '<gray>Aucun rapport en retard sur la période sélectionnée.'
 config:
   list-header: '<gold>===== Configurations éditables (%count% clés, page %page%/%pages%) ====='

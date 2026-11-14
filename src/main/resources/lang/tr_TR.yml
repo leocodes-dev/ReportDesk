@@ -1309,7 +1309,7 @@ admin:
   console-actor: 'Konsol'
 
   sla-report-header: '<gold>===== SLA Raporu ====='
-  sla-report-line: '<gray>%dimension%: <white>%count% <dark_gray>(ortalama gecikme %avg%)'
+  sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(ortalama gecikme %avg%)'
   sla-report-empty: '<gray>Seçilen dönem içinde gecikmeli rapor yok.'
 config:
   list-header: '<gold>===== Düzenlenebilir Yapılandırmalar (%count% anahtar, sayfa %page%/%pages%) ====='

@@ -1309,7 +1309,7 @@ admin:
   console-actor: 'コンソール'
 
   sla-report-header: '<gold>===== SLA レポート ====='
-  sla-report-line: '<gray>%dimension%：<white>%count% <dark_gray>（平均遅延 %avg%）'
+  sla-report-line: '<gray>%dimension% <white>%value%<gray>：<white>%count% <dark_gray>（平均遅延 %avg%）'
   sla-report-empty: '<gray>選択期間内に期限超過の報告はありません。'
 config:
   list-header: '<gold>===== 編集可能な設定 (%count% 項目、ページ %page%/%pages%) ====='

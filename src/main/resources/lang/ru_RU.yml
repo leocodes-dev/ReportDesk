@@ -1309,7 +1309,7 @@ admin:
   console-actor: 'Консоль'
 
   sla-report-header: '<gold>===== Отчёт по SLA ====='
-  sla-report-line: '<gray>%dimension%: <white>%count% <dark_gray>(среднее просрочено %avg%)'
+  sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(среднее просрочено %avg%)'
   sla-report-empty: '<gray>Нет просроченных отчётов за выбранный период.'
 config:
   list-header: '<gold>===== Доступные настройки (%count% ключей, стр. %page%/%pages%) ====='

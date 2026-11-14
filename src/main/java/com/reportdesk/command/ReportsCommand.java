@@ -881,6 +881,8 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
 
       placeholders.put("dimension", dimensionLabel(messages, dimension));
 
+      placeholders.put("value", dimensionValueLabel(messages, dimension, stat.label()));
+
       placeholders.put("count", String.valueOf(stat.overdueCount()));
 
       placeholders.put("avg", TimeText.duration(stat.averageOverdueMillis(), messages));
@@ -900,6 +902,39 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
       case "staff" -> messages.plain(MessageKeys.GENERAL_STAFF);
 
       default -> dimension;
+    };
+  }
+
+  /**
+   * Localised display of a single dimension's value (the priority level, category, or admin name).
+   * Priorities and categories map to their localised names; admin names are shown verbatim.
+   */
+  private String dimensionValueLabel(Messages messages, String dimension, String value) {
+
+    return switch (dimension) {
+      case "priority" -> {
+        com.reportdesk.core.ReportPriority p =
+            com.reportdesk.core.ReportPriority.parse(value, com.reportdesk.core.ReportPriority.NORMAL);
+
+        yield messages.plain(NotificationServicePriorityKey(p));
+      }
+
+      case "category" -> plugin.categoryDisplay(value);
+
+      default -> value;
+    };
+  }
+
+  private static String NotificationServicePriorityKey(com.reportdesk.core.ReportPriority priority) {
+
+    return switch (priority) {
+      case LOW -> MessageKeys.PRIORITY_LOW;
+
+      case HIGH -> MessageKeys.PRIORITY_HIGH;
+
+      case URGENT -> MessageKeys.PRIORITY_URGENT;
+
+      default -> MessageKeys.PRIORITY_NORMAL;
     };
   }
 
@@ -1382,11 +1417,8 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
   /** {@code /reports audit export} — write the full audit log to a CSV in the export directory. */
   private void auditExport(CommandSender sender) {
 
-    if (!allowAction(sender)) {
-
-      return;
-    }
-
+    // Permission + admin-cooldown were already enforced by the outer audit() dispatcher;
+    // a second allowAction here would always trip the cooldown and reject the export.
     sender.sendMessage(plugin.messages().prefixed(MessageKeys.ADMIN_EXPORT_STARTED, Map.of()));
 
     plugin

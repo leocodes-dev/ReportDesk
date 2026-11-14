@@ -1309,7 +1309,7 @@ admin:
   console-actor: 'Console'
 
   sla-report-header: '<gold>===== SLA Report ====='
-  sla-report-line: '<gray>%dimension%: <white>%count% <dark_gray>(avg overdue %avg%)'
+  sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(avg overdue %avg%)'
   sla-report-empty: '<gray>No reports over SLA in the selected period.'
 config:
   list-header: '<gold>===== Editable settings (%count% keys, page %page%/%pages%) ====='
