@@ -895,6 +895,42 @@ public final class MessageKeys {
   public static final String ADMIN_GUI_CONFIG_ENTRY_STATE_MODIFIED =
       "gui.admin.config-entry-state-modified";
 
+  public static final String ADMIN_GUI_CONFIG_FILTER_CHANGED_NAME =
+      "gui.admin.config-filter-changed-name";
+
+  public static final String ADMIN_GUI_CONFIG_FILTER_CHANGED_LORE =
+      "gui.admin.config-filter-changed-lore";
+
+  public static final String ADMIN_GUI_CONFIG_FILTER_RESTART_NAME =
+      "gui.admin.config-filter-restart-name";
+
+  public static final String ADMIN_GUI_CONFIG_FILTER_RESTART_LORE =
+      "gui.admin.config-filter-restart-lore";
+
+  public static final String ADMIN_GUI_CONFIG_FILTER_EMPTY = "gui.admin.config-filter-empty";
+
+  public static final String ADMIN_GUI_CONFIG_STATE_ON = "gui.admin.config-state-on";
+
+  public static final String ADMIN_GUI_CONFIG_STATE_OFF = "gui.admin.config-state-off";
+
+  public static final String ADMIN_GUI_CONFIG_CHANGED_NAME = "gui.admin.config-changed-name";
+
+  public static final String ADMIN_GUI_CONFIG_CHANGED_LORE = "gui.admin.config-changed-lore";
+
+  public static final String ADMIN_GUI_CONFIG_SCOPE_CHANGED = "gui.admin.config-scope-changed";
+
+  public static final String ADMIN_GUI_CONFIG_SCOPE_RESTART = "gui.admin.config-scope-restart";
+
+  public static final String ADMIN_GUI_CONFIG_SCOPE_CHANGED_RESTART =
+      "gui.admin.config-scope-changed-restart";
+
+  public static final String ADMIN_GUI_CONFIG_VALUE_TRUE = "gui.admin.config-value-true";
+
+  public static final String ADMIN_GUI_CONFIG_VALUE_FALSE = "gui.admin.config-value-false";
+
+  public static final String ADMIN_GUI_CONFIG_DETAIL_ADJUST_PREVIEW =
+      "gui.admin.config-detail-adjust-preview";
+
   public static final String ADMIN_GUI_MISC_TITLE = "gui.admin.misc-title";
 
   public static final String ADMIN_GUI_MISC_INFO_NAME = "gui.admin.misc-info-name";

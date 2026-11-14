@@ -602,6 +602,19 @@ gui:
       - '<gray>Consulta actual: <white>%query%'
       - '<yellow>Clic para escribir una palabra clave'
     config-search-prompt: '<yellow>Escribe una palabra clave de configuración, o <white>cancel</white> para abortar.'
+    config-filter-changed-name: '<aqua>Solo modificadas <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>Mostrar solo los ajustes que difieren de los valores predeterminados'
+      - '<gray>Modificadas en esta vista: <white>%modified%</white>'
+      - '<yellow>Haz clic para alternar este filtro'
+    config-filter-restart-name: '<gold>Requiere reinicio <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>Mostrar solo los ajustes que necesitan reiniciar el servidor'
+      - '<gray>Requieren reinicio en esta vista: <white>%restart%</white>'
+      - '<yellow>Haz clic para alternar este filtro'
+    config-filter-empty: '<gray>Ningún ajuste coincide con los filtros activos.'
+    config-state-on: '<green>SÍ'
+    config-state-off: '<gray>NO'
     config-list-header-name: '<gold>Configuración <dark_gray>| <gray>%count% claves <dark_gray>| <gray>%modified% modificadas'
     config-list-header-lore:
       - '<gray><white>%count%</white> configuraciones en esta vista'
@@ -623,6 +636,14 @@ gui:
       - '<yellow>La brújula de abajo busca en todas las secciones'
     config-ready: '<green>listo'
     config-not-ready: '<yellow>cargando'
+    config-changed-name: '<green>Ajustes modificados <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>Revisa todos los ajustes que difieren de los predeterminados'
+      - '<gray>Requieren reinicio: <white>%restart%</white>'
+      - '<yellow>Haz clic para abrir la vista de ajustes modificados'
+    config-scope-changed: '<gray>Ajustes modificados'
+    config-scope-restart: '<gray>Ajustes que requieren reinicio'
+    config-scope-changed-restart: '<gray>Ajustes modificados que requieren reinicio'
     config-reload-name: '<green>Recargar config'
     config-reload-lore:
       - '<gray>Vuelve a leer config.yml y los archivos de idioma'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<yellow>Clic derecho para restablecer al valor por defecto'
     config-key-prompt: '<yellow>Escribe el nuevo valor para <white>%key%</white> (actual %value%), o escribe <white>cancel</white>.'
     config-type: '<gray>Tipo: <white>%type%'
+    config-value-true: 'Activado (true)'
+    config-value-false: 'Desactivado (false)'
     config-detail-title: '<dark_aqua>Config en Vivo <dark_gray>» <gray>%key%'
     config-detail-info-name: '<yellow>%key%'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>Actual: <white>%value%'
       - '<yellow>Clic para ajustar <white>%key%</white> en %amount%'
     config-detail-adjust-failed: '<red>Esta configuración no puede ajustarse con ese paso.'
+    config-detail-adjust-preview: '<gray>Resultado: <white>%after%</white>'
     config-detail-number-hint: '<gray>Valor actual: <white>%value%'
     config-detail-back: '<gray>Volver a la lista'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>Encuentra una configuración por etiqueta, ruta, descripción o valor actual'
       - '<gray>Consulta actual: <white>%query%'
       - '<yellow>Clic para escribir una palabra clave'
-    config-entry-name: '<white>%label%'
+    config-entry-name: '<white>%label% <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -861,6 +885,7 @@ gui:
         enabled: 'Activar Registro de Auditoría'
         retention-days: 'Días de Retención de Auditoría'
         page-size: 'Tamaño de Página de Auditoría'
+        max-size-mb: 'Límite de tamaño de auditoría (MB)'
       security:
         admin-cooldown-millis: 'Cooldown de Acción del Equipo (ms)'
         pending-timeout-seconds: 'Límite de Espera Pendiente (segundos)'
@@ -871,6 +896,8 @@ gui:
         detail-required: 'Detalle Requerido'
         allow-color-codes: 'Permitir Códigos de Color'
         player-name-pattern: 'Patrón de Nombre de Jugador'
+        ip-hash-enabled: 'Hash de IP del denunciante'
+        ip-hash-salt: 'Sal del hash de IP'
       config-editor:
         enabled: 'Activar Editor de Config Online'
         backup-on-save: 'Copia de Config Antes de Guardar'
@@ -889,8 +916,6 @@ gui:
           high-score: 'Umbral alto'
           garbage-score: 'Umbral de basura'
         garbage-action: 'Acción anti-spam'
-        ip-hash-enabled: 'Hash de IP del denunciante'
-        ip-hash-salt: 'Sal del hash de IP'
     config-desc:
       server-name: 'Nombre del servidor mostrado en los mensajes del plugin y en la GUI.'
       language: 'Código de idioma usado por el plugin, por ejemplo zh_CN, en_US, es_ES, ru_RU o de_DE.'
@@ -1026,6 +1051,7 @@ gui:
         enabled: 'Registra acciones del equipo y cambios de configuración.'
         retention-days: 'Días que las entradas de auditoría se conservan en el almacenamiento.'
         page-size: 'Entradas de auditoría mostradas por página en el visor.'
+        max-size-mb: 'Tamaño total máximo de los archivos de auditoría en MB. Los más antiguos se eliminan primero; 0 mantiene solo la retención por días.'
       security:
         admin-cooldown-millis: 'Milisegundos mínimos entre dos acciones del equipo.'
         pending-timeout-seconds: 'Tiempo que el plugin espera por entradas pendientes del equipo, en segundos.'
@@ -1036,6 +1062,8 @@ gui:
         detail-required: 'Requiere un texto de descripción al enviar una denuncia.'
         allow-color-codes: 'Permite códigos de color dentro del texto de la denuncia.'
         player-name-pattern: 'Expresión regular usada para validar el nombre del jugador denunciado.'
+        ip-hash-enabled: 'Recoge un hash SHA-256 con sal de la IP del denunciante para el rastreo de baneos. La IP en texto plano nunca se guarda. Desactivado por defecto.'
+        ip-hash-salt: 'Sal del hash de IP; compártela con herramientas de listas de baneo para correlacionar.'
       config-editor:
         enabled: 'Permite editar config.yml por comandos y por la GUI.'
         backup-on-save: 'Crea una copia antes de que config.yml sea modificado.'
@@ -1054,8 +1082,6 @@ gui:
           high-score: 'A partir de esta puntuación, la denuncia se sube al menos a prioridad alta.'
           garbage-score: 'A esta puntuación o menor se aplica la acción anti-spam.'
         garbage-action: 'Qué ocurre con las denuncias de la banda de spam: marcar, degradar o cerrar automáticamente.'
-        ip-hash-enabled: 'Recoge un hash SHA-256 con sal de la IP del denunciante para el rastreo de baneos. La IP en texto plano nunca se guarda. Desactivado por defecto.'
-        ip-hash-salt: 'Sal del hash de IP; compártela con herramientas de listas de baneo para correlacionar.'
     misc-title: '<dark_aqua>Otras Herramientas <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>Info del Plugin'
     misc-info-lore:

@@ -602,6 +602,19 @@ gui:
       - '<gray>현재 검색: <white>%query%'
       - '<yellow>클릭하여 키워드 입력'
     config-search-prompt: '<yellow>설정 키워드를 입력하거나 <white>cancel</white>로 중단하세요.'
+    config-filter-changed-name: '<aqua>변경된 항목만 <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>기본값과 다른 설정만 표시합니다'
+      - '<gray>이 보기에서 변경됨: <white>%modified%</white>'
+      - '<yellow>클릭하여 이 필터 전환'
+    config-filter-restart-name: '<gold>재시작 필요 <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>서버 재시작이 필요한 설정만 표시합니다'
+      - '<gray>이 보기에서 재시작 필요: <white>%restart%</white>'
+      - '<yellow>클릭하여 이 필터 전환'
+    config-filter-empty: '<gray>활성 필터와 일치하는 설정이 없습니다.'
+    config-state-on: '<green>켜짐'
+    config-state-off: '<gray>꺼짐'
     config-list-header-name: '<gold>설정 <dark_gray>| <gray>%count%개 항목 <dark_gray>| <gray>%modified%개 수정됨'
     config-list-header-lore:
       - '<gray>이 뷰에 <white>%count%</white>개 설정'
@@ -623,6 +636,14 @@ gui:
       - '<yellow>하단 나침반으로 모든 섹션 검색'
     config-ready: '<green>준비됨'
     config-not-ready: '<yellow>로딩 중'
+    config-changed-name: '<green>변경된 설정 <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>기본값과 다른 모든 설정을 검토합니다'
+      - '<gray>재시작 필요: <white>%restart%</white>'
+      - '<yellow>클릭하여 변경된 설정 보기 열기'
+    config-scope-changed: '<gray>변경된 설정'
+    config-scope-restart: '<gray>재시작이 필요한 설정'
+    config-scope-changed-restart: '<gray>재시작이 필요한 변경된 설정'
     config-reload-name: '<green>설정 다시 로드'
     config-reload-lore:
       - '<gray>config.yml과 언어 파일 다시 읽기'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<yellow>우클릭하여 기본값으로 복원'
     config-key-prompt: '<yellow><white>%key%</white>의 새 값을 입력하세요 (현재 %value%), 또는 <white>cancel</white>을(를) 입력하세요.'
     config-type: '<gray>형식: <white>%type%</white>'
+    config-value-true: '사용 (true)'
+    config-value-false: '사용 안 함 (false)'
     config-detail-title: '<dark_aqua>게임 내 설정 <dark_gray>» <gray>%key%'
     config-detail-info-name: '<yellow>%key%'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>현재: <white>%value%'
       - '<yellow>클릭하여 <white>%key%</white>을(를) %amount% 조정'
     config-detail-adjust-failed: '<red>이 설정은 해당 단위로 조정할 수 없습니다.'
+    config-detail-adjust-preview: '<gray>결과: <white>%after%</white>'
     config-detail-number-hint: '<gray>현재 값: <white>%value%</white>'
     config-detail-back: '<gray>목록으로 돌아가기'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>라벨, 경로, 설명, 현재 값으로 설정 찾기'
       - '<gray>현재 검색: <white>%query%'
       - '<yellow>클릭하여 키워드 입력'
-    config-entry-name: '<white>%label%'
+    config-entry-name: '<white>%label% <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -861,6 +885,7 @@ gui:
         enabled: '감사 로그 사용'
         retention-days: '감사 보관 기간 (일)'
         page-size: '감사 페이지 크기'
+        max-size-mb: '감사 파일 크기 제한 (MB)'
       security:
         admin-cooldown-millis: '운영진 작업 쿨타임 (ms)'
         pending-timeout-seconds: '입력 대기 타임아웃 (초)'
@@ -871,6 +896,8 @@ gui:
         detail-required: '상세 필수'
         allow-color-codes: '색 코드 허용'
         player-name-pattern: '플레이어 이름 패턴'
+        ip-hash-enabled: '제보자 IP 해시'
+        ip-hash-salt: 'IP 해시 솔트'
       config-editor:
         enabled: '온라인 설정 편집기 사용'
         backup-on-save: '설정 저장 전 백업'
@@ -889,8 +916,6 @@ gui:
           high-score: '높음 임계값'
           garbage-score: '쓰레기 임계값'
         garbage-action: '쓰레기 처리'
-        ip-hash-enabled: '제보자 IP 해시'
-        ip-hash-salt: 'IP 해시 솔트'
     config-desc:
       server-name: '플러그인 메시지 및 GUI에 표시되는 서버 이름.'
       language: '플러그인이 사용하는 언어 코드, 예: zh_CN, en_US, fr_FR, ja_JP.'
@@ -1026,6 +1051,7 @@ gui:
         enabled: '운영진 작업 및 설정 변경을 기록합니다.'
         retention-days: '감사 항목이 저장소에 보관되는 일수.'
         page-size: '뷰어에서 페이지당 표시되는 감사 항목 수.'
+        max-size-mb: '감사 로그 파일의 최대 총 크기(MB)입니다. 오래된 파일부터 삭제되며, 0이면 일수 기준 보존만 적용됩니다.'
       security:
         admin-cooldown-millis: '운영진 두 작업 사이 최소 밀리초.'
         pending-timeout-seconds: '대기 중인 운영진 입력 대기 시간 (초).'
@@ -1036,6 +1062,8 @@ gui:
         detail-required: '신고 전송 시 설명 텍스트를 요구합니다.'
         allow-color-codes: '신고 텍스트에 색 코드를 허용합니다.'
         player-name-pattern: '대상 플레이어 이름을 검증하는 정규식.'
+        ip-hash-enabled: 'BAN 추적용 제보자 IP의 소금 섞음 SHA-256 해시를 수집합니다. 평문 IP는 절대 저장되지 않습니다. 기본 꺼짐.'
+        ip-hash-salt: 'IP 해시 솔트. BAN 리스트 도구와 공유하면 서로 계산할 수 있습니다.'
       config-editor:
         enabled: '명령과 GUI로 config.yml을 편집할 수 있습니다.'
         backup-on-save: 'config.yml 수정 전에 백업을 생성합니다.'
@@ -1054,8 +1082,6 @@ gui:
           high-score: '이 점수 이상이면 최소 높음 우선순위로 격상됩니다.'
           garbage-score: '이 점수 이하에서 쓰레기 처리가 적용됩니다.'
         garbage-action: '쓰레기 밴드 제보에 대한 처리: 플래그, 강등 또는 자동 폐기.'
-        ip-hash-enabled: 'BAN 추적용 제보자 IP의 소금 섞음 SHA-256 해시를 수집합니다. 평문 IP는 절대 저장되지 않습니다. 기본 꺼짐.'
-        ip-hash-salt: 'IP 해시 솔트. BAN 리스트 도구와 공유하면 서로 계산할 수 있습니다.'
     misc-title: '<dark_aqua>기타 도구 <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>플러그인 정보'
     misc-info-lore:
@@ -1096,7 +1122,7 @@ gui:
     misc-retention-lore:
       - '<gray>제보 <white>%retention-days%</white>일 보관'
       - '<gray>감사 로그 <white>%audit-retention-days%</white>일 보관'
-      - '<gray>자동 폐기: %auto-close-state%<gray> (%auto-close-days)일)'
+      - '<gray>자동 폐기: %auto-close-state% <gray>(%auto-close-days%일)'
     misc-webhook-name: '<aqua>웹훅 테스트'
     misc-webhook-lore:
       - '<gray>상태: %webhook-state%'

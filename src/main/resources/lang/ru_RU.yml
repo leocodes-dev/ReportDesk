@@ -602,6 +602,19 @@ gui:
       - '<gray>Текущий запрос: <white>%query%'
       - '<yellow>Клик, чтобы ввести слово'
     config-search-prompt: '<yellow>Введите слово для поиска, либо <white>cancel</white> для отмены.'
+    config-filter-changed-name: '<aqua>Только изменённые <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>Показывать только настройки, отличающиеся от стандартных'
+      - '<gray>Изменено в этом представлении: <white>%modified%</white>'
+      - '<yellow>Нажмите, чтобы переключить этот фильтр'
+    config-filter-restart-name: '<gold>Нужен перезапуск <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>Показывать только настройки, требующие перезапуска сервера'
+      - '<gray>Требуют перезапуска в этом представлении: <white>%restart%</white>'
+      - '<yellow>Нажмите, чтобы переключить этот фильтр'
+    config-filter-empty: '<gray>Нет настроек, соответствующих активным фильтрам.'
+    config-state-on: '<green>ВКЛ'
+    config-state-off: '<gray>ВЫКЛ'
     config-list-header-name: '<gold>Конфигурация <dark_gray>| <gray>%count% ключей <dark_gray>| <gray>%modified% изменено'
     config-list-header-lore:
       - '<gray>В этом представлении: <white>%count%</white> настроек'
@@ -623,6 +636,14 @@ gui:
       - '<yellow>Буссоль ниже ищет по всем разделам'
     config-ready: '<green>готов'
     config-not-ready: '<yellow>загружается'
+    config-changed-name: '<green>Изменённые настройки <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>Просмотрите все настройки, отличающиеся от стандартных'
+      - '<gray>Требуют перезапуска: <white>%restart%</white>'
+      - '<yellow>Нажмите, чтобы открыть список изменённых настроек'
+    config-scope-changed: '<gray>Изменённые настройки'
+    config-scope-restart: '<gray>Настройки, требующие перезапуска'
+    config-scope-changed-restart: '<gray>Изменённые настройки, требующие перезапуска'
     config-reload-name: '<green>Перезагрузить конфиг'
     config-reload-lore:
       - '<gray>Перечитать config.yml и языковые файлы'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<yellow>ПКМ для сброса к умолчанию'
     config-key-prompt: '<yellow>Введите новое значение для <white>%key%</white> (сейчас %value%), либо напишите <white>cancel</white>.'
     config-type: '<gray>Тип: <white>%type%'
+    config-value-true: 'Включено (true)'
+    config-value-false: 'Отключено (false)'
     config-detail-title: '<dark_aqua>Конфиг в игре <dark_gray>» <gray>%key%'
     config-detail-info-name: '<yellow>%key%'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>Сейчас: <white>%value%'
       - '<yellow>Клик, чтобы сдвинуть <white>%key%</white> на %amount%'
     config-detail-adjust-failed: '<red>Эту настройку нельзя сдвинуть на такой шаг.'
+    config-detail-adjust-preview: '<gray>Результат: <white>%after%</white>'
     config-detail-number-hint: '<gray>Текущее значение: <white>%value%'
     config-detail-back: '<gray>Назад к списку'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>Найти настройку по метке, пути, описанию или значению'
       - '<gray>Текущий запрос: <white>%query%'
       - '<yellow>Клик, чтобы ввести слово'
-    config-entry-name: '<white>%label%'
+    config-entry-name: '<white>%label% <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -861,6 +885,7 @@ gui:
         enabled: 'Журнал аудита включён'
         retention-days: 'Дней хранения журнала'
         page-size: 'Размер страницы журнала'
+        max-size-mb: 'Лимит размера аудита (МБ)'
       security:
         admin-cooldown-millis: 'Период действия команды (мс)'
         pending-timeout-seconds: 'Ожидание ввода команды (с)'
@@ -871,6 +896,8 @@ gui:
         detail-required: 'Описание обязательно'
         allow-color-codes: 'Разрешить коды цвета'
         player-name-pattern: 'Шаблон имени игрока'
+        ip-hash-enabled: 'Хеш IP заявителя'
+        ip-hash-salt: 'Соль хеша IP'
       config-editor:
         enabled: 'Онлайн-редактор включён'
         backup-on-save: 'Резервная копия конфига'
@@ -889,8 +916,6 @@ gui:
           high-score: 'Порог высокого'
           garbage-score: 'Порог мусора'
         garbage-action: 'Действие для мусора'
-        ip-hash-enabled: 'Хеш IP заявителя'
-        ip-hash-salt: 'Соль хеша IP'
     config-desc:
       server-name: 'Имя сервера в сообщениях и в GUI.'
       language: 'Код языка плагина, например zh_CN, en_US, es_ES, ru_RU или de_DE.'
@@ -1026,6 +1051,7 @@ gui:
         enabled: 'Зapisывать действия команды и изменения конфига.'
         retention-days: 'Сколько дней хранить записи журнала.'
         page-size: 'Сколько записей журнала на страницу.'
+        max-size-mb: 'Максимальный суммарный размер файлов аудита в МБ. Сначала удаляются самые старые; 0 — только хранение по дням.'
       security:
         admin-cooldown-millis: 'Минимальные миллисекунды между действиями команды.'
         pending-timeout-seconds: 'Сколько секунд ждать незавершённые вводы команды.'
@@ -1036,6 +1062,8 @@ gui:
         detail-required: 'Требовать текст описания при подаче.'
         allow-color-codes: 'Разрешать коды цвета в тексте жалобы.'
         player-name-pattern: 'Регулярное выражение для проверки имени цели.'
+        ip-hash-enabled: 'Собирает солевой SHA-256-хеш IP заявителя для прослеживания банов. Чистый IP никогда не хранится. По умолчанию выключено.'
+        ip-hash-salt: 'Соль хеша IP; делитесь ею с инструментами бан-листов для сопоставления.'
       config-editor:
         enabled: 'Позволять менять config.yml через команды и GUI.'
         backup-on-save: 'Создавать копию перед правкой config.yml.'
@@ -1054,8 +1082,6 @@ gui:
           high-score: 'Оценка, повышающая рапорт хотя бы до высокого приоритета.'
           garbage-score: 'Оценка, не выше которой применяется мусорное действие.'
         garbage-action: 'Что делать с рапортами из мусорной зоны: пометить, понизить или закрыть автоматически.'
-        ip-hash-enabled: 'Собирает солевой SHA-256-хеш IP заявителя для прослеживания банов. Чистый IP никогда не хранится. По умолчанию выключено.'
-        ip-hash-salt: 'Соль хеша IP; делитесь ею с инструментами бан-листов для сопоставления.'
     misc-title: '<dark_aqua>Прочие инструменты <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>О плагине'
     misc-info-lore:

@@ -602,6 +602,19 @@ gui:
       - '<gray>Aktuelle Suche: <white>%query%'
       - '<yellow>Klick, um ein Wort einzutippen'
     config-search-prompt: '<yellow>Gib ein Suchwort ein oder <white>cancel</white> zum Abbrechen.'
+    config-filter-changed-name: '<aqua>Nur geänderte <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>Nur Einstellungen anzeigen, die von den Standardwerten abweichen'
+      - '<gray>In dieser Ansicht geändert: <white>%modified%</white>'
+      - '<yellow>Klicken, um diesen Filter umzuschalten'
+    config-filter-restart-name: '<gold>Neustart nötig <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>Nur Einstellungen anzeigen, die einen Serverneustart benötigen'
+      - '<gray>Neustart in dieser Ansicht: <white>%restart%</white>'
+      - '<yellow>Klicken, um diesen Filter umzuschalten'
+    config-filter-empty: '<gray>Keine Einstellungen passen zu den aktiven Filtern.'
+    config-state-on: '<green>AN'
+    config-state-off: '<gray>AUS'
     config-list-header-name: '<gold>Konfiguration <dark_gray>| <gray>%count% Schalter <dark_gray>| <gray>%modified% geändert'
     config-list-header-lore:
       - '<gray><white>%count%</white> Schalter in dieser Ansicht'
@@ -623,6 +636,14 @@ gui:
       - '<yellow>Unterste Brücke durchsucht alle Bereiche'
     config-ready: '<green>bereit'
     config-not-ready: '<yellow>wird geladen'
+    config-changed-name: '<green>Geänderte Einstellungen <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>Alle Einstellungen prüfen, die von den Standardwerten abweichen'
+      - '<gray>Neustart erforderlich: <white>%restart%</white>'
+      - '<yellow>Klicken, um die Ansicht der geänderten Einstellungen zu öffnen'
+    config-scope-changed: '<gray>Geänderte Einstellungen'
+    config-scope-restart: '<gray>Einstellungen mit Neustartbedarf'
+    config-scope-changed-restart: '<gray>Geänderte Einstellungen mit Neustartbedarf'
     config-reload-name: '<green>Konfiguration neu laden'
     config-reload-lore:
       - '<gray>config.yml und Sprachdateien neu lesen'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<yellow>Rechtsklick auf Standardwert zurücksetzen'
     config-key-prompt: '<yellow>Gib den neuen Wert für <white>%key%</white> (aktuell %value%) ein oder schreibe <white>cancel</white>.'
     config-type: '<gray>Typ: <white>%type%'
+    config-value-true: 'Aktiviert (true)'
+    config-value-false: 'Deaktiviert (false)'
     config-detail-title: '<dark_aqua>Konfiguration in-game <dark_gray>» <gray>%key%'
     config-detail-info-name: '<yellow>%key%'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>Derzeit: <white>%value%'
       - '<yellow>Klick, um <white>%key%</white> um %amount% zu verschieben'
     config-detail-adjust-failed: '<red>Diese Konfiguration kann nicht mit diesem Schritt geändert werden.'
+    config-detail-adjust-preview: '<gray>Ergebnis: <white>%after%</white>'
     config-detail-number-hint: '<gray>Aktueller Wert: <white>%value%'
     config-detail-back: '<gray>Zurück zur Liste'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>Finde einen Schalter nach Label, Pfad, Beschreibung oder aktuellem Wert'
       - '<gray>Aktuelle Suche: <white>%query%'
       - '<yellow>Klick, um ein Wort einzutippen'
-    config-entry-name: '<white>%label%'
+    config-entry-name: '<white>%label% <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -861,6 +885,7 @@ gui:
         enabled: 'Audit-Protokoll aktiv'
         retention-days: 'Audit-Aufbewahrungstage'
         page-size: 'Audit-Seitengröße'
+        max-size-mb: 'Audit-Dateigrößenlimit (MB)'
       security:
         admin-cooldown-millis: 'Team-aktions-Cooldown (ms)'
         pending-timeout-seconds: 'Ausstehende Zeitbegrenzung (Sekunden)'
@@ -871,6 +896,8 @@ gui:
         detail-required: 'Details erforderlich'
         allow-color-codes: 'Farbcodes erlauben'
         player-name-pattern: 'Spielername-Muster'
+        ip-hash-enabled: 'Reporter-IP-Hash'
+        ip-hash-salt: 'IP-Hash-Salz'
       config-editor:
         enabled: 'Online-Konfig-Editor aktiv'
         backup-on-save: 'Sicherung vor Konfig-Speichern'
@@ -889,8 +916,6 @@ gui:
           high-score: 'Hoch-Schwellwert'
           garbage-score: 'Müll-Schwellwert'
         garbage-action: 'Müllaktion'
-        ip-hash-enabled: 'Reporter-IP-Hash'
-        ip-hash-salt: 'IP-Hash-Salz'
     config-desc:
       server-name: 'Servername in Plugin-Meldungen und GUI.'
       language: 'Sprachcode des Plugins, z. B. zh_CN, en_US, es_ES, ru_RU oder de_DE.'
@@ -1026,6 +1051,7 @@ gui:
         enabled: 'Team-Aktionen und Konfig-Änderungen protokollieren.'
         retention-days: 'Wie lange Audit-Einträge im Speicher bleiben.'
         page-size: 'Audit-Einträge pro Seite im Viewer.'
+        max-size-mb: 'Maximale Gesamtgröße der Audit-Protokolldateien in MB. Älteste Dateien werden zuerst entfernt; 0 bedeutet nur tagebasierte Aufbewahrung.'
       security:
         admin-cooldown-millis: 'Minimale Millisekunden zwischen zwei Team-Aktionen.'
         pending-timeout-seconds: 'Wie lange auf ausstehende Team-Eingaben gewartet wird (Sekunden).'
@@ -1036,6 +1062,8 @@ gui:
         detail-required: 'Meldungsbeschreibung muss nicht leer sein.'
         allow-color-codes: 'Farbcodes im Meldetext erlauben.'
         player-name-pattern: 'Regel, die das Ziel-Spielername validiert.'
+        ip-hash-enabled: 'Sammelt den gesalzenen SHA-256-Hash der Reporter-IP zur Ban-Verfolgung. Klartext-IP wird nie gespeichert. Standardmäßig aus.'
+        ip-hash-salt: 'Salz für den IP-Hash; mit Banlisten-Tools teilen, um zu korrelieren.'
       config-editor:
         enabled: 'config.yml über Befehle und GUI bearbeiten können.'
         backup-on-save: 'Sicherung anlegen, bevor config.yml bearbeitet wird.'
@@ -1054,8 +1082,6 @@ gui:
           high-score: 'Ab dieser Bewertung wird ein Bericht mindestens auf hoch gestellt.'
           garbage-score: 'Ab hier (einschließlich) wird die Müllaktion ausgeführt.'
         garbage-action: 'Was mit Müll-Berichten passiert: markieren, herabstufen oder automatisch schließen.'
-        ip-hash-enabled: 'Sammelt den gesalzenen SHA-256-Hash der Reporter-IP zur Ban-Verfolgung. Klartext-IP wird nie gespeichert. Standardmäßig aus.'
-        ip-hash-salt: 'Salz für den IP-Hash; mit Banlisten-Tools teilen, um zu korrelieren.'
     misc-title: '<dark_aqua>Weitere Werkzeuge <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>Plugin-Info'
     misc-info-lore:

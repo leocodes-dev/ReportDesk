@@ -406,7 +406,7 @@ gui:
       - '<gray>服务器：<white>%server%'
       - '<gray>举报总数：<white>%total%'
       - '<gray>待处理 <white>%open%</white> <dark_gray>| <gray>已受理 <white>%claimed%'
-      - '<gray>已结束 <white>%closed%</white> <dark_gray>| <gray>超时 <red>%overdue%'
+      - '<gray>已结束 <white>%closed%</white> <dark_gray>| <gray>逾期 <red>%overdue%'
       - '<gray>你关注的玩家：<white>%watching%'
       - ''
       - '<gray>点击各张卡片进入对应功能'
@@ -438,7 +438,7 @@ gui:
     hub-audit-lore:
       - '<gray>查看管理员操作记录'
       - '<yellow>点击浏览'
-    hub-misc-name: '<gray>其它工具'
+    hub-misc-name: '<gray>其他工具'
     hub-misc-lore:
       - '<gray>状态、数据工具、审计、Webhook 测试与帮助'
       - '<yellow>点击打开'
@@ -446,7 +446,7 @@ gui:
     queue-header-name: '<gold>举报队列 <dark_gray>| <gray>共 %total% 条'
     queue-header-lore:
       - '<gray>待处理 <white>%open%</white> <dark_gray>| <gray>已受理 <white>%claimed%'
-      - '<gray>已结束 <white>%closed%</white> <dark_gray>| <gray>超时 <red>%overdue%'
+      - '<gray>已结束 <white>%closed%</white> <dark_gray>| <gray>逾期 <red>%overdue%'
       - '<gray>当前筛选：<white>%filter%'
       - '<gray>当前搜索：<white>%query%'
       - ''
@@ -462,7 +462,7 @@ gui:
     filter-header-lore:
       - '<gray>当前筛选：<white>%filter%'
       - '<gray>待处理 <white>%open%</white> <dark_gray>| <gray>已受理 <white>%claimed%'
-      - '<gray>超时 <red>%overdue%'
+      - '<gray>逾期 <red>%overdue%'
       - ''
       - '<yellow>点击 10–16 的状态图标切换筛选'
       - '<gray>下方可切换分类、只看我、排序与优先级'
@@ -550,16 +550,16 @@ gui:
     stats-overview-lore:
       - '<gray>举报总数：<white>%total%'
       - '<gray>待处理 <white>%open%</white> <dark_gray>| <gray>已受理 <white>%claimed%'
-      - '<gray>已结束 <white>%closed%</white> <dark_gray>| <gray>超时 <red>%overdue%'
+      - '<gray>已结束 <white>%closed%</white> <dark_gray>| <gray>逾期 <red>%overdue%'
       - '<gray>平均处理时长：<white>%average%'
     stats-status-name: '<yellow>按状态'
     stats-categories-name: '<gold>热门分类'
     stats-targets-name: '<red>被举报最多'
     stats-staff-name: '<green>处理最多'
-    stats-overdue-name: '<red>超时举报'
+    stats-overdue-name: '<red>逾期举报'
     stats-overdue-lore:
-      - '<gray>当前超时：<red>%overdue%</red> 条'
-      - '<yellow>点击查看超时列表'
+      - '<gray>当前逾期：<red>%overdue%</red> 条'
+      - '<yellow>点击查看逾期列表'
     stats-avg-name: '<aqua>平均处理时长'
     stats-avg-lore:
       - '<gray>平均：<white>%average%'
@@ -602,6 +602,19 @@ gui:
       - '<gray>当前搜索：<white>%query%'
       - '<yellow>点击输入关键词'
     config-search-prompt: '<yellow>请输入配置关键词，输入 <white>cancel</white> 取消。'
+    config-filter-changed-name: '<aqua>仅显示已修改 <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>只显示与内置默认值不同的设置'
+      - '<gray>当前视图已修改：<white>%modified%</white>'
+      - '<yellow>点击切换此筛选'
+    config-filter-restart-name: '<gold>仅显示需重启 <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>只显示需要重启服务器才能生效的设置'
+      - '<gray>当前视图需重启：<white>%restart%</white>'
+      - '<yellow>点击切换此筛选'
+    config-filter-empty: '<gray>没有符合当前筛选条件的设置。'
+    config-state-on: '<green>开'
+    config-state-off: '<gray>关'
     config-list-header-name: '<gold>配置项 <dark_gray>| <gray>%count% 项 <dark_gray>| <gray>已改 %modified%'
     config-list-header-lore:
       - '<gray>共有 <white>%count%</white> 个配置项'
@@ -623,6 +636,14 @@ gui:
       - '<yellow>底部指南针可跨分类搜索'
     config-ready: '<green>已加载'
     config-not-ready: '<yellow>加载中'
+    config-changed-name: '<green>已修改设置 <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>查看所有与默认值不同的设置'
+      - '<gray>需要重启：<white>%restart%</white>'
+      - '<yellow>点击打开已修改设置列表'
+    config-scope-changed: '<gray>已修改的设置'
+    config-scope-restart: '<gray>需要重启的设置'
+    config-scope-changed-restart: '<gray>需要重启的已修改设置'
     config-reload-name: '<green>重载配置'
     config-reload-lore:
       - '<gray>重新读取 config.yml 与语言文件'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<yellow>右键点击恢复默认'
     config-key-prompt: '<yellow>请输入 <white>%key%</white> 的新值（当前 %value%），输入 <white>cancel</white> 取消。'
     config-type: '<gray>类型：<white>%type%'
+    config-value-true: '已启用（true）'
+    config-value-false: '已禁用（false）'
     config-detail-title: '<dark_aqua>在线配置 <dark_gray>» <gray>%key%'
     config-detail-info-name: '<yellow>%key%'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>当前：<white>%value%'
       - '<yellow>点击将 <white>%key%</white> 调整 %amount%'
     config-detail-adjust-failed: '<red>无法按该步长调整此配置项。'
+    config-detail-adjust-preview: '<gray>调整后：<white>%after%</white>'
     config-detail-number-hint: '<gray>当前值：<white>%value%'
     config-detail-back: '<gray>返回列表'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>按中文名称、配置路径、说明或当前值查找'
       - '<gray>当前搜索：<white>%query%'
       - '<yellow>点击输入关键词'
-    config-entry-name: '<white>%label%'
+    config-entry-name: '<white>%label% <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -763,8 +787,8 @@ gui:
           enabled: '启用优先级'
           repeat-offender-threshold: '重复违规阈值'
           repeat-offender-level: '重复违规优先级'
-          overdue-check-minutes: '超时检查间隔（分钟）'
-          overdue-alert-enabled: '超时提醒'
+          overdue-check-minutes: '逾期检查间隔（分钟）'
+          overdue-alert-enabled: '逾期提醒'
           sla-hours:
             urgent: '紧急处理时限（小时）'
             high: '高优先级处理时限（小时）'
@@ -861,6 +885,7 @@ gui:
         enabled: '启用审计日志'
         retention-days: '审计保留天数'
         page-size: '审计每页数量'
+        max-size-mb: '审计文件容量上限（MB）'
       security:
         admin-cooldown-millis: '管理操作冷却（毫秒）'
         pending-timeout-seconds: '待处理超时（秒）'
@@ -871,6 +896,8 @@ gui:
         detail-required: '必须填写详情'
         allow-color-codes: '允许颜色代码'
         player-name-pattern: '玩家名匹配规则'
+        ip-hash-enabled: '举报人 IP 哈希'
+        ip-hash-salt: 'IP 哈希盐值'
       config-editor:
         enabled: '启用在线配置编辑'
         backup-on-save: '保存前备份配置'
@@ -889,8 +916,6 @@ gui:
           high-score: '高优先级分数阈值'
           garbage-score: '垃圾举报分数阈值'
         garbage-action: '垃圾举报处理'
-        ip-hash-enabled: '举报人 IP 哈希'
-        ip-hash-salt: 'IP 哈希盐值'
     config-desc:
       server-name: '显示在插件消息和 GUI 中的服务器名称。'
       language: '插件使用的语言代码，例如 zh_CN 或 en_US。'
@@ -925,7 +950,7 @@ gui:
         staff-stats-top: '管理员统计页面显示的管理员数量。'
         default-category: '玩家未指定分类时使用的默认举报类型。'
         priority:
-          enabled: '根据重复违规和超时规则为举报计算优先级。'
+          enabled: '根据重复违规和逾期规则为举报计算优先级。'
           repeat-offender-threshold: '目标被举报多少次后标记为重复违规。'
           repeat-offender-level: '达到重复违规阈值后使用的优先级。'
           overdue-check-minutes: '检查举报是否超过处理时限的间隔（分钟）。'
@@ -988,7 +1013,7 @@ gui:
           retry-base-seconds: 'Webhook 重试的基础间隔（秒），实际间隔按 2 的幂次递增。'
           failure-alert-enabled: 'Webhook 重试耗尽后向在线管理组发一次站内告警。'
         sla:
-          weekly-enabled: '周期性把 SLA 超时摘要推送到 Webhook。默认关闭。'
+          weekly-enabled: '周期性把 SLA 逾期摘要推送到 Webhook。默认关闭。'
           interval-hours: 'SLA 摘要推送间隔（小时），168 即每周。'
       evidence:
         enabled: '提交举报时采集服务器证据。'
@@ -1026,6 +1051,7 @@ gui:
         enabled: '记录管理操作和配置修改。'
         retention-days: '审计日志在存储中保留的天数。'
         page-size: '审计查看界面每页显示的记录数量。'
+        max-size-mb: '审计日志文件的总大小上限（MB），超出时优先删除最旧的文件；0 表示仅按天数保留。'
       security:
         admin-cooldown-millis: '同一管理员两次管理操作之间至少间隔的毫秒数。'
         pending-timeout-seconds: '等待管理员输入操作内容的最长秒数。'
@@ -1036,6 +1062,8 @@ gui:
         detail-required: '提交举报时必须填写文字说明。'
         allow-color-codes: '允许在举报文本中使用颜色代码。'
         player-name-pattern: '校验举报目标玩家名使用的正则表达式。'
+        ip-hash-enabled: '采集举报人 IP 的加盐 SHA-256 哈希用于封禁溯源，绝不落明文 IP。默认关闭。'
+        ip-hash-salt: 'IP 哈希的盐值；与封禁列表工具共用盐值可互相换算。'
       config-editor:
         enabled: '允许通过命令和 GUI 修改 config.yml。'
         backup-on-save: '修改 config.yml 前先创建一份备份。'
@@ -1052,17 +1080,15 @@ gui:
         thresholds:
           urgent-score: '达到该分数时提升为紧急优先级。'
           high-score: '达到该分数时至少提升为高优先级。'
-          garbage-score: '低于等于该分数时按垃圾举报处理。'
+          garbage-score: '小于等于该分数时按垃圾举报处理。'
         garbage-action: '垃圾举报的处理方式：flag 仅标记 / demote 降为低优先级 / auto-close 自动关闭。'
-        ip-hash-enabled: '采集举报人 IP 的加盐 SHA-256 哈希用于封禁溯源，绝不落明文 IP。默认关闭。'
-        ip-hash-salt: 'IP 哈希的盐值；与封禁列表工具共用盐值可互相换算。'
-    misc-title: '<dark_aqua>其它工具 <dark_gray>» <gray>%server%'
+    misc-title: '<dark_aqua>其他工具 <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>插件信息'
     misc-info-lore:
-      - '<gray>版本: <white>%version%'
-      - '<gray>语言: <white>%language%'
-      - '<gray>存储: <white>%storage%'
-      - '<gray>在线玩家: <white>%online%'
+      - '<gray>版本：<white>%version%'
+      - '<gray>语言：<white>%language%'
+      - '<gray>存储：<white>%storage%'
+      - '<gray>在线玩家：<white>%online%'
     misc-audit-name: '<gold>审计日志'
     misc-audit-lore:
       - '<gray>查看管理员操作记录'
@@ -1073,7 +1099,7 @@ gui:
       - '<yellow>点击导出'
     misc-maintenance-name: '<yellow>立即维护'
     misc-maintenance-lore:
-      - '<gray>自动关闭超期举报并清理过期数据'
+      - '<gray>自动关闭逾期举报并清理过期数据'
       - '<yellow>点击运行'
     misc-purge-name: '<red>清理旧数据'
     misc-purge-lore:
@@ -1089,17 +1115,17 @@ gui:
       - '<yellow>点击查看'
     misc-data-name: '<aqua>数据状态'
     misc-data-lore:
-      - '<gray>总数: <white>%total%'
-      - '<gray>未结: <white>%open%</white> <dark_gray>| <gray>已关闭: <white>%closed%'
-      - '<gray>逾期: <red>%overdue%</red>'
+      - '<gray>总数：<white>%total%'
+      - '<gray>待处理：<white>%open%</white> <dark_gray>| <gray>已关闭：<white>%closed%'
+      - '<gray>逾期：<red>%overdue%</red>'
     misc-retention-name: '<aqua>保留与审计'
     misc-retention-lore:
       - '<gray>举报保留 <white>%retention-days%</white> 天'
       - '<gray>审计日志保留 <white>%audit-retention-days%</white> 天'
-      - '<gray>自动关闭: %auto-close-state%<gray>（%auto-close-days% 天）'
+      - '<gray>自动关闭：%auto-close-state%<gray>（%auto-close-days% 天）'
     misc-webhook-name: '<aqua>Webhook 测试'
     misc-webhook-lore:
-      - '<gray>状态: %webhook-state%'
+      - '<gray>状态：%webhook-state%'
       - '<gray>频道由 <white>notifications.webhook.url</white> 配置'
       - '<yellow>点击发送一条测试消息'
     misc-webhook-disabled: '<red>Webhook 未启用或未配置 URL（notifications.webhook）。'
@@ -1114,7 +1140,7 @@ gui:
       - '<yellow>点击继续'
     confirm-no-name: '<green>取消'
     confirm-no-lore:
-      - '<gray>返回其它工具'
+      - '<gray>返回其他工具'
     action-purge: '清理超过 %days% 天的旧数据'
     action-maintenance: '立即维护'
     audit-title: '<dark_aqua>审计日志 <dark_gray>» <gray>第 %page% / %pages% 页'
@@ -1134,7 +1160,7 @@ gui:
     quick-open-lore:
       - '<gray>快速切换到待处理举报'
       - '<yellow>点击应用'
-    quick-overdue-name: '<red>只看超时'
+    quick-overdue-name: '<red>只看逾期'
     quick-overdue-lore:
       - '<gray>只看超过处理时限的举报'
       - '<yellow>点击应用'

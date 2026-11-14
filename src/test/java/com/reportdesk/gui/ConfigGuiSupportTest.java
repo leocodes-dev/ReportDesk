@@ -85,6 +85,31 @@ class ConfigGuiSupportTest {
   }
 
   @Test
+  void changedAndRestartFiltersCombine() {
+
+    List<ConfigKey> keys = ConfigKeys.all();
+
+    List<ConfigKey> changed = ConfigGuiSupport.filter(keys, CHANGED, DEFAULTS, true, false);
+
+    assertEquals(3, changed.size());
+
+    assertTrue(
+        changed.stream().allMatch(key -> !ConfigGuiSupport.isDefault(key, CHANGED, DEFAULTS)));
+
+    assertTrue(
+        ConfigGuiSupport.filter(keys, DEFAULTS, DEFAULTS, true, false).isEmpty(),
+        "nothing changed from the defaults");
+
+    assertTrue(
+        ConfigGuiSupport.filter(keys, CHANGED, DEFAULTS, true, true).isEmpty(),
+        "none of the changed keys needs a restart");
+
+    assertEquals(keys.size(), ConfigGuiSupport.filter(keys, CHANGED, DEFAULTS, false, false).size());
+
+    assertTrue(ConfigGuiSupport.filter(null, CHANGED, DEFAULTS, true, true).isEmpty());
+  }
+
+  @Test
   void booleansToggleWithoutTyping() {
 
     ConfigKey key = required("gui.admin.enabled");

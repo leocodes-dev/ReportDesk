@@ -602,6 +602,19 @@ gui:
       - '<gray>現在の検索: <white>%query%'
       - '<yellow>クリックでキーワード入力'
     config-search-prompt: '<yellow>設定キーワードを入力するか、<white>cancel</white> で中断。'
+    config-filter-changed-name: '<aqua>変更済みのみ <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>同梱の既定値と異なる設定だけを表示します'
+      - '<gray>このビューの変更数: <white>%modified%</white>'
+      - '<yellow>クリックでこのフィルターを切り替え'
+    config-filter-restart-name: '<gold>再起動が必要 <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>サーバーの再起動が必要な設定だけを表示します'
+      - '<gray>このビューの再起動必要数: <white>%restart%</white>'
+      - '<yellow>クリックでこのフィルターを切り替え'
+    config-filter-empty: '<gray>有効なフィルターに一致する設定はありません。'
+    config-state-on: '<green>オン'
+    config-state-off: '<gray>オフ'
     config-list-header-name: '<gold>設定 <dark_gray>| <gray>%count% 項目 <dark_gray>| <gray>%modified% 変更済み'
     config-list-header-lore:
       - '<gray>このビューには <white>%count%</white> の設定'
@@ -623,6 +636,14 @@ gui:
       - '<gray>下段の羅針盤で全セクションを検索'
     config-ready: '<green>準備完了'
     config-not-ready: '<gray>読み込み中'
+    config-changed-name: '<green>変更済み設定 <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>既定値と異なるすべての設定を確認します'
+      - '<gray>再起動が必要: <white>%restart%</white>'
+      - '<yellow>クリックで変更済み設定ビューを開く'
+    config-scope-changed: '<gray>変更済み設定'
+    config-scope-restart: '<gray>再起動が必要な設定'
+    config-scope-changed-restart: '<gray>再起動が必要な変更済み設定'
     config-reload-name: '<green>設定を再読み込み'
     config-reload-lore:
       - '<gray>config.yml と言語ファイルを再読み込み'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<gray>右クリックでデフォルト値に戻す'
     config-key-prompt: '<yellow><white>%key%</white> の新しい値を入力 (現在 %value%)、または <white>cancel</white> と入力。'
     config-type: '<gray>型: <white>%type%</white>'
+    config-value-true: '有効 (true)'
+    config-value-false: '無効 (false)'
     config-detail-title: '<dark_aqua>ゲーム内設定 <dark_gray>» <gray>%key%'
     config-detail-info-name: '<yellow>%key%'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>現在: <white>%value%'
       - '<yellow>クリックで <white>%key%</white> を %amount% 調整'
     config-detail-adjust-failed: '<red>この設定はこのステップでは調整できません。'
+    config-detail-adjust-preview: '<gray>変更後: <white>%after%</white>'
     config-detail-number-hint: '<gray>現在の値: <white>%value%</white>'
     config-detail-back: '<gray>一覧に戻る'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>ラベル・パス・説明・現在の値で設定を探す'
       - '<gray>現在の検索: <white>%query%</white>'
       - '<yellow>クリックでキーワード入力'
-    config-entry-name: '<white>%label%'
+    config-entry-name: '<white>%label% <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -861,6 +885,7 @@ gui:
         enabled: '監査ログを有効'
         retention-days: '監査保持日数'
         page-size: '監査のページサイズ'
+        max-size-mb: '監査ファイルサイズ上限 (MB)'
       security:
         admin-cooldown-millis: '運営操作クールダウン (ms)'
         pending-timeout-seconds: '入力待機タイムアウト (秒)'
@@ -871,6 +896,8 @@ gui:
         detail-required: '詳細必須'
         allow-color-codes: 'カラーコードを許可'
         player-name-pattern: 'プレイヤー名の正規表現'
+        ip-hash-enabled: '報告者IPハッシュ'
+        ip-hash-salt: 'IPハッシュソルト'
       config-editor:
         enabled: 'オンライン設定エディタを有効'
         backup-on-save: '設定保存前にバックアップ'
@@ -889,8 +916,6 @@ gui:
           high-score: '高のしきい値'
           garbage-score: 'ゴミのしきい値'
         garbage-action: 'ゴミ報告の処理'
-        ip-hash-enabled: '報告者IPハッシュ'
-        ip-hash-salt: 'IPハッシュソルト'
     config-desc:
       server-name: 'プラグインのメッセージと GUI に表示されるサーバー名。'
       language: 'プラグインが使用する言語コード、例: zh_CN, en_US, fr_FR, ja_JP。'
@@ -1026,6 +1051,7 @@ gui:
         enabled: '運営の操作と設定変更を記録します。'
         retention-days: '監査エントリがストレージに保持される日数。'
         page-size: 'ビューアのページごとの監査エントリ数。'
+        max-size-mb: '監査ログファイルの合計サイズ上限 (MB)。古いファイルから削除されます。0 の場合は日数保持のみ行います。'
       security:
         admin-cooldown-millis: '運営操作 2 回間の最小ミリ秒。'
         pending-timeout-seconds: '未完了の運営入力を待つかの時間 (秒)。'
@@ -1036,6 +1062,8 @@ gui:
         detail-required: '通報送信時に説明文を必須にします。'
         allow-color-codes: '通報テキストにカラーコードを許可します。'
         player-name-pattern: '対象プレイヤー名の検証に使う正規表現。'
+        ip-hash-enabled: 'BAN 対策の追跡のため報告者 IP のソルト付き SHA-256 ハッシュを収集します。平文 IP は一切保存しません。既定はオフ。'
+        ip-hash-salt: 'IP ハッシュのソルト。BAN リストツールと共有すれば照合できます。'
       config-editor:
         enabled: 'コマンドと GUI で config.yml を編集できます。'
         backup-on-save: 'config.yml を変更前にコピーを作成します。'
@@ -1054,8 +1082,6 @@ gui:
           high-score: 'このスコア以上で最低でも高優先度に引き上げます。'
           garbage-score: 'このスコア以下でゴミ報告処理が適用されます。'
         garbage-action: 'ゴミ帯の報告への処理：フラグ付け、降格、または自動クローズ。'
-        ip-hash-enabled: 'BAN 対策の追跡のため報告者 IP のソルト付き SHA-256 ハッシュを収集します。平文 IP は一切保存しません。既定はオフ。'
-        ip-hash-salt: 'IP ハッシュのソルト。BAN リストツールと共有すれば照合できます。'
     misc-title: '<dark_aqua>その他のツール <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>プラグイン情報'
     misc-info-lore:

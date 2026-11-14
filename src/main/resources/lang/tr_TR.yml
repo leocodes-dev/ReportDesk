@@ -602,6 +602,19 @@ gui:
       - '<gray>Geçerli arama: <white>%query%</white>'
       - '<gray>bir anahtar kelime yazmak için tıkla'
     config-search-prompt: '<gray>bir yapılandırma anahtar kelimesi yaz veya <white>cancel</white> ile iptal et.'
+    config-filter-changed-name: '<aqua>Yalnızca değişenler <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>Yalnızca varsayılanlardan farklı ayarları göster'
+      - '<gray>Bu görünümde değişen: <white>%modified%</white>'
+      - '<yellow>Bu filtreyi değiştirmek için tıklayın'
+    config-filter-restart-name: '<gold>Yeniden başlatma gerekli <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>Yalnızca sunucu yeniden başlatması gereken ayarları göster'
+      - '<gray>Bu görünümde yeniden başlatma gerekli: <white>%restart%</white>'
+      - '<yellow>Bu filtreyi değiştirmek için tıklayın'
+    config-filter-empty: '<gray>Etkin filtrelerle eşleşen ayar yok.'
+    config-state-on: '<green>AÇIK'
+    config-state-off: '<gray>KAPALI'
     config-list-header-name: '<gold>Yapılandırma <dark_gray>| <gray>%count% anahtar <dark_gray>| <gray>%modified% değiştirildi'
     config-list-header-lore:
       - '<gray>Bu görünümde <white>%count%</white> yapılandırma'
@@ -623,6 +636,14 @@ gui:
       - '<gray>Aşağıdaki pusula tüm bölümleri arar'
     config-ready: '<green>hazır'
     config-not-ready: '<gray>yükleniyor'
+    config-changed-name: '<green>Değişen ayarlar <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>Varsayılanlardan farklı tüm ayarları gözden geçir'
+      - '<gray>Yeniden başlatma gerekli: <white>%restart%</white>'
+      - '<yellow>Değişen ayarlar görünümünü açmak için tıklayın'
+    config-scope-changed: '<gray>Değişen ayarlar'
+    config-scope-restart: '<gray>Yeniden başlatma gereken ayarlar'
+    config-scope-changed-restart: '<gray>Yeniden başlatma gereken değişen ayarlar'
     config-reload-name: '<green>Yapılandırmayı Yeniden Yükle</green>'
     config-reload-lore:
       - '<gray>config.yml ve dil dosyalarını yeniden oku'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<gray>Sağ tıkla varsayılan değere sıfırla'
     config-key-prompt: '<gray><white>%key%</white> için yeni değeri yaz (geçerli %value%), veya <white>cancel</white> yaz.'
     config-type: '<gray>Tip: <white>%type%</white>'
+    config-value-true: 'Etkin (true)'
+    config-value-false: 'Devre dışı (false)'
     config-detail-title: '<dark_aqua>Oyun içi Yapılandırma <dark_gray>» <gray>%key%'
     config-detail-info-name: '<gray>%key%</gray>'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>Şu an: <white>%value%</white>'
       - '<gray><white>%key%</white> değerini %amount% ile değiştirmek için tıkla'
     config-detail-adjust-failed: '<red>Bu yapılandırma bu adımla değiştirilemiyor.'
+    config-detail-adjust-preview: '<gray>Sonuç: <white>%after%</white>'
     config-detail-number-hint: '<gray>Geçerli değer: <white>%value%</white>'
     config-detail-back: '<gray>listeye geri dön'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>Yapılandırmayı etikete, yola, açıklamaya veya geçerli değere göre bul'
       - '<gray>Geçerli arama: <white>%query%</white>'
       - '<gray>bir anahtar kelime yazmak için tıkla'
-    config-entry-name: '<white>%label%</white>'
+    config-entry-name: '<white>%label%</white> <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -861,6 +885,7 @@ gui:
         enabled: 'Denetim Kaydı Etkin'
         retention-days: 'Denetim Saklama Günü'
         page-size: 'Denetim Sayfa Boyutu'
+        max-size-mb: 'Denetim Dosya Boyutu Sınırı (MB)'
       security:
         admin-cooldown-millis: 'Ekip İşlem Soğuma Süresi (ms)'
         pending-timeout-seconds: 'Bekleyen Girdi Süresi (saniye)'
@@ -871,6 +896,8 @@ gui:
         detail-required: 'Ayrıntı Gerekli'
         allow-color-codes: 'Renk Kodlarına İzin Ver'
         player-name-pattern: 'Oyuncu Adı Deseni'
+        ip-hash-enabled: 'Bildirici IP hash''i'
+        ip-hash-salt: 'IP hash tuzu'
       config-editor:
         enabled: 'Çevrimiçi Yapılandırma Düzenleyicisi Etkin'
         backup-on-save: 'Yapılandırmayı Kaydetmeden Önce Yedekle'
@@ -889,8 +916,6 @@ gui:
           high-score: 'Yüksek eşiği'
           garbage-score: 'Çöp eşiği'
         garbage-action: 'Çöp işlemi'
-        ip-hash-enabled: 'Bildirici IP hash''i'
-        ip-hash-salt: 'IP hash tuzu'
     config-desc:
       server-name: 'Eklenti mesajlarında ve GUIde görünen sunucu adı.'
       language: 'Eklenti tarafından kullanılan dil kodu, ör. zh_CN, en_US, fr_FR, ja_JP.'
@@ -1026,6 +1051,7 @@ gui:
         enabled: 'Ekip işlemleri ve yapılandırma değişikliklerini kaydeder.'
         retention-days: 'Denetim girdilerinin depoda tutulacağı gün.'
         page-size: 'Görüntüleyicide sayfa başına gösterilen denetim girdisi.'
+        max-size-mb: 'Denetim günlük dosyalarının toplam boyut üst sınırı (MB). Önce en eski dosyalar silinir; 0 yalnızca gün bazlı saklamayı uygular.'
       security:
         admin-cooldown-millis: 'İki ekip işlemi arasındaki minimum milisaniye.'
         pending-timeout-seconds: 'Bekleyen ekip girdileri için ne kadar bekleneceği (saniye olarak).'
@@ -1036,6 +1062,8 @@ gui:
         detail-required: 'Şikayet gönderirken metin açıklaması ister.'
         allow-color-codes: 'Şikayet metninde renk kodlarına izin verir.'
         player-name-pattern: 'Hedef oyuncu adını doğrulamak için kullanılan düzenli ifade.'
+        ip-hash-enabled: 'BAN izlemesi için bildirenin IP''sinin tuzlu SHA-256 hash''i alınır. Düz metin IP asla kaydedilmez. Varsayılan olarak kapalı.'
+        ip-hash-salt: 'IP hash tuzu; ban listesi araçlarıyla paylaşarak eşleştirme yapın.'
       config-editor:
         enabled: 'config.ymlin komutlar ve GUI üzerinden düzenlenmesine izin verir.'
         backup-on-save: 'config.yml değiştirilmeden önce yedek oluşturur.'
@@ -1054,8 +1082,6 @@ gui:
           high-score: 'Bu puanda bildirim en azından yüksek önceliğe yükselir.'
           garbage-score: 'Bu puan ve altı bildirimlerde çöp işlemi uygulanır.'
         garbage-action: 'Çöp bandındaki bildirimlere ne yapılır: işaretle, düşür veya otomatik kapat.'
-        ip-hash-enabled: 'BAN izlemesi için bildirenin IP''sinin tuzlu SHA-256 hash''i alınır. Düz metin IP asla kaydedilmez. Varsayılan olarak kapalı.'
-        ip-hash-salt: 'IP hash tuzu; ban listesi araçlarıyla paylaşarak eşleştirme yapın.'
     misc-title: '<dark_aqua>Diğer Araçlar <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>Eklenti Bilgileri'
     misc-info-lore:

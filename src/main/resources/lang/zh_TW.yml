@@ -45,7 +45,7 @@ general:
   invalid-id: '<red>檢舉 ID 必須是數字。'
   invalid-verdict: '<red>無效的判定。可用: resolved, rejected, duplicate, insufficient。'
   category: '類別'
-  reporter: '舉報者'
+  reporter: '檢舉者'
   target: '目標'
   status: '狀態'
   verdict: '判定'
@@ -72,7 +72,7 @@ general:
   unread: '未讀'
   last-reply: '最後回覆'
   overdue-label: '只看逾期'
-  smart-score: '智能評分'
+  smart-score: '智慧評分'
   staff: '管理組'
 
 status:
@@ -192,7 +192,7 @@ gui:
     - '<gray>狀態: %status%'
     - '<gray>類別: <white>%category%'
     - '<gray>優先級: %priority% <dark_gray>| <gray>期限: %sla%'
-    - '<gray>舉報者: <white>%reporter%'
+    - '<gray>檢舉者: <white>%reporter%'
     - '<gray>經辦: <white>%claimed%'
     - '<gray>建立: <white>%created%'
     - '<gray>對話: <white>%replies%</white> <dark_gray>| <gray>未讀: <red>%unread%</red>'
@@ -255,7 +255,7 @@ gui:
   detail-info-name: '<white>檢舉 #%id%'
   detail-info-lore:
     - '<gray>目標: <white>%target%'
-    - '<gray>舉報者: <white>%reporter%'
+    - '<gray>檢舉者: <white>%reporter%'
     - '<gray>類別: <white>%category%'
     - '<gray>狀態: %status%'
     - '<gray>優先級: %priority% <dark_gray>| <gray>期限: %sla%'
@@ -291,7 +291,7 @@ gui:
     - '<yellow>點擊查看'
   detail-replies-name: '<yellow>對話（%count% 則）'
   detail-replies-lore:
-    - '<gray>與舉報者溝通'
+    - '<gray>與檢舉者溝通'
     - '<gray>未讀: <red>%unread%</red>'
     - '<yellow>點擊開啟'
   detail-reopen-name: '<green>重新開啟檢舉'
@@ -391,10 +391,10 @@ gui:
     - '<gray>角色: <white>%role%'
     - '<gray>%text%'
   replies-empty: '<gray>此檢舉尚無對話。'
-  replies-add-name: '<green>回覆舉報者'
+  replies-add-name: '<green>回覆檢舉者'
   replies-add-lore:
     - '<gray>在聊天欄輸入回覆'
-    - '<gray>舉報者將收到遊戲內提示'
+    - '<gray>檢舉者將收到遊戲內提示'
   replies-add-prompt: '<yellow>在聊天欄輸入回覆，或輸入 <white>cancel</white>。'
   search-prompt: '<yellow>輸入檢舉 ID、玩家名或關鍵字，或輸入 <white>cancel</white>。'
   loading: '<yellow>載入中…'
@@ -493,7 +493,7 @@ gui:
     player-item-name: '<white>%player% <dark_gray>| %state%'
     player-item-lore:
       - '<gray>被檢舉: <white>%target%</white> 件 <dark_gray>| <gray>未結 <red>%open%</red> 件'
-      - '<gray>作為舉報者: <white>%reporter%</white> 件'
+      - '<gray>作為檢舉者: <white>%reporter%</white> 件'
       - '<gray>已確認: <white>%resolved%</white> 件'
       - '<gray>最後活動: <white>%last%'
       - ''
@@ -503,7 +503,7 @@ gui:
     player-info-lore:
       - '<gray>UUID: <white>%uuid%'
       - '<gray>被檢舉: <white>%target%</white> 件（未結 <red>%open%</red>）'
-      - '<gray>作為舉報者: <white>%reporter%</white> 件'
+      - '<gray>作為檢舉者: <white>%reporter%</white> 件'
       - '<gray>已確認: <white>%resolved%</white> 件'
       - '<gray>最後活動: <white>%last%'
       - '<gray>監控中: <white>%watching%'
@@ -513,7 +513,7 @@ gui:
       - '<yellow>點擊開啟'
     player-all-name: '<aqua>所有相關檢舉'
     player-all-lore:
-      - '<gray>作為目標或舉報者的全部檢舉'
+      - '<gray>作為目標或檢舉者的全部檢舉'
       - '<yellow>點擊開啟'
     player-verdict-name: '<gold>已處理檢舉'
     player-verdict-lore:
@@ -544,7 +544,7 @@ gui:
     scope-all: '所有相關檢舉'
     scope-open: '未結檢舉'
     scope-target: '作為目標'
-    scope-reporter: '作為舉報者'
+    scope-reporter: '作為檢舉者'
     stats-title: '<dark_aqua>統計 <dark_gray>» <gray>即時數據'
     stats-overview-name: '<aqua>總覽'
     stats-overview-lore:
@@ -602,6 +602,19 @@ gui:
       - '<gray>目前查詢: <white>%query%'
       - '<yellow>點擊輸入關鍵字'
     config-search-prompt: '<yellow>輸入設定關鍵字，或輸入 <white>cancel</white> 取消。'
+    config-filter-changed-name: '<aqua>僅顯示已修改 <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>只顯示與內建預設值不同的設定'
+      - '<gray>目前檢視已修改：<white>%modified%</white>'
+      - '<yellow>點擊切換此篩選'
+    config-filter-restart-name: '<gold>僅顯示需重啟 <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>只顯示需要重新啟動伺服器才能生效的設定'
+      - '<gray>目前檢視需重啟：<white>%restart%</white>'
+      - '<yellow>點擊切換此篩選'
+    config-filter-empty: '<gray>沒有符合目前篩選條件的設定。'
+    config-state-on: '<green>開'
+    config-state-off: '<gray>關'
     config-list-header-name: '<gold>設定 <dark_gray>| <gray>%count% 項 <dark_gray>| <gray>%modified% 項已改'
     config-list-header-lore:
       - '<gray>此檢視含 <white>%count%</white> 項設定'
@@ -623,6 +636,14 @@ gui:
       - '<yellow>下方指南針可搜尋所有區塊'
     config-ready: '<green>就緒'
     config-not-ready: '<yellow>載入中'
+    config-changed-name: '<green>已修改設定 <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>檢視所有與預設值不同的設定'
+      - '<gray>需要重啟：<white>%restart%</white>'
+      - '<yellow>點擊開啟已修改設定清單'
+    config-scope-changed: '<gray>已修改的設定'
+    config-scope-restart: '<gray>需要重啟的設定'
+    config-scope-changed-restart: '<gray>需要重啟的已修改設定'
     config-reload-name: '<green>重新載入設定'
     config-reload-lore:
       - '<gray>重新讀取 config.yml 與語言檔'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<yellow>右鍵重置為預設值'
     config-key-prompt: '<yellow>輸入 <white>%key%</white> 的新值（目前 %value%），或輸入 <white>cancel</white>。'
     config-type: '<gray>型別: <white>%type%</white>'
+    config-value-true: '已啟用（true）'
+    config-value-false: '已停用（false）'
     config-detail-title: '<dark_aqua>遊戲內設定 <dark_gray>» <gray>%key%'
     config-detail-info-name: '<yellow>%key%'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>目前: <white>%value%'
       - '<yellow>點擊將 <white>%key%</white> 調整 %amount%'
     config-detail-adjust-failed: '<red>此設定無法以該步距調整。'
+    config-detail-adjust-preview: '<gray>調整後：<white>%after%</white>'
     config-detail-number-hint: '<gray>目前值: <white>%value%</white>'
     config-detail-back: '<gray>返回清單'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>依標籤、路徑、說明或目前值搜尋設定'
       - '<gray>目前查詢: <white>%query%'
       - '<yellow>點擊輸入關鍵字'
-    config-entry-name: '<white>%label%'
+    config-entry-name: '<white>%label% <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -719,13 +743,13 @@ gui:
       limits: '提交時的冷卻、每日上限與重複偵測。'
       reports: '分頁、自動關閉、保留期限、優先級與回覆。'
       gui: '介面選項、音效與管理選單行為。'
-      notifications: '管理組提醒、舉報者通知、監控清單與 webhook。'
+      notifications: '管理組提醒、檢舉者通知、監控清單與 webhook。'
       evidence: '採集哪些證據與保存多久。'
       punishments: '關閉檢舉時是否執行已設定的懲罰指令。'
       audit: '稽核日誌選項、保留期限與分頁。'
       security: '輸入長度限制、備註上限與玩家名校驗。'
       config-editor: '線上設定編輯器的選項、備份與輸入上限。'
-      smart-priority: '可選的智能評分：按多維度給舉報打分、提升優先級並過濾垃圾舉報。'
+      smart-priority: '可選的智慧評分：按多維度給檢舉打分、提升優先級並過濾垃圾檢舉。'
     config-label:
       server-name: '伺服器名稱'
       language: '介面語言'
@@ -799,7 +823,7 @@ gui:
           sound-enabled: '管理組音效'
           sound: '管理組音效類別'
         reporter:
-          enabled: '舉報者通知'
+          enabled: '檢舉者通知'
           queue-offline: '離線時排隊'
           max-queued: '離線排線上限'
           queue-retention-days: '離線排線保留天數'
@@ -861,6 +885,7 @@ gui:
         enabled: '啟用稽核日誌'
         retention-days: '稽核保留天數'
         page-size: '稽核分頁大小'
+        max-size-mb: '稽核檔案容量上限（MB）'
       security:
         admin-cooldown-millis: '管理組操作冷卻（ms）'
         pending-timeout-seconds: '待輸入超時（秒）'
@@ -871,15 +896,17 @@ gui:
         detail-required: '詳情必填'
         allow-color-codes: '允許顏色碼'
         player-name-pattern: '玩家名稱式'
+        ip-hash-enabled: '檢舉人 IP 雜湊'
+        ip-hash-salt: 'IP 雜湊鹽值'
       config-editor:
         enabled: '啟用線上設定編輯'
         backup-on-save: '修改設定前備份'
         max-backups: '設定備份上限'
         max-value-length: '設定值最大長度'
       smart-priority:
-        enabled: '啟用智能優先級'
+        enabled: '啟用智慧優先級'
         weights:
-          reporter-credibility: '舉報人信譽權重'
+          reporter-credibility: '檢舉人信譽權重'
           target-history: '目標歷史權重'
           detail-quality: '詳情質量權重'
           chat-evidence: '聊天證據權重'
@@ -887,10 +914,8 @@ gui:
         thresholds:
           urgent-score: '緊急分數閾值'
           high-score: '高優先級分數閾值'
-          garbage-score: '垃圾舉報分數閾值'
-        garbage-action: '垃圾舉報處理'
-        ip-hash-enabled: '舉報人 IP 哈希'
-        ip-hash-salt: 'IP 哈希鹽值'
+          garbage-score: '垃圾檢舉分數閾值'
+        garbage-action: '垃圾檢舉處理'
     config-desc:
       server-name: '顯示於外掛訊息與 GUI 的伺服器名稱。'
       language: '外掛使用的語言代碼，例如 zh_CN、en_US、fr_FR、ja_JP。'
@@ -964,8 +989,8 @@ gui:
           sound-enabled: '管理組通知時播放音效。'
           sound: '管理組通知的音效。'
         reporter:
-          enabled: '檢舉狀態變化時通知舉報者。'
-          queue-offline: '舉報者離線時暫存通知，上線後交付。'
+          enabled: '檢舉狀態變化時通知檢舉者。'
+          queue-offline: '檢舉者離線時暫存通知，上線後交付。'
           max-queued: '每位玩家的排線通知上限。'
           queue-retention-days: '排線通知保留的天數。'
         watchlist:
@@ -1026,6 +1051,7 @@ gui:
         enabled: '記錄管理組操作與設定變更。'
         retention-days: '稽核條目在儲存空間中保留的天數。'
         page-size: '稽核檢視器每頁顯示的條目數。'
+        max-size-mb: '稽核日誌檔案的總大小上限（MB），超出時優先刪除最舊的檔案；0 表示僅依天數保留。'
       security:
         admin-cooldown-millis: '管理組兩次操作之間的最小毫秒數。'
         pending-timeout-seconds: '等待未完成管理組輸入的時間（秒）。'
@@ -1036,15 +1062,17 @@ gui:
         detail-required: '提交檢舉時要求非空說明文字。'
         allow-color-codes: '允許檢舉文字中使用顏色碼。'
         player-name-pattern: '用於驗證目標玩家名稱的規則式。'
+        ip-hash-enabled: '採集檢舉人 IP 的加鹽 SHA-256 雜湊用於封鎖溯源，絕不落明文 IP。預設關閉。'
+        ip-hash-salt: 'IP 雜湊的鹽值；與封鎖清單工具共用鹽值可互相換算。'
       config-editor:
         enabled: '可透過指令與 GUI 編輯 config.yml。'
         backup-on-save: '修改 config.yml 前建立備份。'
         max-backups: '保留的 config.yml 備份數。'
         max-value-length: '設定值允許的最大字元數。'
       smart-priority:
-        enabled: '啟用智能優先級評分層。關閉時提交流程不做任何額外計算。'
+        enabled: '啟用智慧優先級評分層。關閉時提交流程不做任何額外計算。'
         weights:
-          reporter-credibility: '舉報人信譽因子的權重（0-100）。'
+          reporter-credibility: '檢舉人信譽因子的權重（0-100）。'
           target-history: '目標歷史因子的權重（0-100）。'
           detail-quality: '詳情質量因子的權重（0-100）。'
           chat-evidence: '聊天證據因子的權重（0-100）。'
@@ -1052,10 +1080,8 @@ gui:
         thresholds:
           urgent-score: '達到該分數時提升為緊急優先級。'
           high-score: '達到該分數時至少提升為高優先級。'
-          garbage-score: '低於等於該分數時按垃圾舉報處理。'
-        garbage-action: '垃圾舉報的處理方式：flag 僅標記 / demote 降為低優先級 / auto-close 自動關閉。'
-        ip-hash-enabled: '採集舉報人 IP 的加鹽 SHA-256 哈希用於封禁溯源，絕不落明文 IP。預設關閉。'
-        ip-hash-salt: 'IP 哈希的鹽值；與封禁清單工具共用鹽值可互相換算。'
+          garbage-score: '低於等於該分數時按垃圾檢舉處理。'
+        garbage-action: '垃圾檢舉的處理方式：flag 僅標記 / demote 降為低優先級 / auto-close 自動關閉。'
     misc-title: '<dark_aqua>其他工具 <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>外掛資訊'
     misc-info-lore:
@@ -1094,7 +1120,7 @@ gui:
       - '<gray>逾期: <red>%overdue%</red>'
     misc-retention-name: '<aqua>保留與稽核'
     misc-retention-lore:
-      - '<gray>舉報保留 <white>%retention-days%</white> 天'
+      - '<gray>檢舉保留 <white>%retention-days%</white> 天'
       - '<gray>稽核日誌保留 <white>%audit-retention-days%</white> 天'
       - '<gray>自動關閉: %auto-close-state%<gray>（%auto-close-days% 天）'
     misc-webhook-name: '<aqua>Webhook 測試'
@@ -1147,7 +1173,7 @@ gui:
       - '<yellow>點擊開啟'
     chat-review-name: '<gold>查看聊天記錄'
     chat-review-lore:
-      - '<gray>舉報者已選: <white>%count%</white> 則'
+      - '<gray>檢舉者已選: <white>%count%</white> 則'
       - '<gray>重看此玩家的全部截取的訊息'
       - '<yellow>點擊開啟'
     chat-title: '<dark_aqua>聊天記錄 <dark_gray>| <white>%target% <dark_gray>| <gray>第 %page% / %pages% 頁'
@@ -1158,12 +1184,12 @@ gui:
     chat-selected-lore:
       - '<gray>訊息: <white>%message%'
       - ''
-      - '<gray>舉報者已標記此訊息'
+      - '<gray>檢舉者已標記此訊息'
     chat-empty: '<gray>此檢舉沒有可用的聊天記錄。'
     chat-summary-name: '<gold>聊天記錄摘要'
     chat-summary-lore:
       - '<gray>總計: <white>%total%</white>（第 %page% / %pages% 頁）'
-      - '<gray>舉報者標記: <white>%selected%</white> 則'
+      - '<gray>檢舉者標記: <white>%selected%</white> 則'
     section:
       config-editor: '設定編輯器'
       general: '一般'
@@ -1177,9 +1203,9 @@ gui:
       punishments: '處罰'
       audit: '稽核'
 
-      smart-priority: '智能優先級'
+      smart-priority: '智慧優先級'
 notify:
-  staff-new: '<gold>新檢舉 <white>#%id%</white> <gray>| <white>%target%</white> <gray>| %category% <gray>| 舉報者 <white>%reporter%</white>'
+  staff-new: '<gold>新檢舉 <white>#%id%</white> <gray>| <white>%target%</white> <gray>| %category% <gray>| 檢舉者 <white>%reporter%</white>'
   staff-claimed: '<aqua>%staff% <gray>接手了檢舉 <white>#%id%</white>（%target%）。'
   staff-closed: '<gray>%staff% <gray>已將檢舉 <white>#%id%</white> 判定為 %verdict% 並關閉。'
   staff-reopened: '<green>%staff% <gray>重新開啟了檢舉 <white>#%id%</white>。'
@@ -1189,7 +1215,7 @@ notify:
   reporter-reply: '<aqua>管理組 <white>%author%</white> 回覆了你的檢舉 <white>#%id%</white><gray>：<white>%text%'
   staff-reply: '<gold>%author% <gray>回覆了檢舉 <white>#%id%</white><gray>：<white>%text%'
   staff-overdue: '<red>檢舉 <white>#%id%</white>（%target%）已逾期 <white>%overdue%</white><red>，請盡快處理。'
-  staff-watched: '<red>【監控】<white>%target%</white> 被檢舉 <white>#%id%</white> <gray>| %category% <gray>| 舉報者 <white>%reporter%</white>'
+  staff-watched: '<red>【監控】<white>%target%</white> 被檢舉 <white>#%id%</white> <gray>| %category% <gray>| 檢舉者 <white>%reporter%</white>'
   broadcast-new: '<gray>【檢舉】<white>%target%</white> <gray>被檢舉（%category%），編號 <white>#%id%</white>。'
 
 admin:
@@ -1204,7 +1230,7 @@ admin:
   help-tp: '<gray>/reports tp <id> <dark_gray>- <gray>傳送至目標'
   help-evidence: '<gray>/reports evidence <id> <dark_gray>- <gray>查看證據'
   help-note: '<gray>/reports note <id> [文字...] <dark_gray>- <gray>新增管理組備註'
-  help-reply: '<gray>/reports reply <id> [文字...] <dark_gray>- <gray>回覆舉報者'
+  help-reply: '<gray>/reports reply <id> [文字...] <dark_gray>- <gray>回覆檢舉者'
   help-replies: '<gray>/reports replies <id> [頁] <dark_gray>- <gray>讀取對話'
   help-overdue: '<gray>/reports overdue [頁] <dark_gray>- <gray>列出逾期檢舉'
   help-watch: '<gray>/reports watch <玩家> <dark_gray>- <gray>監控玩家並接收提醒'
@@ -1237,7 +1263,7 @@ admin:
   deleted: '<red>檢舉 <white>#%id%</white> 已刪除。'
   note-added: '<green>已為檢舉 <white>#%id%</white> 新增備註。'
   notes-full: '<red>此檢舉備註已達上限（%limit%）。'
-  reply-sent: '<green>你已回覆檢舉 <white>#%id%</white> 的舉報者。'
+  reply-sent: '<green>你已回覆檢舉 <white>#%id%</white> 的檢舉者。'
   reply-disabled: '<red>檢舉對話已停用（reports.replies.enabled=false）。'
   reply-full: '<red>此檢舉回覆已達上限（%limit%）。'
   replies-header: '<gold>===== 檢舉 #%id% 對話（%count% 則）====='
@@ -1316,7 +1342,7 @@ webhook:
   title-claimed: '檢舉 #%id% 已接手'
   title-closed: '檢舉 #%id% 已關閉'
   field-target: '目標'
-  field-reporter: '舉報者'
+  field-reporter: '檢舉者'
   field-category: '類別'
   field-status: '狀態'
   field-staff: '管理組'

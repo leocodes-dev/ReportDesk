@@ -78,6 +78,34 @@ final class ConfigGuiSupport {
   }
 
   /**
+   * Applies the two optional list filters. Both are independent and combine with AND, so an
+   * administrator can ask for "changed settings that also need a restart". A disabled filter
+   * never touches the list, which keeps the default view allocation-free.
+   */
+  static List<ConfigKey> filter(
+      List<ConfigKey> keys,
+      PluginConfig live,
+      PluginConfig defaults,
+      boolean onlyModified,
+      boolean onlyRestart) {
+
+    if (keys == null || keys.isEmpty()) {
+
+      return List.of();
+    }
+
+    if (!onlyModified && !onlyRestart) {
+
+      return keys;
+    }
+
+    return keys.stream()
+        .filter(key -> !onlyModified || !isDefault(key, live, defaults))
+        .filter(key -> !onlyRestart || key.restartRequired())
+        .toList();
+  }
+
+  /**
    * The value a left click should write for keys that can be changed without
    *
    * <p>typing. Booleans toggle; choices advance to the next suggestion. Numbers

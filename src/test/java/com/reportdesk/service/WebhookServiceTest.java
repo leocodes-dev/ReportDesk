@@ -83,7 +83,7 @@ class WebhookServiceTest {
   }
 
   @Test
-  void exhaustedRetriesAlertOnce() throws Exception {
+  void exhaustedTestRetriesDoNotAlertStaff() throws Exception {
 
     HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 
@@ -113,9 +113,7 @@ class WebhookServiceTest {
 
       assertEquals(2, hits.get(), "initial attempt plus one retry");
 
-      assertEquals(1, alerts.size(), "exhaustion alerts exactly once");
-
-      assertEquals("test", alerts.get(0));
+      assertTrue(alerts.isEmpty(), "a failed test reports in chat, never as a staff alert");
     } finally {
 
       server.stop(0);

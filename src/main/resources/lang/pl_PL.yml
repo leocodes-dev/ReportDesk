@@ -602,6 +602,19 @@ gui:
       - '<gray>Bieżące zapytanie: <white>%query%</white>'
       - '<yellow>Kliknij, aby wpisać słowo kluczowe'
     config-search-prompt: '<gray>Wpisz słowo kluczowe konfiguracji albo <white>cancel</white>, aby anulować.</gray>'
+    config-filter-changed-name: '<aqua>Tylko zmienione <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>Pokazuj tylko ustawienia różniące się od domyślnych'
+      - '<gray>Zmienione w tym widoku: <white>%modified%</white>'
+      - '<yellow>Kliknij, aby przełączyć ten filtr'
+    config-filter-restart-name: '<gold>Wymaga restartu <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>Pokazuj tylko ustawienia wymagające restartu serwera'
+      - '<gray>Wymaga restartu w tym widoku: <white>%restart%</white>'
+      - '<yellow>Kliknij, aby przełączyć ten filtr'
+    config-filter-empty: '<gray>Żadne ustawienia nie pasują do aktywnych filtrów.'
+    config-state-on: '<green>WŁ.'
+    config-state-off: '<gray>WYŁ.'
     config-list-header-name: '<gold>Konfiguracja <dark_gray>| <gray>%count% kluczy <dark_gray>| <gray>%modified% zmodyfikowanych'
     config-list-header-lore:
       - '<gray><white>%count%</white> konfiguracji w tym widoku'
@@ -623,6 +636,14 @@ gui:
       - '<gray> Kompas na dole przeszukuje wszystkie sekcje'
     config-ready: '<green>gotowy'
     config-not-ready: '<gray>wczytywanie'
+    config-changed-name: '<green>Zmienione ustawienia <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>Przejrzyj wszystkie ustawienia różniące się od domyślnych'
+      - '<gray>Wymaga restartu: <white>%restart%</white>'
+      - '<yellow>Kliknij, aby otworzyć widok zmienionych ustawień'
+    config-scope-changed: '<gray>Zmienione ustawienia'
+    config-scope-restart: '<gray>Ustawienia wymagające restartu'
+    config-scope-changed-restart: '<gray>Zmienione ustawienia wymagające restartu'
     config-reload-name: '<green>Przeładuj konfigurację'
     config-reload-lore:
       - '<gray>Przeczytaj config.yml i pliki językowe ponownie'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<gray>PPM, aby przywrócić wartość domyślną'
     config-key-prompt: '<gray>Wpisz nową wartość dla <white>%key%</white> (obecna %value%), albo wpisz <white>cancel</white>.</gray>'
     config-type: '<gray>Typ: <white>%type%</white>'
+    config-value-true: 'Włączone (true)'
+    config-value-false: 'Wyłączone (false)'
     config-detail-title: '<dark_aqua>Konfiguracja in-game <dark_gray>» <gray>%key%'
     config-detail-info-name: '<yellow>%key%'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>Obecna: <white>%value%'
       - '<yellow>Kliknij, aby zmienić <white>%key%</white> o %amount%'
     config-detail-adjust-failed: '<gray>Ta konfiguracja nie może być zmieniona o ten krok.</gray>'
+    config-detail-adjust-preview: '<gray>Wynik: <white>%after%</white>'
     config-detail-number-hint: '<gray>Bieżąca wartość: <white>%value%</white>'
     config-detail-back: '<gray>Wróć do listy'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>Znajdź konfigurację według etykiety, ścieżki, opisu lub bieżącej wartości'
       - '<gray>Bieżące zapytanie: <white>%query%</white>'
       - '<yellow>Kliknij, aby wpisać słowo kluczowe'
-    config-entry-name: '<white>%label%'
+    config-entry-name: '<white>%label% <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -861,6 +885,7 @@ gui:
         enabled: 'Włącz dziennik audytu'
         retention-days: 'Dni retencji audytu'
         page-size: 'Rozmiar strony audytu'
+        max-size-mb: 'Limit rozmiaru audytu (MB)'
       security:
         admin-cooldown-millis: 'Chłodnia akcji zespołu (ms)'
         pending-timeout-seconds: 'Limit oczekiwania na wejścia (sekundy)'
@@ -871,6 +896,8 @@ gui:
         detail-required: 'Wymagaj szczegółów'
         allow-color-codes: 'Dozwól kody kolorów'
         player-name-pattern: 'Wzór nazwy gracza'
+        ip-hash-enabled: 'Hash IP zgłaszającego'
+        ip-hash-salt: 'Sól hashu IP'
       config-editor:
         enabled: 'Włącz online edytor konfiguracji'
         backup-on-save: 'Kopia konfiguracji przed zapisem'
@@ -889,8 +916,6 @@ gui:
           high-score: 'Próg wysoki'
           garbage-score: 'Próg śmieci'
         garbage-action: 'Akcja antyspamowa'
-        ip-hash-enabled: 'Hash IP zgłaszającego'
-        ip-hash-salt: 'Sól hashu IP'
     config-desc:
       server-name: 'Nazwa serwera wyświetlana w komunikatach i GUI pluginu.'
       language: 'Kod języka używany przez plugin, np. zh_CN, en_US, fr_FR, ja_JP.'
@@ -1026,6 +1051,7 @@ gui:
         enabled: 'Rejestruje akcje zespołu i zmiany konfiguracji.'
         retention-days: 'Liczba dni, przez które wpisy audytu pozostają w pamięci.'
         page-size: 'Liczba wpisów audytu wyświetlanych na stronę w przeglądarce.'
+        max-size-mb: 'Maksymalny łączny rozmiar plików audytu w MB. Najstarsze pliki są usuwane jako pierwsze; 0 oznacza tylko retencję według dni.'
       security:
         admin-cooldown-millis: 'Minimalna liczba milisekund między dwiema akcjami zespołu.'
         pending-timeout-seconds: 'Liczba sekund oczekiwania na nierozstrzygnięte wejścia zespołu.'
@@ -1036,6 +1062,8 @@ gui:
         detail-required: 'Wymaga tekstu opisu przy wysyłaniu zgłoszenia.'
         allow-color-codes: 'Pozwala na kody kolorów w tekście zgłoszenia.'
         player-name-pattern: 'Wzorceregularny używany do walidacji nazwy gracza-celu.'
+        ip-hash-enabled: 'Zbiera solany hash SHA-256 IP zgłaszającego do śledzenia banów. Jawna IP nigdy nie jest zapisywana. Domyślnie wyłączony.'
+        ip-hash-salt: 'Sól hashu IP; udostępnij ją narzędziom list banów, aby skorelować.'
       config-editor:
         enabled: 'Pozwala edytować config.yml przez komendy i GUI.'
         backup-on-save: 'Tworzy kopię przed modyfikacją config.yml.'
@@ -1054,8 +1082,6 @@ gui:
           high-score: 'Wynik, który podnosi zgłoszenie co najmniej do priorytetu wysokiego.'
           garbage-score: 'Wynik poniżej którego (włącznie) zastosowana jest akcja antyspamowa.'
         garbage-action: 'Co dzieje się ze zgłoszeniami z pasma śmieci: oznaczenie, obniżenie lub zamknięcie automatyczne.'
-        ip-hash-enabled: 'Zbiera solany hash SHA-256 IP zgłaszającego do śledzenia banów. Jawna IP nigdy nie jest zapisywana. Domyślnie wyłączony.'
-        ip-hash-salt: 'Sól hashu IP; udostępnij ją narzędziom list banów, aby skorelować.'
     misc-title: '<dark_aqua>Inne narzędzia <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>Informacje o pluginie'
     misc-info-lore:

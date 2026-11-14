@@ -133,6 +133,14 @@ public final class AdminGuiService {
 
   private static final int CONFIG_RELOAD_SLOT = 7;
 
+  /** Filters stay on the top border so the 7x4 content grid is never shifted. */
+  private static final int CONFIG_FILTER_CHANGED_SLOT = 0;
+
+  private static final int CONFIG_FILTER_RESTART_SLOT = 1;
+
+  /** Cross-section shortcut on the section overview. */
+  private static final int CONFIG_CHANGED_SLOT = 6;
+
   private static final int[] CONFIG_MINUS_SLOTS = {10, 11, 12};
 
   private static final int[] CONFIG_PLUS_SLOTS = {14, 15, 16};
@@ -142,6 +150,10 @@ public final class AdminGuiService {
   private static final String ATTR_SECTION = "section";
 
   private static final String ATTR_SCOPE = "scope";
+
+  private static final String ATTR_ONLY_MODIFIED = "only_modified";
+
+  private static final String ATTR_ONLY_RESTART = "only_restart";
 
   private static final String ATTR_ACTION = "action";
 
@@ -171,12 +183,27 @@ public final class AdminGuiService {
    *
    * <p>return to the exact section or search result the admin was looking at.
    */
-  private record ConfigOrigin(String section, String query, int page) {
+  private record ConfigOrigin(
+      String section, String query, boolean onlyModified, boolean onlyRestart, int page) {
 
     static ConfigOrigin of(ReportDeskHolder holder) {
 
       return new ConfigOrigin(
-          holder.attribute(ATTR_SECTION, ""), holder.attribute(ATTR_QUERY, ""), holder.page());
+          holder.attribute(ATTR_SECTION, ""),
+          holder.attribute(ATTR_QUERY, ""),
+          Boolean.parseBoolean(holder.attribute(ATTR_ONLY_MODIFIED, "false")),
+          Boolean.parseBoolean(holder.attribute(ATTR_ONLY_RESTART, "false")),
+          holder.page());
+    }
+
+    ConfigOrigin withPage(int newPage) {
+
+      return new ConfigOrigin(section, query, onlyModified, onlyRestart, newPage);
+    }
+
+    ConfigOrigin withFilters(boolean changedOnly, boolean restartOnly) {
+
+      return new ConfigOrigin(section, query, changedOnly, restartOnly, 1);
     }
   }
 
@@ -1130,6 +1157,13 @@ public final class AdminGuiService {
               messages().components(MessageKeys.ADMIN_GUI_CONFIG_RELOAD_LORE)));
     }
 
+    inventory.setItem(
+        CONFIG_CHANGED_SLOT,
+        gui.item(
+            Material.WRITABLE_BOOK,
+            messages().component(MessageKeys.ADMIN_GUI_CONFIG_CHANGED_NAME, header),
+            messages().components(MessageKeys.ADMIN_GUI_CONFIG_CHANGED_LORE, header)));
+
     gui.hubButton(inventory);
 
     gui.closeButton(inventory);
@@ -1141,15 +1175,26 @@ public final class AdminGuiService {
 
   public void openConfigKeys(Player player, String section, int requestedPage) {
 
-    openConfigList(player, section, "", requestedPage);
+    openConfigList(player, section, "", false, false, requestedPage);
   }
 
   public void openConfigSearch(Player player, String query, int requestedPage) {
 
-    openConfigList(player, "", query, requestedPage);
+    openConfigList(player, "", query, false, false, requestedPage);
   }
 
-  private void openConfigList(Player player, String section, String query, int requestedPage) {
+  public void openConfigChanged(Player player, int requestedPage) {
+
+    openConfigList(player, "", "", true, false, requestedPage);
+  }
+
+  private void openConfigList(
+      Player player,
+      String section,
+      String query,
+      boolean onlyModified,
+      boolean onlyRestart,
+      int requestedPage) {
 
     if (!require(player, "reportdesk.config")) {
 
@@ -1160,16 +1205,21 @@ public final class AdminGuiService {
 
     String effectiveQuery = query == null ? "" : query.trim();
 
-    if (effectiveSection.isEmpty() && effectiveQuery.isEmpty()) {
+    if (effectiveSection.isEmpty()
+        && effectiveQuery.isEmpty()
+        && !onlyModified
+        && !onlyRestart) {
 
-      openConfigSections(player, 1);
+      openConfigSections(player, Math.max(1, requestedPage));
 
       return;
     }
 
-    List<ConfigKey> keys =
+    List<ConfigKey> baseKeys =
         effectiveQuery.isEmpty()
-            ? ConfigKeys.inSection(effectiveSection)
+            ? (effectiveSection.isEmpty()
+                ? ConfigKeys.all()
+                : ConfigKeys.inSection(effectiveSection))
             : ConfigKeys.all().stream()
                 .filter(
                     key ->
@@ -1181,6 +1231,10 @@ public final class AdminGuiService {
                             ConfigLabels.description(messages(), key.path())))
                 .toList();
 
+    List<ConfigKey> keys =
+        ConfigGuiSupport.filter(
+            baseKeys, plugin.config(), plugin.configEditor().defaults(), onlyModified, onlyRestart);
+
     Page<ConfigKey> page = Page.of(keys, requestedPage, configPageSize());
 
     ReportDeskHolder holder =
@@ -1190,14 +1244,13 @@ public final class AdminGuiService {
 
     holder.putAttribute(ATTR_QUERY, effectiveQuery);
 
+    holder.putAttribute(ATTR_ONLY_MODIFIED, String.valueOf(onlyModified));
+
+    holder.putAttribute(ATTR_ONLY_RESTART, String.valueOf(onlyRestart));
+
     Map<String, String> header = configHeaderPlaceholders(keys);
 
-    header.put(
-        "scope",
-        effectiveQuery.isEmpty()
-            ? sectionDisplay(effectiveSection)
-            : messages()
-                .plain(MessageKeys.ADMIN_GUI_CONFIG_SEARCH_SCOPE, Map.of("query", effectiveQuery)));
+    header.put("scope", configScope(effectiveSection, effectiveQuery, onlyModified, onlyRestart));
 
     header.put("query", effectiveQuery.isEmpty() ? "-" : effectiveQuery);
 
@@ -1214,17 +1267,16 @@ public final class AdminGuiService {
 
     if (page.items().isEmpty()) {
 
+      String emptyKey =
+          onlyModified || onlyRestart
+              ? MessageKeys.ADMIN_GUI_CONFIG_FILTER_EMPTY
+              : (effectiveQuery.isEmpty()
+                  ? MessageKeys.GUI_EMPTY
+                  : MessageKeys.ADMIN_GUI_CONFIG_SEARCH_EMPTY);
+
       inventory.setItem(
           CONFIG_INFO_SLOT,
-          gui.item(
-              Material.PAPER,
-              messages()
-                  .component(
-                      effectiveQuery.isEmpty()
-                          ? MessageKeys.GUI_EMPTY
-                          : MessageKeys.ADMIN_GUI_CONFIG_SEARCH_EMPTY,
-                      header),
-              List.of()));
+          gui.item(Material.PAPER, messages().component(emptyKey, header), List.of()));
 
     } else {
 
@@ -1259,6 +1311,42 @@ public final class AdminGuiService {
               configLore(key, placeholders)));
     }
 
+    Map<String, String> filterPlaceholders = configHeaderPlaceholders(baseKeys);
+
+    filterPlaceholders.put(
+        "state",
+        messages()
+            .plain(
+                onlyModified
+                    ? MessageKeys.ADMIN_GUI_CONFIG_STATE_ON
+                    : MessageKeys.ADMIN_GUI_CONFIG_STATE_OFF));
+
+    inventory.setItem(
+        CONFIG_FILTER_CHANGED_SLOT,
+        gui.item(
+            onlyModified ? Material.LIME_DYE : Material.GRAY_DYE,
+            messages()
+                .component(MessageKeys.ADMIN_GUI_CONFIG_FILTER_CHANGED_NAME, filterPlaceholders),
+            messages()
+                .components(MessageKeys.ADMIN_GUI_CONFIG_FILTER_CHANGED_LORE, filterPlaceholders)));
+
+    filterPlaceholders.put(
+        "state",
+        messages()
+            .plain(
+                onlyRestart
+                    ? MessageKeys.ADMIN_GUI_CONFIG_STATE_ON
+                    : MessageKeys.ADMIN_GUI_CONFIG_STATE_OFF));
+
+    inventory.setItem(
+        CONFIG_FILTER_RESTART_SLOT,
+        gui.item(
+            onlyRestart ? Material.LIME_DYE : Material.GRAY_DYE,
+            messages()
+                .component(MessageKeys.ADMIN_GUI_CONFIG_FILTER_RESTART_NAME, filterPlaceholders),
+            messages()
+                .components(MessageKeys.ADMIN_GUI_CONFIG_FILTER_RESTART_LORE, filterPlaceholders)));
+
     gui.backButton(inventory);
 
     inventory.setItem(
@@ -1271,6 +1359,16 @@ public final class AdminGuiService {
                     MessageKeys.ADMIN_GUI_CONFIG_ENTRY_SEARCH_LORE,
                     Map.of("query", effectiveQuery.isEmpty() ? "-" : effectiveQuery))));
 
+    if (player.hasPermission("reportdesk.reload")) {
+
+      inventory.setItem(
+          CONFIG_RELOAD_SLOT,
+          gui.item(
+              Material.HOPPER,
+              messages().component(MessageKeys.ADMIN_GUI_CONFIG_RELOAD_NAME),
+              messages().components(MessageKeys.ADMIN_GUI_CONFIG_RELOAD_LORE)));
+    }
+
     gui.pageNavigation(inventory, page);
 
     gui.refreshButton(inventory);
@@ -1282,6 +1380,38 @@ public final class AdminGuiService {
     gui.fill(inventory, holder);
 
     player.openInventory(inventory);
+  }
+
+  private String configScope(
+      String section, String query, boolean onlyModified, boolean onlyRestart) {
+
+    if (!query.isEmpty()) {
+
+      return messages()
+          .plain(MessageKeys.ADMIN_GUI_CONFIG_SEARCH_SCOPE, Map.of("query", query));
+    }
+
+    if (!section.isEmpty()) {
+
+      return sectionDisplay(section);
+    }
+
+    if (onlyModified && onlyRestart) {
+
+      return messages().plain(MessageKeys.ADMIN_GUI_CONFIG_SCOPE_CHANGED_RESTART);
+    }
+
+    if (onlyModified) {
+
+      return messages().plain(MessageKeys.ADMIN_GUI_CONFIG_SCOPE_CHANGED);
+    }
+
+    if (onlyRestart) {
+
+      return messages().plain(MessageKeys.ADMIN_GUI_CONFIG_SCOPE_RESTART);
+    }
+
+    return sectionDisplay(section);
   }
 
   private void openConfigKeyDetail(Player player, ConfigKey key, ConfigOrigin origin) {
@@ -1301,6 +1431,10 @@ public final class AdminGuiService {
     holder.putAttribute(ATTR_SECTION, origin.section());
 
     holder.putAttribute(ATTR_QUERY, origin.query());
+
+    holder.putAttribute(ATTR_ONLY_MODIFIED, String.valueOf(origin.onlyModified()));
+
+    holder.putAttribute(ATTR_ONLY_RESTART, String.valueOf(origin.onlyRestart()));
 
     holder.putAttribute(ATTR_PATH, key.path());
 
@@ -1350,7 +1484,7 @@ public final class AdminGuiService {
       ConfigGuiSupport.quickChange(key, plugin.config())
           .ifPresent(
               next -> {
-                placeholders.put("next", next);
+                placeholders.put("next", configNextDisplay(key, next));
 
                 boolean toggle = key.kind() == ConfigKey.Kind.BOOLEAN;
 
@@ -1379,12 +1513,12 @@ public final class AdminGuiService {
 
       for (int i = 0; i < steps.length && i < CONFIG_MINUS_SLOTS.length; i++) {
 
-        inventory.setItem(CONFIG_MINUS_SLOTS[i], adjustmentItem(placeholders, -steps[i]));
+        inventory.setItem(CONFIG_MINUS_SLOTS[i], adjustmentItem(key, placeholders, -steps[i]));
       }
 
       for (int i = 0; i < steps.length && i < CONFIG_PLUS_SLOTS.length; i++) {
 
-        inventory.setItem(CONFIG_PLUS_SLOTS[i], adjustmentItem(placeholders, steps[i]));
+        inventory.setItem(CONFIG_PLUS_SLOTS[i], adjustmentItem(key, placeholders, steps[i]));
       }
     }
 
@@ -1416,7 +1550,7 @@ public final class AdminGuiService {
   }
 
   private org.bukkit.inventory.ItemStack adjustmentItem(
-      Map<String, String> placeholders, long amount) {
+      ConfigKey key, Map<String, String> placeholders, long amount) {
 
     String label = (amount > 0 ? "+" : "") + amount;
 
@@ -1424,10 +1558,22 @@ public final class AdminGuiService {
 
     values.put("amount", label);
 
+    ConfigGuiSupport.adjustedValue(key, plugin.config(), amount)
+        .ifPresent(after -> values.put("after", after));
+
+    List<Component> lore =
+        new ArrayList<>(
+            messages().components(MessageKeys.ADMIN_GUI_CONFIG_ENTRY_DETAIL_ADJUST_LORE, values));
+
+    if (values.containsKey("after")) {
+
+      lore.add(messages().component(MessageKeys.ADMIN_GUI_CONFIG_DETAIL_ADJUST_PREVIEW, values));
+    }
+
     return gui.item(
         amount > 0 ? Material.LIME_DYE : Material.RED_DYE,
         messages().component(MessageKeys.ADMIN_GUI_CONFIG_DETAIL_ADJUST_NAME, values),
-        messages().components(MessageKeys.ADMIN_GUI_CONFIG_ENTRY_DETAIL_ADJUST_LORE, values));
+        lore);
   }
 
   private Map<String, String> configHeaderPlaceholders(List<ConfigKey> keys) {
@@ -1480,9 +1626,10 @@ public final class AdminGuiService {
 
     placeholders.put("description", ConfigLabels.description(messages(), key.path()));
 
-    placeholders.put("value", key.display(key.current(plugin.config())));
+    placeholders.put("value", configValueDisplay(key, key.current(plugin.config())));
 
-    placeholders.put("default", key.display(key.current(plugin.configEditor().defaults())));
+    placeholders.put(
+        "default", configValueDisplay(key, key.current(plugin.configEditor().defaults())));
 
     placeholders.put("type", ConfigLabels.typeName(messages(), key.kind()));
 
@@ -1490,6 +1637,35 @@ public final class AdminGuiService {
         "choices", key.suggestions().isEmpty() ? "-" : String.join(" / ", key.suggestions()));
 
     return placeholders;
+  }
+
+  /**
+   * Booleans read better as plain words than as raw {@code true/false}, especially in list item
+   * names where the value is the fastest way to scan the page. Other kinds keep their raw display
+   * form so paths, regexes and numbers are never altered.
+   */
+  private String configValueDisplay(ConfigKey key, Object value) {
+
+    if (key != null && key.kind() == ConfigKey.Kind.BOOLEAN && value instanceof Boolean enabled) {
+
+      return messages()
+          .plain(
+              enabled
+                  ? MessageKeys.ADMIN_GUI_CONFIG_VALUE_TRUE
+                  : MessageKeys.ADMIN_GUI_CONFIG_VALUE_FALSE);
+    }
+
+    return key == null ? "" : key.display(value);
+  }
+
+  private String configNextDisplay(ConfigKey key, String next) {
+
+    if (key != null && key.kind() == ConfigKey.Kind.BOOLEAN) {
+
+      return configValueDisplay(key, Boolean.parseBoolean(next));
+    }
+
+    return next;
   }
 
   private List<Component> configLore(ConfigKey key, Map<String, String> placeholders) {
@@ -2626,6 +2802,8 @@ public final class AdminGuiService {
 
       case CONFIG_RELOAD_SLOT -> reloadConfig(player);
 
+      case CONFIG_CHANGED_SLOT -> openConfigChanged(player, 1);
+
       default -> {
         String section = holder.value(slot);
 
@@ -2641,10 +2819,6 @@ public final class AdminGuiService {
 
   private void clickConfigKeys(
       Player player, ReportDeskHolder holder, int slot, boolean rightClick, boolean shiftClick) {
-
-    String section = holder.attribute(ATTR_SECTION, "");
-
-    String query = holder.attribute(ATTR_QUERY, "");
 
     ConfigOrigin origin = ConfigOrigin.of(holder);
 
@@ -2671,28 +2845,53 @@ public final class AdminGuiService {
 
     if (slot == CONFIG_SEARCH_SLOT) {
 
-      promptConfigSearch(player);
+      promptConfigSearch(player, origin.onlyModified(), origin.onlyRestart());
 
       return;
     }
 
     if (slot == REFRESH_SLOT) {
 
-      openConfigOrigin(player, new ConfigOrigin(section, query, holder.page()));
+      openConfigOrigin(player, origin);
 
       return;
     }
 
     if (slot == PREVIOUS_SLOT) {
 
-      openConfigOrigin(player, new ConfigOrigin(section, query, holder.page() - 1));
+      openConfigOrigin(player, origin.withPage(holder.page() - 1));
 
       return;
     }
 
     if (slot == NEXT_SLOT) {
 
-      openConfigOrigin(player, new ConfigOrigin(section, query, holder.page() + 1));
+      openConfigOrigin(player, origin.withPage(holder.page() + 1));
+
+      return;
+    }
+
+    if (slot == CONFIG_FILTER_CHANGED_SLOT) {
+
+      click(player);
+
+      openConfigOrigin(player, origin.withFilters(!origin.onlyModified(), origin.onlyRestart()));
+
+      return;
+    }
+
+    if (slot == CONFIG_FILTER_RESTART_SLOT) {
+
+      click(player);
+
+      openConfigOrigin(player, origin.withFilters(origin.onlyModified(), !origin.onlyRestart()));
+
+      return;
+    }
+
+    if (slot == CONFIG_RELOAD_SLOT) {
+
+      reloadConfig(player);
 
       return;
     }
@@ -2842,7 +3041,11 @@ public final class AdminGuiService {
 
               setConfig(player, key, value, origin, true);
             },
-            () -> send(player, MessageKeys.ADMIN_GUI_CONFIG_DETAIL_ADJUST_FAILED, Map.of()));
+            () -> {
+              gui.play(player, plugin.config().gui().soundError());
+
+              send(player, MessageKeys.ADMIN_GUI_CONFIG_DETAIL_ADJUST_FAILED, Map.of());
+            });
   }
 
   private void promptConfig(Player player, ConfigKey key, ConfigOrigin origin, boolean detail) {
@@ -2869,6 +3072,11 @@ public final class AdminGuiService {
 
   private void promptConfigSearch(Player player) {
 
+    promptConfigSearch(player, false, false);
+  }
+
+  private void promptConfigSearch(Player player, boolean onlyModified, boolean onlyRestart) {
+
     player.closeInventory();
 
     plugin
@@ -2890,12 +3098,12 @@ public final class AdminGuiService {
                     MessageKeys.GENERAL_INVALID_INPUT,
                     Map.of("reason", "illegal_characters"));
 
-                openConfigSections(player, 1);
+                openConfigList(player, "", "", onlyModified, onlyRestart, 1);
 
                 return;
               }
 
-              openConfigSearch(player, text.trim(), 1);
+              openConfigList(player, "", text.trim(), onlyModified, onlyRestart, 1);
             });
   }
 
@@ -2956,18 +3164,13 @@ public final class AdminGuiService {
 
   private void openConfigOrigin(Player player, ConfigOrigin origin) {
 
-    if (origin.query() != null && !origin.query().isBlank()) {
-
-      openConfigSearch(player, origin.query(), origin.page());
-
-    } else if (origin.section() != null && !origin.section().isBlank()) {
-
-      openConfigKeys(player, origin.section(), origin.page());
-
-    } else {
-
-      openConfigSections(player, Math.max(1, origin.page()));
-    }
+    openConfigList(
+        player,
+        origin.section(),
+        origin.query(),
+        origin.onlyModified(),
+        origin.onlyRestart(),
+        Math.max(1, origin.page()));
   }
 
   private void reloadConfig(Player player) {

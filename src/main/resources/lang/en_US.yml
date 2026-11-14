@@ -602,6 +602,19 @@ gui:
       - '<gray>Current query: <white>%query%'
       - '<yellow>Click to type a keyword'
     config-search-prompt: '<yellow>Type a config keyword, or <white>cancel</white> to abort.'
+    config-filter-changed-name: '<aqua>Changed only <dark_gray>| %state%'
+    config-filter-changed-lore:
+      - '<gray>Show only settings that differ from the bundled defaults'
+      - '<gray>Changed in this view: <white>%modified%</white>'
+      - '<yellow>Click to toggle this filter'
+    config-filter-restart-name: '<gold>Restart required <dark_gray>| %state%'
+    config-filter-restart-lore:
+      - '<gray>Show only settings that need a server restart'
+      - '<gray>Restart required in this view: <white>%restart%</white>'
+      - '<yellow>Click to toggle this filter'
+    config-filter-empty: '<gray>No settings match the active filters.'
+    config-state-on: '<green>ON'
+    config-state-off: '<gray>OFF'
     config-list-header-name: '<gold>Settings <dark_gray>| <gray>%count% keys <dark_gray>| <gray>%modified% changed'
     config-list-header-lore:
       - '<gray><white>%count%</white> settings in this view'
@@ -623,6 +636,14 @@ gui:
       - '<yellow>The compass at the bottom searches all sections'
     config-ready: '<green>ready'
     config-not-ready: '<yellow>loading'
+    config-changed-name: '<green>Changed settings <dark_gray>| <gray>%modified%'
+    config-changed-lore:
+      - '<gray>Review every setting that differs from the defaults'
+      - '<gray>Restart required: <white>%restart%</white>'
+      - '<yellow>Click to open the changed settings view'
+    config-scope-changed: '<gray>Changed settings'
+    config-scope-restart: '<gray>Settings that need a restart'
+    config-scope-changed-restart: '<gray>Changed settings that need a restart'
     config-reload-name: '<green>Reload config'
     config-reload-lore:
       - '<gray>Re-read config.yml and language files'
@@ -641,6 +662,8 @@ gui:
     config-key-hint-reset: '<yellow>Right click to reset to default'
     config-key-prompt: '<yellow>Type the new value for <white>%key%</white> (current %value%), or type <white>cancel</white>.'
     config-type: '<gray>Type: <white>%type%'
+    config-value-true: 'Enabled (true)'
+    config-value-false: 'Disabled (false)'
     config-detail-title: '<dark_aqua>Live Config <dark_gray>» <gray>%key%'
     config-detail-info-name: '<yellow>%key%'
     config-detail-info-lore:
@@ -668,6 +691,7 @@ gui:
       - '<gray>Current: <white>%value%'
       - '<yellow>Click to adjust <white>%key%</white> by %amount%'
     config-detail-adjust-failed: '<red>This setting cannot be adjusted by that step.'
+    config-detail-adjust-preview: '<gray>Result: <white>%after%'
     config-detail-number-hint: '<gray>Current value: <white>%value%'
     config-detail-back: '<gray>Back to list'
     config-entry-section-lore:
@@ -681,7 +705,7 @@ gui:
       - '<gray>Find a setting by label, path, description or current value'
       - '<gray>Current query: <white>%query%'
       - '<yellow>Click to type a keyword'
-    config-entry-name: '<white>%label%'
+    config-entry-name: '<white>%label% <dark_gray>| <gray>%value%'
     config-entry-lore:
       - '<gray>%description%'
       - ''
@@ -861,6 +885,7 @@ gui:
         enabled: 'Enable Audit Log'
         retention-days: 'Audit Retention Days'
         page-size: 'Audit Page Size'
+        max-size-mb: 'Audit File Size Limit (MB)'
       security:
         admin-cooldown-millis: 'Admin Action Cooldown (ms)'
         pending-timeout-seconds: 'Pending Timeout (seconds)'
@@ -871,6 +896,8 @@ gui:
         detail-required: 'Detail Required'
         allow-color-codes: 'Allow Color Codes'
         player-name-pattern: 'Player Name Pattern'
+        ip-hash-enabled: 'Reporter IP Hash'
+        ip-hash-salt: 'IP Hash Salt'
       config-editor:
         enabled: 'Enable Online Config Editor'
         backup-on-save: 'Backup Config Before Save'
@@ -889,8 +916,6 @@ gui:
           high-score: 'High Score Threshold'
           garbage-score: 'Garbage Score Threshold'
         garbage-action: 'Garbage Action'
-        ip-hash-enabled: 'Reporter IP Hash'
-        ip-hash-salt: 'IP Hash Salt'
     config-desc:
       server-name: 'Server name shown in plugin messages and the GUI.'
       language: 'Language code used by the plugin, for example zh_CN or en_US.'
@@ -1026,6 +1051,7 @@ gui:
         enabled: 'Record admin actions and config changes.'
         retention-days: 'How many days audit entries stay in storage.'
         page-size: 'Audit entries shown per page in the audit viewer.'
+        max-size-mb: 'Maximum total size of audit log files in MB. Oldest files are removed first; 0 keeps only the day-based retention.'
       security:
         admin-cooldown-millis: 'Minimum milliseconds between two admin actions.'
         pending-timeout-seconds: 'How long the plugin waits for pending admin input, in seconds.'
@@ -1036,6 +1062,8 @@ gui:
         detail-required: 'Require a text description when submitting a report.'
         allow-color-codes: 'Allow color codes inside report text.'
         player-name-pattern: 'Regular expression used to validate the reported player name.'
+        ip-hash-enabled: 'Collects a salted SHA-256 hash of the reporter IP for ban provenance. The plaintext IP is never stored. Off by default.'
+        ip-hash-salt: 'Salt mixed into the IP hash; share it with ban-list tooling to correlate.'
       config-editor:
         enabled: 'Allow config.yml to be edited through commands and the GUI.'
         backup-on-save: 'Create a backup before config.yml is modified.'
@@ -1054,8 +1082,6 @@ gui:
           high-score: 'Score that upgrades a report to at least high priority.'
           garbage-score: 'Score at or below which the garbage action applies.'
         garbage-action: 'What happens to garbage-band reports: flag, demote, or auto-close.'
-        ip-hash-enabled: 'Collects a salted SHA-256 hash of the reporter IP for ban provenance. The plaintext IP is never stored. Off by default.'
-        ip-hash-salt: 'Salt mixed into the IP hash; share it with ban-list tooling to correlate.'
     misc-title: '<dark_aqua>Other Tools <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>Plugin Info'
     misc-info-lore:

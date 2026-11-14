@@ -36,7 +36,7 @@ class CsvExporterTest {
     String csv = CsvExporter.toCsv(null);
 
     assertEquals(
-        "id,created_at,status,category,target,reporter,claimed_by,closed_by,verdict,detail,notes\n",
+        "id,created_at,status,category,target,reporter,claimed_by,closed_by,verdict,detail,notes,reported_from,ip_hash\n",
         csv);
   }
 
@@ -68,7 +68,7 @@ class CsvExporterTest {
 
     assertTrue(lines[1].contains(",RESOLVED,cheating,Bob,Alice,"));
 
-    assertTrue(lines[1].endsWith(",1"));
+    assertTrue(lines[1].endsWith(",1,,"));
   }
 
   @Test
