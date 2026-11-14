@@ -162,9 +162,9 @@ public final class MaintenanceService {
             auditFuture =
                 auditFuture.thenCombine(
                     plugin.auditStorage().purgeOverSize(auditMaxBytes),
-                    (deleted, sized) ->
-                        Math.max(
-                            deleted, sized)); // both delete audit files; report max
+                    (deletedByTime, deletedBySize) ->
+                        deletedByTime
+                            + deletedBySize); // time-based and size-based each delete distinct files
           }
 
           int finalAutoClosed = autoClosed;
