@@ -738,6 +738,7 @@ gui:
       string: 'Text'
       choice: 'Option'
     section-desc:
+      language-detection: "Automatische Erkennung und Fallback der Clientsprache."
       general: 'Servername, Interface-Sprache und anderes.'
       storage: 'Wo Meldungen gespeichert werden, Sicherungen und Shutdown-Wartungen.'
       limits: 'Coolds, Tageslimits und Duplikaterkennung beim Senden.'
@@ -751,6 +752,13 @@ gui:
       config-editor: 'Optionen, Sicherungen und Limits des Online-Konfig-Editors.'
       smart-priority: 'Optionale intelligente Bewertung, die Berichte rangiert und Müll herausfiltert.'
     config-label:
+      language-detection:
+        per-player-enabled: "
+Sprache pro Spieler
+"
+        detect-java: "
+Java-Client-Sprache erkennen
+"
       server-name: 'Servername'
       language: 'Interface-Sprache'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: 'Müll-Schwellwert'
         garbage-action: 'Müllaktion'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+Erkennt die Clientsprache jedes Spielers und zeigt sie in dieser Sprache an.
+"
+        detect-java: "
+Schätzt die Systemregionssprache von Java-Clients ab (Best-Effort).
+"
       server-name: 'Servername in Plugin-Meldungen und GUI.'
       language: 'Sprachcode des Plugins, z. B. zh_CN, en_US, es_ES, ru_RU oder de_DE.'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>Gesamt: <white>%total%</white> (Seite %page% / %pages%)'
       - '<gray>Von Melder markiert: <white>%selected%</white> Nachrichten'
     section:
+      language-detection: "Spracherkennung"
       config-editor: 'Konfig-Editor'
       general: 'Allgemein'
       storage: 'Speicher'

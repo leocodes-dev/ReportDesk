@@ -43,6 +43,16 @@ public final class PlayerSessionListener implements Listener {
   public void onJoin(PlayerJoinEvent event) {
 
     plugin.offlineNotices().flush(event.getPlayer());
+
+    // Resolve this player's client language once on join (best-effort, cached for the session).
+    // The reflective probes never throw; when the language is unsupported or undetectable nothing
+    // is cached and the player falls back to the server default language.
+    if (plugin.config().languageSettings().perPlayerEnabled()) {
+
+      plugin
+          .playerLanguage()
+          .resolve(event.getPlayer(), plugin.config().languageSettings().detectJava());
+    }
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -55,5 +65,7 @@ public final class PlayerSessionListener implements Listener {
     plugin.chatInput().cancel(event.getPlayer(), false);
 
     plugin.gui().forget(playerId);
+
+    plugin.playerLanguage().clear(playerId);
   }
 }

@@ -377,12 +377,22 @@ public final class ConfigLoader {
       language = "zh_CN";
     }
 
-    String serverName = string(root, "server-name", "ReportDesk Server");
+    String serverName = string(root, "server-name", "A Minecraft Server");
 
     if (serverName.isBlank()) {
 
-      serverName = "ReportDesk Server";
+      serverName = "A Minecraft Server";
     }
+
+    // Per-player language detection (enhancement, enabled by default but safe to turn off;
+    // when a player's client language is unsupported it falls back to the default above).
+    // Note: this is a separate top-level key from the scalar "language" default-language value.
+    ConfigSource languageDetection = root.section("language-detection");
+
+    PluginConfig.Language languageSettings =
+        new PluginConfig.Language(
+            bool(languageDetection, "per-player-enabled", true),
+            bool(languageDetection, "detect-java", true));
 
     return new PluginConfig(
         serverName,
@@ -400,7 +410,8 @@ public final class ConfigLoader {
         categories,
         defaultCategory,
         smartSettings,
-        bedrockFormsSettings);
+        bedrockFormsSettings,
+        languageSettings);
   }
 
   private PluginConfig.SmartPriority.GarbageAction parseSmartGarbageAction(String raw) {

@@ -738,6 +738,7 @@ gui:
       string: 'Metin'
       choice: 'Seçim'
     section-desc:
+      language-detection: "İstemci dilinin otomatik algılanması ve geri dönüşü."
       general: 'Sunucu adı, arayüz dili ve diğer temeller.'
       storage: 'Şikayetlerin nerede saklandığı, otomatik yedekler ve kapatma sırasında bekleme.'
       limits: 'Gönderim sırasında soğuma süreleri, günlük sınırlar ve mükerrer algılama.'
@@ -751,6 +752,13 @@ gui:
       config-editor: 'Oyun içi yapılandırma düzenleyicisinin seçenekleri, yedekleri ve girdi sınırları.'
       smart-priority: 'Bildirimleri sıralayan ve çöp bildirimleri ayıklayan isteğe bağlı akıllı puanlama.'
     config-label:
+      language-detection:
+        per-player-enabled: "
+Oyuncu Başına Dil
+"
+        detect-java: "
+Java İstemci Dilini Algıla
+"
       server-name: 'Sunucu Adı'
       language: 'Arayüz Dili'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: 'Çöp eşiği'
         garbage-action: 'Çöp işlemi'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+Her oyuncunun istemci dilini algılar ve bu dille gösterir.
+"
+        detect-java: "
+Java istemcilerinin sistem bölge dilini tahmin eder (olası olduğunca).
+"
       server-name: 'Eklenti mesajlarında ve GUIde görünen sunucu adı.'
       language: 'Eklenti tarafından kullanılan dil kodu, ör. zh_CN, en_US, fr_FR, ja_JP.'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>Toplam: <white>%total%</white> (sayfa %page% / %pages%)'
       - '<gray>Bildirenin işaretlediği: <white>%selected%</white> mesaj'
     section:
+      language-detection: "Dil Algılama"
       config-editor: 'Yapılandırma Düzenleyicisi'
       general: 'Genel'
       storage: 'Depolama'

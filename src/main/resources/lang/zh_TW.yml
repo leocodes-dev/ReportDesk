@@ -738,6 +738,7 @@ gui:
       string: '文字'
       choice: '選項'
     section-desc:
+      language-detection: "按玩家客戶端語言自動偵測與回退。"
       general: '伺服器名稱、介面語言與其他基本設定。'
       storage: '檢舉資料儲存位置、自動備份與關機等待。'
       limits: '提交時的冷卻、每日上限與重複偵測。'
@@ -751,6 +752,13 @@ gui:
       config-editor: '線上設定編輯器的選項、備份與輸入上限。'
       smart-priority: '可選的智慧評分：按多維度給檢舉打分、提升優先級並過濾垃圾檢舉。'
     config-label:
+      language-detection:
+        per-player-enabled: "
+按玩家語言
+"
+        detect-java: "
+偵測 Java 客戶端語言
+"
       server-name: '伺服器名稱'
       language: '介面語言'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: '垃圾檢舉分數閾值'
         garbage-action: '垃圾檢舉處理'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+自動識別每位玩家的客戶端語言，並以該語言向其顯示。
+"
+        detect-java: "
+偵測 Java 客戶端的系統區域語言（盡力而為）。
+"
       server-name: '顯示於外掛訊息與 GUI 的伺服器名稱。'
       language: '外掛使用的語言代碼，例如 zh_CN、en_US、fr_FR、ja_JP。'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>總計: <white>%total%</white>（第 %page% / %pages% 頁）'
       - '<gray>檢舉者標記: <white>%selected%</white> 則'
     section:
+      language-detection: "語言偵測"
       config-editor: '設定編輯器'
       general: '一般'
       storage: '儲存'

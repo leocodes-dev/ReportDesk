@@ -41,6 +41,11 @@ public final class ConfigKeys {
       List.of(
           string("server-name", PluginConfig::serverName),
           string("language", PluginConfig::language),
+          bool(
+              "language-detection.per-player-enabled",
+              config -> config.languageSettings().perPlayerEnabled()),
+          bool(
+              "language-detection.detect-java", config -> config.languageSettings().detectJava()),
           restartString("storage.directory", config -> config.storage().directory()),
           restartBool("storage.backup-on-save", config -> config.storage().backupOnSave()),
           restartInt("storage.max-backups", config -> config.storage().maxBackups()),

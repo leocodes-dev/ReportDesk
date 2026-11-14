@@ -65,6 +65,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -128,6 +129,12 @@ public final class ReportDeskPlugin extends JavaPlugin {
   private BedrockFormBridge bedrockBridge;
 
   private com.reportdesk.service.BedrockFormService bedrockForm;
+
+  private com.reportdesk.i18n.PlayerLanguageResolver playerLanguageResolver;
+
+  /** Per-language message caches; keyed by bundled language code. Immutable, thread-safe. */
+  private final java.util.concurrent.ConcurrentHashMap<String, Messages> languageCache =
+      new java.util.concurrent.ConcurrentHashMap<>();
 
   private final List<Listener> evidenceListeners = new ArrayList<>();
 
@@ -198,6 +205,12 @@ public final class ReportDeskPlugin extends JavaPlugin {
     bedrockBridge = new BedrockFormBridge();
 
     bedrockForm = new com.reportdesk.service.BedrockFormService(this, bedrockBridge);
+
+    // Per-player language detection: resolve on join, serve cached Messages per player. The
+    // 12 bundled languages are pre-warmed asynchronously so the first join never pays file IO.
+    playerLanguageResolver = new com.reportdesk.i18n.PlayerLanguageResolver();
+
+    warmLanguageCache();
 
     registerPermissions();
 
@@ -387,6 +400,46 @@ public final class ReportDeskPlugin extends JavaPlugin {
             Clock.systemDefaultZone());
   }
 
+  /**
+   * Pre-warms the per-language {@link Messages} cache by loading all bundled language files on a
+   * background thread, so the first player join that needs a specific language never blocks the
+   * main thread on file IO. Called on enable and re-called after a reload that changes the
+   * language. The cache is rebuilt from the current config's default language plus every bundled
+   * language; a failure to read one file just leaves that entry missing (lookups then fall back
+   * to the default).
+   */
+  private void warmLanguageCache() {
+
+    languageCache.clear();
+
+    Path langDir = getDataFolder().toPath().resolve("lang");
+
+    Path fallback = langDir.resolve("en_US.yml");
+
+    Bukkit.getScheduler().runTaskAsynchronously(
+        this,
+        () -> {
+          for (String code : com.reportdesk.i18n.PlayerLanguageResolver.SUPPORTED) {
+
+            Path primary = langDir.resolve(code + ".yml");
+
+            if (!Files.isRegularFile(primary)) {
+
+              continue;
+            }
+
+            try {
+
+              languageCache.put(code, Messages.load(primary, fallback, this::warning));
+
+            } catch (RuntimeException exception) {
+
+              warning("Failed to pre-load language " + code + ": " + exception.getMessage());
+            }
+          }
+        });
+  }
+
   private void loadData() {
 
     storage
@@ -423,6 +476,10 @@ public final class ReportDeskPlugin extends JavaPlugin {
       warning("storage.directory changed; a server restart is required to move existing data");
     }
 
+    // A reload may have changed the default language or the bundled lang files; re-warm the
+    // per-language cache so player lookups keep serving the freshest translations.
+    warmLanguageCache();
+
     rebuildCoreServices();
 
     applyEvidenceListeners();
@@ -456,6 +513,9 @@ public final class ReportDeskPlugin extends JavaPlugin {
     if (previous == null || !previous.language().equals(updated.language())) {
 
       loadMessages(updated);
+
+      // The default language changed; re-warm so per-player caches reflect the new default.
+      warmLanguageCache();
     }
 
     rebuildCoreServices();
@@ -797,6 +857,40 @@ public final class ReportDeskPlugin extends JavaPlugin {
   public Messages messages() {
 
     return messages;
+  }
+
+  /**
+   * The messages a given sender should see. For a player, when per-player detection is enabled and
+   * the player's client language was resolved on join, returns that player's language cache;
+   * otherwise (console, unsupported or undetectable language, detection off) the server default.
+   *
+   * <p>Pure in-memory: it only reads the {@code languageCache} and the join-time resolver cache,
+   * never performs file IO on the calling (main) thread.
+   */
+  public Messages messagesFor(CommandSender sender) {
+
+    if (sender instanceof Player player && config().languageSettings().perPlayerEnabled()) {
+
+      String language = playerLanguageResolver.cached(player.getUniqueId()).orElse(null);
+
+      if (language != null) {
+
+        Messages cached = languageCache.get(language);
+
+        if (cached != null) {
+
+          return cached;
+        }
+      }
+    }
+
+    return messages;
+  }
+
+  /** Reflective bridge + resolver for per-player client language detection. */
+  public com.reportdesk.i18n.PlayerLanguageResolver playerLanguage() {
+
+    return playerLanguageResolver;
   }
 
   public InputValidator validator() {

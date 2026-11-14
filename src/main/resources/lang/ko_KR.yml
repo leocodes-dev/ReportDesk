@@ -738,6 +738,7 @@ gui:
       string: '텍스트'
       choice: '선택지'
     section-desc:
+      language-detection: "플레이어 클라이언트 언어 자동 감지와 폴백."
       general: '서버 이름, 인터페이스 언어 및 기타 기본 설정.'
       storage: '신고 데이터 저장 위치, 자동 백업, 종료 대기.'
       limits: '전송 시 쿨타임, 일일 한도, 중복 감지.'
@@ -751,6 +752,13 @@ gui:
       config-editor: '온라인 설정 편집기 옵션, 백업, 입력 제한.'
       smart-priority: '제보를 순위 매기고 쓰레기 제보를 걸러내는 선택형 스마트 점수화입니다.'
     config-label:
+      language-detection:
+        per-player-enabled: "
+플레이어별 언어
+"
+        detect-java: "
+Java 클라이언트 언어 감지
+"
       server-name: '서버 이름'
       language: '인터페이스 언어'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: '쓰레기 임계값'
         garbage-action: '쓰레기 처리'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+각 플레이어의 클라이언트 언어를 자동 감지해 그 언어로 표시합니다.
+"
+        detect-java: "
+Java 클라이언트의 시스템 지역 언어를 추정합니다(최선 처리).
+"
       server-name: '플러그인 메시지 및 GUI에 표시되는 서버 이름.'
       language: '플러그인이 사용하는 언어 코드, 예: zh_CN, en_US, fr_FR, ja_JP.'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>전체: <white>%total%</white> (페이지 %page% / %pages%)'
       - '<gray>신고자 표시: <white>%selected%</white>개 메시지'
     section:
+      language-detection: "언어 감지"
       config-editor: '설정 편집기'
       general: '일반'
       storage: '저장소'

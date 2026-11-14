@@ -99,7 +99,7 @@ public final class ChatInputService {
     if (trimmed.equalsIgnoreCase("cancel")) {
 
       player.sendMessage(
-          plugin.messages().prefixed(MessageKeys.GENERAL_CANCELLED, java.util.Map.of()));
+          plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_CANCELLED, java.util.Map.of()));
 
       return;
     }
@@ -111,7 +111,7 @@ public final class ChatInputService {
               .messages()
               .prefixed(
                   MessageKeys.GENERAL_INVALID_INPUT,
-                  java.util.Map.of("reason", plugin.messages().plain(MessageKeys.GENERAL_NONE))));
+                  java.util.Map.of("reason", plugin.messagesFor(player).plain(MessageKeys.GENERAL_NONE))));
 
       return;
     }
@@ -125,7 +125,7 @@ public final class ChatInputService {
       plugin.getLogger().warning("Chat input callback failed: " + exception.getMessage());
 
       player.sendMessage(
-          plugin.messages().prefixed(MessageKeys.GENERAL_UNKNOWN_ERROR, java.util.Map.of()));
+          plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_UNKNOWN_ERROR, java.util.Map.of()));
     }
   }
 
@@ -141,7 +141,7 @@ public final class ChatInputService {
     if (notify && removed != null) {
 
       player.sendMessage(
-          plugin.messages().prefixed(MessageKeys.GENERAL_CANCELLED, java.util.Map.of()));
+          plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_CANCELLED, java.util.Map.of()));
     }
   }
 
@@ -164,7 +164,7 @@ public final class ChatInputService {
         if (player != null && player.isOnline()) {
 
           player.sendMessage(
-              plugin.messages().prefixed(MessageKeys.GENERAL_INPUT_TIMEOUT, java.util.Map.of()));
+              plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_INPUT_TIMEOUT, java.util.Map.of()));
         }
       }
     }

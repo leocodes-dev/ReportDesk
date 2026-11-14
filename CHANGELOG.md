@@ -5,6 +5,35 @@
 
 ---
 
+## Release 1.2.0
+
+**发布日期** 2026-11-14 · **标签** `v1.2.0` · **产物** `ReportDesk-1.2.0.jar` · **许可证** GNU General Public License v3.0 only
+
+### 概述
+
+ReportDesk 1.2.0 新增「按玩家客户端语言自动切换插件显示语言」能力：玩家进服时插件探测其客户端语言（基岩端经 Floodgate 始终可探，Java 端反射读取系统区域语言、失败安全回退），映射到内置 12 种语言之一；识别不到或不受支持则回退到服主在 `config.yml` 的 `language` 默认语言。玩家提交举报、聊天回执、基岩表单与举报人通知均按该玩家语言显示，控制台与其他玩家不受影响。默认语言与所有文案键沿用既有 `lang/*.yml`，功能由 `language-detection.per-player-enabled`（默认开）与 `language-detection.detect-java`（默认开）两个开关控制，关闭即完全回到此前行为。同时把 `server-name` 默认值改为原版默认的 `A Minecraft Server`。
+
+ReportDesk 1.2.0 adds "automatic per-player client-language selection": on join, the plugin probes the player's client language (Bedrock via Floodgate, always; Java by reflectively reading the OS region, failing safely), maps it to one of the 12 bundled languages, and falls back to the server default set in `config.yml` when the client language is unknown or unsupported. Player-facing surfaces — report submission, chat replies, Bedrock forms and reporter notifications — render in that player's language, while the console and other players are unaffected. The default language and all message keys reuse the existing `lang/*.yml`; the feature is gated by `language-detection.per-player-enabled` (default on) and `language-detection.detect-java` (default on), and turning it off fully restores the previous behaviour. It also changes the `server-name` default to the vanilla default, `A Minecraft Server`.
+
+### 1.2.0 更新一览（2026-11-14）
+
+**新增**
+- 玩家级智能语言（`language-detection` 增强层，默认开）：`PlayerLanguageResolver` 在 `PlayerJoinEvent` 反射探测客户端语言并缓存，`PlayerQuitEvent` 清理；`ReportDeskPlugin#messagesFor(sender)` 为该玩家服务对应语言文案（纯内存读缓存，主线程零 IO），12 语言启动时异步预热、重载/改默认语言时重建。
+- 客户端语言 → 内置语言纯函数映射（BCP47/Java-locale 归一化）：`en_*`→en_US、`zh`/`zh_CN`/`zh_SG`→zh_CN、`zh_TW`/`zh_HK`/`zh_MO`→zh_TW、`de/fr/ru/pt/es/tr/pl/ja/ko`→各自；未命中返回空并回退默认语言（单测 `PlayerLanguageResolverTest`）。
+- 接线玩家交互层：`ReportCommand`（15 处玩家回执）、`ChatInputService`、`BedrockFormService` 玩家路径、`NotificationService` 的举报人回执均改为按该玩家语言渲染；非玩家 sender 与 staff/广播路径仍用默认语言。
+
+**配置**
+- 新增 `language-detection.per-player-enabled`（默认 true）、`language-detection.detect-java`（默认 true），进 `ConfigKeys` 注册并补 12 语言配置编辑器 label/desc。
+- `server-name` 默认值由 `ReportDesk Server` 改为 `A Minecraft Server`（服主自定义值不受影响）。
+
+**优化**
+- 语言缓存随 `/reports reload` 与默认语言变更重建；反射探测全部包裹 try/catch，读不到即静默回退默认语言，永不影响插件加载或炸服。
+
+**安全**
+- 玩家语言解析仅发生在低频 `PlayerJoinEvent`，纯内存缓存，无高频事件、无主线程 IO；不支持的语言安全回退。
+
+---
+
 ## Release 1.1.0
 
 **发布日期** 2026-11-14 · **标签** `v1.1.0` · **产物** `ReportDesk-1.1.0.jar` · **许可证** GNU General Public License v3.0 only

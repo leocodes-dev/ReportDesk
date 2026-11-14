@@ -738,6 +738,7 @@ gui:
       string: 'Text'
       choice: 'Choice'
     section-desc:
+      language-detection: "Per-player client language detection and fallback."
       general: 'Server name, interface language and other basics.'
       storage: 'Where reports are stored, automatic backups and shutdown waits.'
       limits: 'Cooldowns, daily caps and duplicate detection for submissions.'
@@ -751,6 +752,13 @@ gui:
       config-editor: 'Toggles, backups and input limits for editing config.yml in game.'
       smart-priority: 'Optional smart scoring that ranks reports and filters out junk.'
     config-label:
+      language-detection:
+        per-player-enabled: "
+Per-Player Language
+"
+        detect-java: "
+Detect Java Client Language
+"
       server-name: 'Server Name'
       language: 'Interface Language'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: 'Garbage Score Threshold'
         garbage-action: 'Garbage Action'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+Automatically detect each player's client language and show them that language.
+"
+        detect-java: "
+Probe Java clients for their system region language (best-effort).
+"
       server-name: 'Server name shown in plugin messages and the GUI.'
       language: 'Language code used by the plugin, for example zh_CN or en_US.'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>Total: <white>%total%</white> (page %page% / %pages%)'
       - '<gray>Reporter highlighted: <white>%selected%</white> message(s)'
     section:
+      language-detection: "Language Detection"
       config-editor: 'Config Editor'
       general: 'General'
       storage: 'Storage'

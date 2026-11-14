@@ -738,6 +738,7 @@ gui:
       string: '文本'
       choice: '可选值'
     section-desc:
+      language-detection: "按玩家客户端语言自动检测与回退。"
       general: '服务器名称、界面语言等基础设置。'
       storage: '举报数据的保存位置、自动备份和关闭等待。'
       limits: '提交举报的冷却、每日上限和重复判定规则。'
@@ -751,6 +752,13 @@ gui:
       config-editor: '在线修改 config.yml 的开关、备份与输入限制。'
       smart-priority: '可选的智能评分：按多维度给举报打分、提升优先级并过滤垃圾举报。'
     config-label:
+      language-detection:
+        per-player-enabled: "
+按玩家语言
+"
+        detect-java: "
+检测 Java 客户端语言
+"
       server-name: '服务器名称'
       language: '界面语言'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: '垃圾举报分数阈值'
         garbage-action: '垃圾举报处理'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+自动识别每位玩家的客户端语言，并以该语言向其显示。
+"
+        detect-java: "
+探测 Java 客户端的系统区域语言（尽力而为）。
+"
       server-name: '显示在插件消息和 GUI 中的服务器名称。'
       language: '插件使用的语言代码，例如 zh_CN 或 en_US。'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>共 <white>%total%</white> 条（第 %page% / %pages% 页）'
       - '<gray>举报人重点勾选：<white>%selected%</white> 条'
     section:
+      language-detection: "语言检测"
       config-editor: '配置编辑器'
       general: '基础设置'
       storage: '存储'

@@ -46,11 +46,12 @@ public record PluginConfig(
     List<ReportCategory> categories,
     String defaultCategory,
     SmartPriority smartPriority,
-    BedrockForms bedrockForms) {
+    BedrockForms bedrockForms,
+    Language languageSettings) {
 
   public PluginConfig {
 
-    serverName = blankTo(serverName, "ReportDesk Server");
+    serverName = blankTo(serverName, "A Minecraft Server");
 
     language = blankTo(language, "zh_CN");
 
@@ -61,6 +62,8 @@ public record PluginConfig(
     smartPriority = smartPriority == null ? defaultSmartPriority() : smartPriority;
 
     bedrockForms = bedrockForms == null ? defaultBedrockForms() : bedrockForms;
+
+    languageSettings = languageSettings == null ? defaultLanguage() : languageSettings;
   }
 
   private static BedrockForms defaultBedrockForms() {
@@ -440,6 +443,13 @@ public record PluginConfig(
    * <p>Requires GeyserMC (and Floodgate, for Bedrock login) to be installed on the server. The
    * plugin detects the backend reflectively at startup and degrades gracefully when it is absent.
    */
+  public record Language(boolean perPlayerEnabled, boolean detectJava) {}
+
+  private static Language defaultLanguage() {
+
+    return new Language(true, true);
+  }
+
   public record BedrockForms(boolean enabled) {}
 
   private static String blankTo(String value, String fallback) {

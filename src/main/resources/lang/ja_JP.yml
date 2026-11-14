@@ -738,6 +738,7 @@ gui:
       string: 'テキスト'
       choice: '選択肢'
     section-desc:
+      language-detection: "プレイヤークライアント言語の自動検出とフォールバック。"
       general: 'サーバー名・インターフェース言語・その他の基本設定。'
       storage: '通報データの保存場所・自動バックアップ・シャットダウン待機。'
       limits: '送信時のクールダウン・日次上限・重複検出。'
@@ -751,6 +752,13 @@ gui:
       config-editor: 'オンライン設定エディタのオプション・バックアップ・入力制限。'
       smart-priority: '報告をランク付けし、ゴミ報告を除外する任意のスマートスコアリング。'
     config-label:
+      language-detection:
+        per-player-enabled: "
+プレイヤー別言語
+"
+        detect-java: "
+Javaクライアント言語の検出
+"
       server-name: 'サーバー名'
       language: 'インターフェース言語'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: 'ゴミのしきい値'
         garbage-action: 'ゴミ報告の処理'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+各プレイヤーのクライアント言語を自動検出し、その言語で表示します。
+"
+        detect-java: "
+Javaクライアントのシステム地域言語を推定します（ベストエフォート）。
+"
       server-name: 'プラグインのメッセージと GUI に表示されるサーバー名。'
       language: 'プラグインが使用する言語コード、例: zh_CN, en_US, fr_FR, ja_JP。'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>合計: <white>%total%</white> (ページ %page% / %pages%)'
       - '<gray>通報者のマーク: <white>%selected%</white> 件'
     section:
+      language-detection: "言語検出"
       config-editor: '設定エディタ'
       general: '全般'
       storage: 'ストレージ'

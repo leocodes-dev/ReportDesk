@@ -738,6 +738,7 @@ gui:
       string: 'Texto'
       choice: 'Escolha'
     section-desc:
+      language-detection: "Detecção automática e fallback do idioma do cliente."
       general: 'Nome do servidor, idioma da interface e outros básicos.'
       storage: 'Onde as denúncias são armazenadas, backups automáticos e esperas de desligamento.'
       limits: 'Cooldowns, limites diários e detecção de duplicidade para envios.'
@@ -751,6 +752,13 @@ gui:
       config-editor: 'Alternativas, backups e limites de entrada para editar o config.yml no jogo.'
       smart-priority: 'Pontuação inteligente opcional que classifica denúncias e filtra spam.'
     config-label:
+      language-detection:
+        per-player-enabled: "
+Idioma por jogador
+"
+        detect-java: "
+Detectar idioma do cliente Java
+"
       server-name: 'Nome do Servidor'
       language: 'Idioma da Interface'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: 'Limite de spam'
         garbage-action: 'Ação anti-spam'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+Detecta o idioma do cliente de cada jogador e mostra nesse idioma.
+"
+        detect-java: "
+Estima o idioma regional do sistema dos clientes Java (melhor esforço).
+"
       server-name: 'Nome do servidor exibido nas mensagens do plugin e na GUI.'
       language: 'Código de idioma usado pelo plugin, por exemplo zh_CN, en_US ou pt_BR.'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>Total: <white>%total%</white> (página %page% / %pages%)'
       - '<gray>Realçado pelo denunciante: <white>%selected%</white> mensagem(ns)'
     section:
+      language-detection: "Detecção de idioma"
       config-editor: 'Editor de Config'
       general: 'Geral'
       storage: 'Armazenamento'

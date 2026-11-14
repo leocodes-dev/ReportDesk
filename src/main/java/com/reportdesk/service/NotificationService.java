@@ -220,7 +220,9 @@ public final class NotificationService {
       return;
     }
 
-    reporter.sendMessage(plugin.messages().prefixed(key, placeholders));
+    // The reporter's own language (resolved on join); falls back to the default for console-safe
+    // senders or when detection is off/unsupported.
+    reporter.sendMessage(plugin.messagesFor(reporter).prefixed(key, placeholders));
   }
 
   /** Extra alert for staff who explicitly follow the reported player. */

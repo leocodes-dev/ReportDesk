@@ -738,6 +738,7 @@ gui:
       string: 'Tekst'
       choice: 'Opcja'
     section-desc:
+      language-detection: "Automatyczne wykrywanie i awaryjne ustalenie języka klienta."
       general: 'Nazwa serwera, język interfejsu i inne podstawy.'
       storage: 'Gdzie przechowywane są zgłoszenia, kopie zapasowe i oczekiwanie przy wyłączaniu.'
       limits: 'Czasy chłodni, limity dzienne i wykrywanie duplikatów podczas wysyłania.'
@@ -751,6 +752,13 @@ gui:
       config-editor: 'Opcje, kopie zapasowe i limity wejścia online edytora konfiguracji.'
       smart-priority: 'Opcjonalne inteligentne ocenianie, które sortuje zgłoszenia i filtruje śmieci.'
     config-label:
+      language-detection:
+        per-player-enabled: "
+Język per gracz
+"
+        detect-java: "
+Wykrywanie języka klienta Java
+"
       server-name: 'Nazwa serwera'
       language: 'Język interfejsu'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: 'Próg śmieci'
         garbage-action: 'Akcja antyspamowa'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+Wykrywa język klienta każdego gracza i wyświetla ten język.
+"
+        detect-java: "
+Szacuje systemowy język regionalny klientów Java (dołożenie starań).
+"
       server-name: 'Nazwa serwera wyświetlana w komunikatach i GUI pluginu.'
       language: 'Kod języka używany przez plugin, np. zh_CN, en_US, fr_FR, ja_JP.'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>Łącznie: <white>%total%</white> (strona %page% / %pages%)'
       - '<gray>Oznaczone przez zgłaszającego: <white>%selected%</white> wiadomości'
     section:
+      language-detection: "Wykrywanie języka"
       config-editor: 'Edytor konfiguracji'
       general: 'Ogólne'
       storage: 'Pamięć'

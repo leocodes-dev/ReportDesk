@@ -102,7 +102,7 @@ public final class BedrockFormService {
         categoryIds.stream().map(plugin::categoryDisplay).collect(java.util.stream.Collectors.toList());
 
     String title =
-        plugin.messages().plain(MessageKeys.BEDROCK_FORM_REPORT_TITLE, Map.of());
+        plugin.messagesFor(player).plain(MessageKeys.BEDROCK_FORM_REPORT_TITLE, Map.of());
 
     String contentLabel =
         plugin
@@ -111,18 +111,18 @@ public final class BedrockFormService {
                 MessageKeys.BEDROCK_FORM_REPORT_CONTENT,
                 Map.of("player", presetTarget == null || presetTarget.isBlank() ? "" : presetTarget));
 
-    String categoryLabel = plugin.messages().plain(MessageKeys.GENERAL_CATEGORY, Map.of());
-    String detailLabel = plugin.messages().plain(MessageKeys.GENERAL_DETAIL, Map.of());
+    String categoryLabel = plugin.messagesFor(player).plain(MessageKeys.GENERAL_CATEGORY, Map.of());
+    String detailLabel = plugin.messagesFor(player).plain(MessageKeys.GENERAL_DETAIL, Map.of());
     String detailPlaceholder =
-        plugin.messages().plain(MessageKeys.BEDROCK_FORM_DETAIL_PLACEHOLDER, Map.of());
+        plugin.messagesFor(player).plain(MessageKeys.BEDROCK_FORM_DETAIL_PLACEHOLDER, Map.of());
 
     String target = presetTarget;
 
     final List<String> idsForMapping = categoryIds;
 
-    String targetLabel = plugin.messages().plain(MessageKeys.GENERAL_TARGET, Map.of());
+    String targetLabel = plugin.messagesFor(player).plain(MessageKeys.GENERAL_TARGET, Map.of());
     String targetPlaceholder =
-        plugin.messages().plain(MessageKeys.BEDROCK_FORM_TARGET_PLACEHOLDER, Map.of());
+        plugin.messagesFor(player).plain(MessageKeys.BEDROCK_FORM_TARGET_PLACEHOLDER, Map.of());
 
     boolean ok =
         bridge.sendCustomForm(
@@ -210,11 +210,11 @@ public final class BedrockFormService {
       placeholders.putIfAbsent("reason", "unknown");
     }
 
-    player.sendMessage(plugin.messages().prefixed(key, placeholders));
+    player.sendMessage(plugin.messagesFor(player).prefixed(key, placeholders));
 
     if (result.success()) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.BEDROCK_FORM_REPORT_SUBMITTED, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.BEDROCK_FORM_REPORT_SUBMITTED, Map.of()));
     }
   }
 
@@ -239,7 +239,7 @@ public final class BedrockFormService {
 
     if (!plugin.repository().isReady()) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
 
       return false;
     }
@@ -268,15 +268,15 @@ public final class BedrockFormService {
 
     if (buttons.isEmpty()) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.REPORT_OWN_EMPTY, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.REPORT_OWN_EMPTY, Map.of()));
 
       return false;
     }
 
-    String title = plugin.messages().plain(MessageKeys.BEDROCK_FORM_HISTORY_TITLE, Map.of());
+    String title = plugin.messagesFor(player).plain(MessageKeys.BEDROCK_FORM_HISTORY_TITLE, Map.of());
 
     String content =
-        plugin.messages().plain(MessageKeys.BEDROCK_FORM_HISTORY_CONTENT, Map.of());
+        plugin.messagesFor(player).plain(MessageKeys.BEDROCK_FORM_HISTORY_CONTENT, Map.of());
 
     final int[] selectedIndex = {-1};
 
@@ -338,7 +338,7 @@ public final class BedrockFormService {
 
     if (!plugin.repository().isReady()) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
 
       return false;
     }
@@ -357,7 +357,7 @@ public final class BedrockFormService {
               .plain(
                   com.reportdesk.service.NotificationService.statusKey(report.status()), Map.of());
 
-      String timeLabel = TimeText.absolute(report.createdAt(), plugin.messages());
+      String timeLabel = TimeText.absolute(report.createdAt(), plugin.messagesFor(player));
 
       buttons.add(
           String.format(
@@ -371,10 +371,10 @@ public final class BedrockFormService {
 
     if (buttons.isEmpty()) {
 
-      buttons.add(plugin.messages().plain(MessageKeys.GENERAL_NONE, Map.of()));
+      buttons.add(plugin.messagesFor(player).plain(MessageKeys.GENERAL_NONE, Map.of()));
     }
 
-    String title = plugin.messages().plain(MessageKeys.BEDROCK_FORM_ADMIN_TITLE, Map.of());
+    String title = plugin.messagesFor(player).plain(MessageKeys.BEDROCK_FORM_ADMIN_TITLE, Map.of());
 
     String content =
         plugin

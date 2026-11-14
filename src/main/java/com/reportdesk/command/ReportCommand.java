@@ -66,6 +66,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     if (!(sender instanceof Player player)) {
 
+      // Not a player (console/other), so there is no player language to serve; use the default.
       sender.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_PLAYER_ONLY, Map.of()));
 
       return true;
@@ -73,7 +74,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     if (!player.hasPermission("reportdesk.report")) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_NO_PERMISSION, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_NO_PERMISSION, Map.of()));
 
       return true;
     }
@@ -221,14 +222,14 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
       placeholders.putIfAbsent("reason", reasonNameFor(result.reason()));
     }
 
-    player.sendMessage(plugin.messages().prefixed(key, placeholders));
+    player.sendMessage(plugin.messagesFor(player).prefixed(key, placeholders));
   }
 
   private void showOwnReport(Player player, String[] args) {
 
     if (!plugin.repository().isReady()) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
 
       return;
     }
@@ -247,7 +248,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     if (id == null || id <= 0) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_INVALID_ID, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_INVALID_ID, Map.of()));
 
       return;
     }
@@ -280,7 +281,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     if (!plugin.repository().isReady()) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
 
       return;
     }
@@ -310,14 +311,14 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     var result = plugin.reportService().addReply(report, player, join(args, 2), false);
 
-    player.sendMessage(plugin.messages().prefixed(result.messageKey(), result.placeholders()));
+    player.sendMessage(plugin.messagesFor(player).prefixed(result.messageKey(), result.placeholders()));
   }
 
   private void showReplies(Player player, String[] args) {
 
     if (!plugin.repository().isReady()) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
 
       return;
     }
@@ -367,7 +368,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     if (id == null || id <= 0) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_INVALID_ID, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_INVALID_ID, Map.of()));
 
       return null;
     }
@@ -391,7 +392,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     if (!plugin.repository().isReady()) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
 
       return;
     }
@@ -426,7 +427,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     if (!plugin.repository().isReady()) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
 
       return;
     }
@@ -544,7 +545,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
   private void sendHelp(Player player) {
 
-    player.sendMessage(plugin.messages().prefixed(MessageKeys.REPORT_HELP_HEADER, Map.of()));
+    player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.REPORT_HELP_HEADER, Map.of()));
 
     for (String key :
         List.of(
@@ -558,7 +559,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
             MessageKeys.REPORT_HELP_LINE_HISTORY,
             MessageKeys.REPORT_HELP_LINE_CANCEL)) {
 
-      player.sendMessage(plugin.messages().component(key, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).component(key, Map.of()));
     }
   }
 
@@ -579,7 +580,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     if (last != null && now - last < cooldown) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_ACTION_COOLDOWN, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_ACTION_COOLDOWN, Map.of()));
 
       return false;
     }
@@ -613,7 +614,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
     if (last != null && now - last < cooldown) {
 
-      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_ACTION_COOLDOWN, Map.of()));
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_ACTION_COOLDOWN, Map.of()));
 
       return false;
     }

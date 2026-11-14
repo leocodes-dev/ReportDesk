@@ -41,9 +41,16 @@ class ConfigLoaderTest {
 
     assertTrue(warnings.isEmpty(), () -> "unexpected warnings: " + warnings);
 
-    assertEquals("ReportDesk Server", config.serverName());
+    // Default server name matches the vanilla default ("A Minecraft Server").
+    assertEquals("A Minecraft Server", config.serverName());
 
     assertEquals("zh_CN", config.language());
+
+    // Per-player language detection is enabled by default (safe to turn off; unsupported
+    // client languages fall back to the default language).
+    assertTrue(config.languageSettings().perPlayerEnabled());
+
+    assertTrue(config.languageSettings().detectJava());
 
     assertEquals("data", config.storage().directory());
 
@@ -199,6 +206,14 @@ class ConfigLoaderTest {
     assertEquals(168, config.notifications().sla().weeklyIntervalHours());
 
     assertEquals(0, config.audit().maxFileSizeMb());
+
+    // Default server name matches the vanilla default ("A Minecraft Server").
+    assertEquals("A Minecraft Server", config.serverName());
+
+    // Per-player language detection defaults: enabled, with Java-client probing on.
+    assertTrue(config.languageSettings().perPlayerEnabled());
+
+    assertTrue(config.languageSettings().detectJava());
 
     assertFalse(warnings.isEmpty());
   }

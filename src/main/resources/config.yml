@@ -9,10 +9,20 @@
 # ============================================================
 
 # 服务器名称，仅用于展示、审计与 Webhook。
-server-name: 'ReportDesk Server'
+server-name: 'A Minecraft Server'
 
-# 消息语言：zh_CN / zh_TW / en_US / pt_BR / es_ES / ru_RU / de_DE / fr_FR / tr_TR / pl_PL / ja_JP / ko_KR（缺失时回退内置 en_US）。
+# 默认消息语言（玩家语言无法识别或不受支持时回退到此值）：
+# zh_CN / zh_TW / en_US / pt_BR / es_ES / ru_RU / de_DE / fr_FR / tr_TR / pl_PL / ja_JP / ko_KR。
 language: zh_CN
+
+# 按玩家客户端语言自动切换插件显示语言（增强层，默认开启；不影响控制台与其它插件）。
+# 玩家进服时探测其客户端语言，映射到上面 12 种支持语言之一；无法识别/不受支持则回退到默认 language。
+language-detection:
+  # 总开关。false 时所有玩家一律用默认 language（完全回到此前行为）。
+  per-player-enabled: true
+  # 是否对 Java 端玩家反射探测其系统区域语言（best-effort；失败安全回退）。
+  # Bedrock（Floodgate）玩家的语言始终探测，不受此开关影响。
+  detect-java: true
 
 storage:
   # 数据目录（相对插件数据目录）。修改后需要重启服务器。

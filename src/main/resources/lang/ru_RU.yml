@@ -738,6 +738,7 @@ gui:
       string: 'Текст'
       choice: 'Вариант'
     section-desc:
+      language-detection: "Автоматическое определение языка клиента и откат."
       general: 'Имя сервера, язык интерфейса и прочее.'
       storage: 'Где хранятся жалобы, резервные копии и ожидание при выключении.'
       limits: 'Периоды ожидания, дневные лимиты и дубликаты.'
@@ -751,6 +752,13 @@ gui:
       config-editor: 'Параметры, резервные копии и ограничения онлайн-редактора.'
       smart-priority: 'Необязательное умное оценивание, ранжирующее рапорты и отсекающее мусор.'
     config-label:
+      language-detection:
+        per-player-enabled: "
+Язык по игроку
+"
+        detect-java: "
+Определять язык Java-клиента
+"
       server-name: 'Имя сервера'
       language: 'Язык интерфейса'
       storage:
@@ -921,6 +929,13 @@ gui:
           garbage-score: 'Порог мусора'
         garbage-action: 'Действие для мусора'
     config-desc:
+      language-detection:
+        per-player-enabled: "
+Определяет язык клиента каждого игрока и показывает этот язык.
+"
+        detect-java: "
+Определяет системный региональный язык Java-клиентов (по возможности).
+"
       server-name: 'Имя сервера в сообщениях и в GUI.'
       language: 'Код языка плагина, например zh_CN, en_US, es_ES, ru_RU или de_DE.'
       storage:
@@ -1199,6 +1214,7 @@ gui:
       - '<gray>Всего: <white>%total%</white> (стр. %page% / %pages%)'
       - '<gray>Отмечено подавшим: <white>%selected%</white> сообщений'
     section:
+      language-detection: "Определение языка"
       config-editor: 'Редактор конфига'
       general: 'Общие'
       storage: 'Хранилище'
