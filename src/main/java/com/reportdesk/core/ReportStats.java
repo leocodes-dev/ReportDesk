@@ -82,6 +82,81 @@ public record ReportStats(
         Map.of());
   }
 
+  /**
+   * Same single pass as {@link #compute} but skips the per-category / per-target / per-staff
+   * breakdown maps. GUIs that only need the totals (queue list, filter menu, hub) use this; the
+   * breakdowns are an N-sized set of map merges plus three stream sorts per render.
+   */
+  public static ReportStats computeCounts(Collection<Report> reports) {
+
+    int open = 0;
+
+    int claimed = 0;
+
+    int resolved = 0;
+
+    int rejected = 0;
+
+    int duplicate = 0;
+
+    int autoClosed = 0;
+
+    long handledTotal = 0L;
+
+    int handledCount = 0;
+
+    if (reports != null) {
+
+      for (Report report : reports) {
+
+        if (report == null) {
+
+          continue;
+        }
+
+        switch (report.status()) {
+          case OPEN -> open++;
+
+          case CLAIMED -> claimed++;
+
+          case RESOLVED -> resolved++;
+
+          case REJECTED -> rejected++;
+
+          case DUPLICATE -> duplicate++;
+
+          case AUTO_CLOSED -> autoClosed++;
+        }
+
+        if (report.status().isTerminal()
+            && report.closedAt() > 0
+            && report.closedAt() >= report.createdAt()) {
+
+          handledTotal += report.closedAt() - report.createdAt();
+
+          handledCount++;
+        }
+      }
+    }
+
+    long average = handledCount == 0 ? 0L : handledTotal / handledCount;
+
+    int total = open + claimed + resolved + rejected + duplicate + autoClosed;
+
+    return new ReportStats(
+        total,
+        open,
+        claimed,
+        resolved,
+        rejected,
+        duplicate,
+        autoClosed,
+        average,
+        Map.of(),
+        Map.of(),
+        Map.of());
+  }
+
   public static ReportStats compute(Collection<Report> reports) {
 
     int open = 0;

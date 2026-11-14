@@ -118,7 +118,11 @@ public final class MessageKeys {
 
   public static final String GENERAL_CLAIMED_BY = "general.claimed-by";
 
+  public static final String GENERAL_CLAIMED_AT = "general.claimed-at";
+
   public static final String GENERAL_CLOSED_BY = "general.closed-by";
+
+  public static final String GENERAL_CLOSED_AT = "general.closed-at";
 
   public static final String GENERAL_DETAIL = "general.detail";
 
@@ -155,6 +159,8 @@ public final class MessageKeys {
   public static final String GENERAL_LAST_REPLY = "general.last-reply";
 
   public static final String GENERAL_OVERDUE_LABEL = "general.overdue-label";
+
+  public static final String GENERAL_SMART_SCORE = "general.smart-score";
 
   public static final String PRIORITY_LOW = "priority.low";
 
@@ -261,6 +267,16 @@ public final class MessageKeys {
   public static final String REPORT_OWN_INFO_HEADER = "report.own-info-header";
 
   public static final String REPORT_OWN_INFO_LINE = "report.own-info-line";
+
+  public static final String REPORT_HELP_LINE_HISTORY = "report.help-line-history";
+
+  public static final String REPORT_HISTORY_HEADER = "report.history-header";
+
+  public static final String REPORT_HISTORY_STATS = "report.history-stats";
+
+  public static final String REPORT_HISTORY_HINT = "report.history-hint";
+
+  public static final String REPORT_HISTORY_UNKNOWN_FILTER = "report.history-unknown-filter";
 
   public static final String REPORT_MENU_TITLE_PLAYERS = "report.menu-title-players";
 
@@ -465,6 +481,60 @@ public final class MessageKeys {
   public static final String GUI_DETAIL_NEXT_NAME = "gui.detail-next-name";
 
   public static final String GUI_DETAIL_NEXT_LORE = "gui.detail-next-lore";
+
+  public static final String GUI_HISTORY_TITLE = "gui.history-title";
+
+  public static final String GUI_HISTORY_ENTRY_NAME = "gui.history-entry-name";
+
+  public static final String GUI_HISTORY_ENTRY_LORE = "gui.history-entry-lore";
+
+  public static final String GUI_HISTORY_HEADER_NAME = "gui.history-header-name";
+
+  public static final String GUI_HISTORY_HEADER_LORE = "gui.history-header-lore";
+
+  public static final String GUI_HISTORY_ITEM_NAME = "gui.history-item-name";
+
+  public static final String GUI_HISTORY_ITEM_LORE = "gui.history-item-lore";
+
+  public static final String GUI_HISTORY_FILTER_TITLE = "gui.history-filter-title";
+
+  public static final String GUI_HISTORY_DETAIL_TITLE = "gui.history-detail-title";
+
+  public static final String GUI_HISTORY_INFO_NAME = "gui.history-info-name";
+
+  public static final String GUI_HISTORY_INFO_LORE = "gui.history-info-lore";
+
+  public static final String GUI_HISTORY_RESULT_NAME = "gui.history-result-name";
+
+  public static final String GUI_HISTORY_RESULT_VERDICT = "gui.history-result-verdict";
+
+  public static final String GUI_HISTORY_RESULT_CLAIMED = "gui.history-result-claimed";
+
+  public static final String GUI_HISTORY_RESULT_PENDING = "gui.history-result-pending";
+
+  public static final String GUI_HISTORY_RESULT_CLOSED_BY = "gui.history-result-closed-by";
+
+  public static final String GUI_HISTORY_RESULT_NOTE = "gui.history-result-note";
+
+  public static final String GUI_HISTORY_RESULT_TARGET = "gui.history-result-target";
+
+  public static final String GUI_HISTORY_EVIDENCE_NAME = "gui.history-evidence-name";
+
+  public static final String GUI_HISTORY_EVIDENCE_LORE = "gui.history-evidence-lore";
+
+  public static final String GUI_HISTORY_REPLIES_NAME = "gui.history-replies-name";
+
+  public static final String GUI_HISTORY_REPLIES_LORE = "gui.history-replies-lore";
+
+  public static final String GUI_HISTORY_REPLY_NAME = "gui.history-reply-name";
+
+  public static final String GUI_HISTORY_REPLY_LORE = "gui.history-reply-lore";
+
+  public static final String GUI_HISTORY_REPLY_DISABLED = "gui.history-reply-disabled";
+
+  public static final String GUI_HISTORY_REPLY_PROMPT = "gui.history-reply-prompt";
+
+  public static final String GUI_HISTORY_REPLIES_TITLE = "gui.history-replies-title";
 
   public static final String GUI_DELETE_TITLE = "gui.delete-title";
 
@@ -855,6 +925,24 @@ public final class MessageKeys {
 
   public static final String ADMIN_GUI_MISC_HELP_LORE = "gui.admin.misc-help-lore";
 
+  public static final String ADMIN_GUI_MISC_DATA_NAME = "gui.admin.misc-data-name";
+
+  public static final String ADMIN_GUI_MISC_DATA_LORE = "gui.admin.misc-data-lore";
+
+  public static final String ADMIN_GUI_MISC_RETENTION_NAME = "gui.admin.misc-retention-name";
+
+  public static final String ADMIN_GUI_MISC_RETENTION_LORE = "gui.admin.misc-retention-lore";
+
+  public static final String ADMIN_GUI_MISC_WEBHOOK_NAME = "gui.admin.misc-webhook-name";
+
+  public static final String ADMIN_GUI_MISC_WEBHOOK_LORE = "gui.admin.misc-webhook-lore";
+
+  public static final String ADMIN_GUI_MISC_WEBHOOK_DISABLED = "gui.admin.misc-webhook-disabled";
+
+  public static final String ADMIN_GUI_MISC_WEBHOOK_SENT = "gui.admin.misc-webhook-sent";
+
+  public static final String ADMIN_GUI_MISC_WEBHOOK_FAILED = "gui.admin.misc-webhook-failed";
+
   public static final String ADMIN_GUI_MAINTENANCE_DONE = "gui.admin.maintenance-done";
 
   public static final String ADMIN_GUI_CONFIRM_TITLE = "gui.admin.confirm-title";
@@ -902,6 +990,13 @@ public final class MessageKeys {
   public static final String ADMIN_GUI_QUEUE_HEADER_NAME = "gui.admin.queue-header-name";
 
   public static final String ADMIN_GUI_QUEUE_HEADER_LORE = "gui.admin.queue-header-lore";
+
+  public static final String ADMIN_GUI_QUEUE_ITEM_NAME = "gui.admin.queue-item-name";
+
+  public static final String ADMIN_GUI_QUEUE_ITEM_OVERDUE = "gui.admin.queue-item-overdue";
+
+  public static final String ADMIN_GUI_QUEUE_ITEM_QUICK_CLAIM =
+      "gui.admin.queue-item-quick-claim";
 
   public static final String ADMIN_GUI_PLAYERS_HEADER_NAME = "gui.admin.players-header-name";
 
@@ -1224,6 +1319,12 @@ public final class MessageKeys {
   public static final String WEBHOOK_CONTENT_CLAIMED = "webhook.content-claimed";
 
   public static final String WEBHOOK_CONTENT_CLOSED = "webhook.content-closed";
+
+  public static final String WEBHOOK_TEST_TITLE = "webhook.test-title";
+
+  public static final String WEBHOOK_TEST_CONTENT = "webhook.test-content";
+
+  public static final String WEBHOOK_FAILURE_ALERT = "webhook.failure-alert";
 
   public static final String TIME_NOW = "time.now";
 

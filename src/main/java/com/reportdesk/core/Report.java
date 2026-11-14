@@ -19,6 +19,7 @@
 package com.reportdesk.core;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,7 +55,10 @@ public record Report(
     long slaAlertedAt,
     List<ReportReply> replies,
     long reporterReadAt,
-    List<ReportChatSelection> chatSelections) {
+    List<ReportChatSelection> chatSelections,
+    int smartScore,
+    String reportedFrom,
+    String ipHash) {
 
   public Report {
 
@@ -95,6 +99,13 @@ public record Report(
     reporterReadAt = Math.max(0L, reporterReadAt);
 
     chatSelections = chatSelections == null ? List.of() : List.copyOf(chatSelections);
+
+    smartScore = Math.max(0, smartScore);
+
+    // Legacy files predate both fields; Gson loads them as null and they stay empty.
+    reportedFrom = reportedFrom == null ? "" : reportedFrom;
+
+    ipHash = ipHash == null ? "" : ipHash;
   }
 
   /**
@@ -154,7 +165,10 @@ public record Report(
         0L,
         List.of(),
         0L,
-        List.of());
+        List.of(),
+        0,
+        "",
+        "");
   }
 
   public boolean isOpen() {
@@ -175,6 +189,73 @@ public record Report(
   public boolean isOverdue(long now) {
 
     return !isTerminal() && slaDueAt > 0L && now > slaDueAt;
+  }
+
+  /**
+   * Case-insensitive text search over the report's stable fields. The lower-casing is paid on every
+   * call; {@link ReportRepository#filter} passes a memoised field array (see {@link
+   * #matchesQuery(String, String[])}) so the cost is spread over renders instead of repeated on
+   * every page navigation.
+   *
+   * @param query an already lower-cased query (as produced by {@link ReportFilter}).
+   */
+  public boolean matchesQuery(String query) {
+
+    return matchesQuery(query, null);
+  }
+
+  /**
+   * Same as {@link #matchesQuery(String)}, but the lower-cased search fields may be supplied by
+   * the caller so repeated filter passes over the same repository state do not re-pay the
+   * {@code toLowerCase} work.
+   *
+   * <p>A non-null {@code cachedFields} is trusted to have been built for a report instance with
+   * the same id and {@code updatedAt}: every {@code with*} method that changes one of the
+   * searched fields also changes {@code updatedAt}, so an unchanged {@code updatedAt} means the
+   * fields are still valid.
+   *
+   * @param cachedFields memoised lower-cased fields, or {@code null} to build them here.
+   */
+  public boolean matchesQuery(String query, String[] cachedFields) {
+
+    if (query == null || query.isEmpty()) {
+
+      return true;
+    }
+
+    String[] fields = cachedFields != null ? cachedFields : searchFields(this);
+
+    for (String field : fields) {
+
+      if (field.contains(query)) {
+
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /** The lower-cased copies of the fields a text query is matched against. */
+  public static String[] searchFields(Report report) {
+
+    return new String[] {
+      lower(report.targetName()),
+      lower(report.reporterName()),
+      lower(report.category()),
+      lower(report.detail()),
+      lower(report.claimedByName()),
+      lower(report.closedByName()),
+      lower(report.verdict()),
+      lower(report.priority().id()),
+      String.valueOf(report.id()),
+      "#" + report.id()
+    };
+  }
+
+  private static String lower(String value) {
+
+    return value == null ? "" : value.toLowerCase(Locale.ROOT);
   }
 
   /** Staff replies the reporter has not read yet. */
@@ -218,7 +299,10 @@ public record Report(
         slaAlertedAt,
         replies,
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withClaim(UUID staffId, String staffName, long now) {
@@ -241,7 +325,10 @@ public record Report(
         slaAlertedAt,
         replies,
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withClaimReleased(long now) {
@@ -264,7 +351,10 @@ public record Report(
         slaAlertedAt,
         replies,
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withClosed(Verdict result, UUID staffId, String staffName, String note, long now) {
@@ -287,7 +377,10 @@ public record Report(
         slaAlertedAt,
         replies,
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withReopened(long now) {
@@ -310,7 +403,10 @@ public record Report(
         0L,
         replies,
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withNote(ReportNote note, long now) {
@@ -337,7 +433,10 @@ public record Report(
         slaAlertedAt,
         replies,
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withEvidence(EvidenceMeta meta, long now) {
@@ -360,7 +459,10 @@ public record Report(
         slaAlertedAt,
         replies,
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withPriority(ReportPriority newPriority, long dueAt, long now) {
@@ -383,7 +485,10 @@ public record Report(
         slaAlertedAt,
         replies,
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withSlaAlerted(long now) {
@@ -406,7 +511,10 @@ public record Report(
         Math.max(0L, now),
         replies,
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withReply(ReportReply reply, long now) {
@@ -438,7 +546,10 @@ public record Report(
         slaAlertedAt,
         List.copyOf(updated),
         reporterReadAt,
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withReporterReadAt(long now) {
@@ -461,7 +572,10 @@ public record Report(
         slaAlertedAt,
         replies,
         Math.max(0L, now),
-        chatSelections);
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
   }
 
   public Report withChatSelections(List<ReportChatSelection> selections, long now) {
@@ -484,7 +598,40 @@ public record Report(
         slaAlertedAt,
         replies,
         reporterReadAt,
-        selections == null ? List.of() : selections);
+        selections == null ? List.of() : selections,
+        smartScore,
+        reportedFrom,
+        ipHash);
+  }
+
+  /**
+   * Records the smart-priority score without touching {@code updatedAt}; the score is written at
+   * submission time and is not one of the text-searched fields.
+   */
+  public Report withSmartScore(int score) {
+
+    return copy(
+        status,
+        updatedAt,
+        claimedBy,
+        claimedByName,
+        claimedAt,
+        closedBy,
+        closedByName,
+        closedAt,
+        verdict,
+        closeNote,
+        notes,
+        evidence,
+        priority,
+        slaDueAt,
+        slaAlertedAt,
+        replies,
+        reporterReadAt,
+        chatSelections,
+        Math.max(0, score),
+        reportedFrom,
+        ipHash);
   }
 
   private Report copy(
@@ -505,7 +652,10 @@ public record Report(
       long newSlaAlertedAt,
       List<ReportReply> newReplies,
       long newReporterReadAt,
-      List<ReportChatSelection> newChatSelections) {
+      List<ReportChatSelection> newChatSelections,
+      int newSmartScore,
+      String newReportedFrom,
+      String newIpHash) {
 
     return new Report(
         id,
@@ -535,6 +685,9 @@ public record Report(
         newSlaAlertedAt,
         newReplies,
         newReporterReadAt,
-        newChatSelections);
+        newChatSelections,
+        newSmartScore,
+        newReportedFrom,
+        newIpHash);
   }
 }

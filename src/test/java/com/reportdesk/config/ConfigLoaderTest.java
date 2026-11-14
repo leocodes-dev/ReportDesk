@@ -363,6 +363,69 @@ class ConfigLoaderTest {
                     Map.of("chat-log", chatLog))));
   }
 
+  @Test
+  void smartPriorityDefaultsAreDisabledAndSafe() {
+
+    List<String> warnings = new ArrayList<>();
+
+    PluginConfig config = new ConfigLoader(warnings::add).load(bundledConfig());
+
+    assertTrue(warnings.isEmpty(), "unexpected warnings: " + warnings);
+
+    assertFalse(config.smartPriority().enabled());
+
+    assertEquals(30, config.smartPriority().reporterCredibilityWeight());
+
+    assertEquals(20, config.smartPriority().targetHistoryWeight());
+
+    assertEquals(25, config.smartPriority().detailQualityWeight());
+
+    assertEquals(10, config.smartPriority().chatEvidenceWeight());
+
+    assertEquals(15, config.smartPriority().categorySeverityWeight());
+
+    assertEquals(90, config.smartPriority().urgentScore());
+
+    assertEquals(70, config.smartPriority().highScore());
+
+    assertEquals(30, config.smartPriority().garbageScore());
+
+    assertEquals(
+        PluginConfig.SmartPriority.GarbageAction.FLAG, config.smartPriority().garbageAction());
+  }
+
+  @Test
+  void smartPriorityThresholdsAreClampedIntoOrder() {
+
+    MapConfigSource source =
+        new MapConfigSource(
+            Map.of(
+                "smart-priority",
+                    Map.of(
+                        "enabled",
+                        true,
+                        "thresholds",
+                        Map.of(
+                            "urgent-score", 40,
+                            "high-score", 80,
+                            "garbage-score", 90),
+                        "garbage-action", "auto-close")));
+
+    List<String> ignored = new ArrayList<>();
+
+    PluginConfig config = new ConfigLoader(ignored::add).load(source);
+
+    PluginConfig.SmartPriority smart = config.smartPriority();
+
+    assertEquals(40, smart.urgentScore());
+
+    assertEquals(40, smart.highScore()); // clamped below urgent
+
+    assertEquals(40, smart.garbageScore()); // clamped below high
+
+    assertEquals(PluginConfig.SmartPriority.GarbageAction.AUTO_CLOSE, smart.garbageAction());
+  }
+
   private static MapConfigSource bundledConfig() {
 
     try (InputStream input = ConfigLoaderTest.class.getResourceAsStream("/config.yml")) {

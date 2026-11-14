@@ -92,6 +92,8 @@ public final class ConfigLoader {
 
     ConfigSource webhook = notifications.section("webhook");
 
+    ConfigSource sla = notifications.section("sla");
+
     ConfigSource evidence = root.section("evidence");
 
     ConfigSource capture = evidence.section("capture");
@@ -109,6 +111,34 @@ public final class ConfigLoader {
     ConfigSource configEditor = root.section("config-editor");
 
     ConfigSource security = root.section("security");
+
+    ConfigSource smartRoot = root.section("smart-priority");
+
+    ConfigSource smartWeights = smartRoot.section("weights");
+
+    ConfigSource smartThresholds = smartRoot.section("thresholds");
+
+    int smartUrgent = integer(smartThresholds, "urgent-score", 90, 0, 100);
+
+    int smartHigh = Math.min(integer(smartThresholds, "high-score", 70, 0, 100), smartUrgent);
+
+    int smartGarbage = Math.min(integer(smartThresholds, "garbage-score", 30, 0, 100), smartHigh);
+
+    PluginConfig.SmartPriority smartSettings =
+        new PluginConfig.SmartPriority(
+            bool(smartRoot, "enabled", false),
+            integer(smartWeights, "reporter-credibility", 30, 0, 100),
+            integer(smartWeights, "target-history", 20, 0, 100),
+            integer(smartWeights, "detail-quality", 25, 0, 100),
+            integer(smartWeights, "chat-evidence", 10, 0, 100),
+            integer(smartWeights, "category-severity", 15, 0, 100),
+            smartUrgent,
+            smartHigh,
+            smartGarbage,
+            parseSmartGarbageAction(string(smartRoot, "garbage-action", "flag")),
+            integer(security, "detail-min-length", 2, 0, 10_000),
+            integer(security, "detail-max-length", 200, 1, 100_000),
+            integer(chatReport, "max-selected", 5, 1, 100));
 
     List<ReportCategory> categories = readCategories(reports);
 
@@ -177,7 +207,9 @@ public final class ConfigLoader {
             bool(security, "detail-required", false),
             bool(security, "allow-color-codes", false),
             playerPattern,
-            list(security, "blocked-words", List.of()));
+            list(security, "blocked-words", List.of()),
+            bool(security, "ip-hash-enabled", false),
+            string(security, "ip-hash-salt", ""));
 
     PluginConfig.Reports reportSettings =
         new PluginConfig.Reports(
@@ -249,7 +281,10 @@ public final class ConfigLoader {
             string(webhook, "avatar-url", ""),
             bool(webhook, "events.created", true),
             bool(webhook, "events.claimed", true),
-            bool(webhook, "events.closed", true));
+            bool(webhook, "events.closed", true),
+            integer(webhook, "retry-count", 2, 0, 5),
+            integer(webhook, "retry-base-seconds", 5, 1, 300),
+            bool(webhook, "failure-alert-enabled", true));
 
     PluginConfig.Notifications notificationSettings =
         new PluginConfig.Notifications(
@@ -265,7 +300,10 @@ public final class ConfigLoader {
             integer(watchlist, "max-targets", 20, 1, 200),
             bool(watchlist, "notify-on-report", true),
             bool(notifications, "broadcast.enabled", false),
-            webhookSettings);
+            webhookSettings,
+            new PluginConfig.Sla(
+                bool(sla, "weekly-enabled", false),
+                integer(sla, "interval-hours", 168, 6, 8_760)));
 
     PluginConfig.Evidence evidenceSettings =
         new PluginConfig.Evidence(
@@ -308,7 +346,8 @@ public final class ConfigLoader {
         new PluginConfig.Audit(
             bool(audit, "enabled", true),
             integer(audit, "retention-days", 180, 0, 36_500),
-            integer(audit, "page-size", DEFAULT_TEXT_PAGE_SIZE, 1, 100));
+            integer(audit, "page-size", DEFAULT_TEXT_PAGE_SIZE, 1, 100),
+            integer(audit, "max-size-mb", 0, 0, 10_240));
 
     PluginConfig.ConfigEditor editorSettings =
         new PluginConfig.ConfigEditor(
@@ -347,7 +386,32 @@ public final class ConfigLoader {
         editorSettings,
         securitySettings,
         categories,
-        defaultCategory);
+        defaultCategory,
+        smartSettings);
+  }
+
+  private PluginConfig.SmartPriority.GarbageAction parseSmartGarbageAction(String raw) {
+
+    String normalized = raw == null ? "" : raw.trim().toLowerCase(java.util.Locale.ROOT);
+
+    return switch (normalized) {
+      case "demote", "lower" -> PluginConfig.SmartPriority.GarbageAction.DEMOTE;
+
+      case "auto-close", "autoclose", "close", "purge" ->
+          PluginConfig.SmartPriority.GarbageAction.AUTO_CLOSE;
+
+      default -> {
+        if (!normalized.isEmpty() && !normalized.equals("flag")) {
+
+          warn(
+              "smart-priority.garbage-action '"
+                  + raw
+                  + "' is invalid; using 'flag' (flag/demote/auto-close)");
+        }
+
+        yield PluginConfig.SmartPriority.GarbageAction.FLAG;
+      }
+    };
   }
 
   private List<ReportCategory> readCategories(ConfigSource reports) {

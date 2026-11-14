@@ -35,6 +35,7 @@ import com.reportdesk.service.ConfigEditService;
 import com.reportdesk.service.WatchlistService;
 import com.reportdesk.util.TimeText;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -214,7 +215,9 @@ public final class AdminGuiService {
       return;
     }
 
-    ReportStats stats = ReportStats.compute(plugin.repository().all());
+    List<Report> snapshot = plugin.repository().snapshot();
+
+    ReportStats stats = ReportStats.computeCounts(snapshot);
 
     Map<String, String> placeholders = new LinkedHashMap<>();
 
@@ -228,7 +231,7 @@ public final class AdminGuiService {
 
     placeholders.put("closed", String.valueOf(stats.closed()));
 
-    placeholders.put("overdue", String.valueOf(overdueCount()));
+    placeholders.put("overdue", String.valueOf(overdueCount(snapshot)));
 
     placeholders.put(
         "watching", String.valueOf(plugin.watchlist().watchedBy(player.getUniqueId()).size()));
@@ -354,7 +357,7 @@ public final class AdminGuiService {
     String query = playerQueries.getOrDefault(player.getUniqueId(), "");
 
     List<PlayerSummary> summaries =
-        PlayerSummary.build(plugin.repository().all(), onlineNames(), query);
+        PlayerSummary.build(plugin.repository().snapshot(), onlineNames(), query);
 
     int pageSize = Math.min(plugin.config().reports().guiPageSize(), GuiService.listCapacity());
 
@@ -593,7 +596,7 @@ public final class AdminGuiService {
 
     List<Report> matches = new ArrayList<>();
 
-    for (Report report : plugin.repository().all()) {
+    for (Report report : plugin.repository().snapshot()) {
 
       if (matchesScope(report, name, effectiveScope)) {
 
@@ -601,6 +604,9 @@ public final class AdminGuiService {
       }
     }
 
+    // The snapshot arrives unsorted, so apply the display order here
+    // (newest first, id as the tie-breaker) instead of paying for a full
+    // sort of the repository that gets thrown away again.
     matches.sort(
         Comparator.comparingLong(Report::createdAt)
             .reversed()
@@ -730,7 +736,11 @@ public final class AdminGuiService {
       return;
     }
 
-    ReportStats stats = ReportStats.compute(plugin.repository().all());
+    // This screen shows the full breakdown, so keep the complete compute;
+    // only the unsorted snapshot (no extra copy + sort) is used.
+    List<Report> snapshot = plugin.repository().snapshot();
+
+    ReportStats stats = ReportStats.compute(snapshot);
 
     Map<String, String> placeholders = new LinkedHashMap<>();
 
@@ -752,7 +762,7 @@ public final class AdminGuiService {
 
     placeholders.put("average", TimeText.duration(stats.averageHandlingMillis(), messages()));
 
-    placeholders.put("overdue", String.valueOf(overdueCount()));
+    placeholders.put("overdue", String.valueOf(overdueCount(snapshot)));
 
     placeholders.put("targets", String.valueOf(plugin.config().reports().statsTopTargets()));
 
@@ -1556,34 +1566,67 @@ public final class AdminGuiService {
 
     placeholders.put("online", String.valueOf(Bukkit.getOnlinePlayers().size()));
 
+    placeholders.put("days", String.valueOf(plugin.config().reports().retentionDays()));
+
+    placeholders.put("retention-days", String.valueOf(plugin.config().reports().retentionDays()));
+
+    placeholders.put("audit-retention-days", String.valueOf(plugin.config().audit().retentionDays()));
+
     placeholders.put(
-        "audit",
+        "auto-close-state",
         messages()
             .plain(
-                plugin.config().audit().enabled()
+                plugin.config().reports().autoCloseEnabled()
                     ? MessageKeys.GENERAL_ENABLED
                     : MessageKeys.GENERAL_DISABLED));
 
-    placeholders.put("days", String.valueOf(plugin.config().reports().retentionDays()));
+    placeholders.put("auto-close-days", String.valueOf(plugin.config().reports().autoCloseDays()));
+
+    placeholders.put(
+        "webhook-state",
+        messages()
+            .plain(
+                plugin.config().notifications().webhook().enabled()
+                    ? MessageKeys.GENERAL_ENABLED
+                    : MessageKeys.GENERAL_DISABLED));
+
+    List<Report> snapshot = plugin.repository().snapshot();
+
+    ReportStats stats = ReportStats.computeCounts(snapshot);
+
+    placeholders.put("open", String.valueOf(stats.open()));
+
+    placeholders.put("closed", String.valueOf(stats.closed()));
+
+    placeholders.put("overdue", String.valueOf(overdueCount(snapshot)));
 
     ReportDeskHolder holder = ReportDeskHolder.of(ReportDeskHolder.Type.ADMIN_MISC);
 
     Inventory inventory = gui.create(holder, MessageKeys.ADMIN_GUI_MISC_TITLE, placeholders);
 
+    // Row 0: status strip.
     inventory.setItem(
-        4,
+        0,
         gui.item(
             Material.BOOK,
             messages().component(MessageKeys.ADMIN_GUI_MISC_INFO_NAME, placeholders),
             messages().components(MessageKeys.ADMIN_GUI_MISC_INFO_LORE, placeholders)));
 
     inventory.setItem(
-        10,
+        2,
         gui.item(
-            Material.WRITABLE_BOOK,
-            messages().component(MessageKeys.ADMIN_GUI_MISC_AUDIT_NAME, placeholders),
-            messages().components(MessageKeys.ADMIN_GUI_MISC_AUDIT_LORE, placeholders)));
+            Material.PAPER,
+            messages().component(MessageKeys.ADMIN_GUI_MISC_DATA_NAME, placeholders),
+            messages().components(MessageKeys.ADMIN_GUI_MISC_DATA_LORE, placeholders)));
 
+    inventory.setItem(
+        4,
+        gui.item(
+            Material.CLOCK,
+            messages().component(MessageKeys.ADMIN_GUI_MISC_RETENTION_NAME, placeholders),
+            messages().components(MessageKeys.ADMIN_GUI_MISC_RETENTION_LORE, placeholders)));
+
+    // Row 1: data and maintenance tools.
     inventory.setItem(
         12,
         gui.item(
@@ -1594,14 +1637,14 @@ public final class AdminGuiService {
     if (player.hasPermission("reportdesk.admin.delete")) {
 
       inventory.setItem(
-          14,
+          10,
           gui.item(
               Material.ANVIL,
               messages().component(MessageKeys.ADMIN_GUI_MISC_MAINTENANCE_NAME, placeholders),
               messages().components(MessageKeys.ADMIN_GUI_MISC_MAINTENANCE_LORE, placeholders)));
 
       inventory.setItem(
-          16,
+          14,
           gui.item(
               Material.LAVA_BUCKET,
               messages().component(MessageKeys.ADMIN_GUI_MISC_PURGE_NAME, placeholders),
@@ -1611,15 +1654,30 @@ public final class AdminGuiService {
     if (player.hasPermission("reportdesk.reload")) {
 
       inventory.setItem(
-          28,
+          16,
           gui.item(
               Material.REDSTONE,
               messages().component(MessageKeys.ADMIN_GUI_MISC_RELOAD_NAME, placeholders),
               messages().components(MessageKeys.ADMIN_GUI_MISC_RELOAD_LORE, placeholders)));
     }
 
+    // Row 2: records and verification.
     inventory.setItem(
-        30,
+        20,
+        gui.item(
+            Material.WRITABLE_BOOK,
+            messages().component(MessageKeys.ADMIN_GUI_MISC_AUDIT_NAME, placeholders),
+            messages().components(MessageKeys.ADMIN_GUI_MISC_AUDIT_LORE, placeholders)));
+
+    inventory.setItem(
+        22,
+        gui.item(
+            Material.REPEATER,
+            messages().component(MessageKeys.ADMIN_GUI_MISC_WEBHOOK_NAME, placeholders),
+            messages().components(MessageKeys.ADMIN_GUI_MISC_WEBHOOK_LORE, placeholders)));
+
+    inventory.setItem(
+        24,
         gui.item(
             Material.KNOWLEDGE_BOOK,
             messages().component(MessageKeys.ADMIN_GUI_MISC_HELP_NAME, placeholders),
@@ -2992,18 +3050,6 @@ public final class AdminGuiService {
       case BACK_SLOT, HUB_SLOT -> openHub(player);
 
       case 10 -> {
-        click(player);
-
-        openAudit(player, 1);
-      }
-
-      case 12 -> {
-        click(player);
-
-        runExport(player);
-      }
-
-      case 14 -> {
         if (!require(player, "reportdesk.admin.delete")) {
 
           return;
@@ -3021,7 +3067,13 @@ public final class AdminGuiService {
         }
       }
 
-      case 16 -> {
+      case 12 -> {
+        click(player);
+
+        runExport(player);
+      }
+
+      case 14 -> {
         if (!require(player, "reportdesk.admin.delete")) {
 
           return;
@@ -3046,7 +3098,7 @@ public final class AdminGuiService {
         }
       }
 
-      case 28 -> {
+      case 16 -> {
         if (!require(player, "reportdesk.reload")) {
 
           return;
@@ -3070,7 +3122,58 @@ public final class AdminGuiService {
         }
       }
 
-      case 30 -> {
+      case 20 -> {
+        click(player);
+
+        openAudit(player, 1);
+      }
+
+      case 22 -> {
+        if (!require(player, "reportdesk.admin")) {
+
+          return;
+        }
+
+        if (!gui.adminActionAllowed(player)) {
+
+          return;
+        }
+
+        if (!webhookConfigured()) {
+
+          send(player, MessageKeys.ADMIN_GUI_MISC_WEBHOOK_DISABLED, Map.of());
+
+          return;
+        }
+
+        click(player);
+
+        plugin
+            .webhook()
+            .sendTest()
+            .whenComplete(
+                (sent, throwable) ->
+                    gui.runSync(
+                        () -> {
+                          if (!player.isOnline()) {
+
+                            return;
+                          }
+
+                          boolean ok = Boolean.TRUE.equals(sent) && throwable == null;
+
+                          send(
+                              player,
+                              ok
+                                  ? MessageKeys.ADMIN_GUI_MISC_WEBHOOK_SENT
+                                  : MessageKeys.ADMIN_GUI_MISC_WEBHOOK_FAILED,
+                              Map.of());
+
+                          plugin.audit("WEBHOOK_TEST", player, 0L, ok ? "ok" : "failed");
+                        }));
+      }
+
+      case 24 -> {
         player.closeInventory();
 
         player.performCommand("reports help");
@@ -3082,6 +3185,13 @@ public final class AdminGuiService {
 
       }
     }
+  }
+
+  private boolean webhookConfigured() {
+
+    return plugin.config().notifications().webhook().enabled()
+        && plugin.config().notifications().webhook().url() != null
+        && !plugin.config().notifications().webhook().url().isBlank();
   }
 
   private void clickAudit(Player player, ReportDeskHolder holder, int slot) {
@@ -3175,7 +3285,7 @@ public final class AdminGuiService {
 
   private PlayerSummary summary(String name) {
 
-    for (PlayerSummary summary : PlayerSummary.build(plugin.repository().all(), onlineNames())) {
+    for (PlayerSummary summary : PlayerSummary.build(plugin.repository().snapshot(), onlineNames())) {
 
       if (summary.name().equalsIgnoreCase(name)) {
 
@@ -3205,13 +3315,14 @@ public final class AdminGuiService {
     return online == null ? "-" : online.getUniqueId().toString();
   }
 
-  private int overdueCount() {
+  /** Counts overdue reports within a single snapshot instead of re-copying the whole map. */
+  private static int overdueCount(Collection<Report> reports) {
 
     long now = System.currentTimeMillis();
 
     int count = 0;
 
-    for (Report report : plugin.repository().all()) {
+    for (Report report : reports) {
 
       if (report.isOverdue(now)) {
 

@@ -34,17 +34,34 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 /**
- * Asynchronous Discord webhook integration. Disabled by default; no thread is blocked and failures
- * are only logged.
+ * Asynchronous Discord webhook integration. Disabled by default; no thread is blocked.
+ *
+ * <p>Failures are retried with exponential backoff (bounded by
+ * {@code notifications.webhook.retry-count}) and, once exhausted, alert online staff in game
+ * (bounded, in-memory only: at most {@code retry-count} pending retries per in-flight event).
  */
 public final class WebhookService {
 
   private final ReportDeskPlugin plugin;
 
+  private final Supplier<PluginConfig> config;
+
+  private final Supplier<Messages> messages;
+
+  private final Function<String, String> categoryDisplay;
+
   private final Consumer<String> warning;
+
+  private final Consumer<String> failureAlert;
 
   private final Gson gson = new Gson();
 
@@ -52,15 +69,38 @@ public final class WebhookService {
 
   public WebhookService(ReportDeskPlugin plugin) {
 
+    this(
+        plugin,
+        plugin::config,
+        plugin::messages,
+        plugin::categoryDisplay,
+        message -> plugin.getLogger().warning("[webhook] " + message),
+        defaultFailureAlert(plugin),
+        defaultClient());
+  }
+
+  WebhookService(
+      ReportDeskPlugin plugin,
+      Supplier<PluginConfig> config,
+      Supplier<Messages> messages,
+      Function<String, String> categoryDisplay,
+      Consumer<String> warning,
+      Consumer<String> failureAlert,
+      HttpClient client) {
+
     this.plugin = plugin;
 
-    this.warning = message -> plugin.getLogger().warning("[webhook] " + message);
+    this.config = config;
 
-    this.client =
-        HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build();
+    this.messages = messages;
+
+    this.categoryDisplay = categoryDisplay;
+
+    this.warning = warning;
+
+    this.failureAlert = failureAlert;
+
+    this.client = client;
   }
 
   public void created(Report report) {
@@ -78,9 +118,46 @@ public final class WebhookService {
     send("closed", report, staffName);
   }
 
+  /**
+   * Sends a small test payload to the configured channel so an administrator can verify the
+   * webhook works. Runs the same retry chain as event sends; completes with {@code true} when
+   * the channel finally accepts a message. No staff alert is raised for a failed test — the
+   * clicker sees the result in chat.
+   */
+  public CompletableFuture<Boolean> sendTest() {
+
+    PluginConfig.Webhook settings = config.get().notifications().webhook();
+
+    if (!settings.enabled() || settings.url() == null || settings.url().isBlank()) {
+
+      return CompletableFuture.completedFuture(false);
+    }
+
+    Messages text = messages.get();
+
+    WebhookPayload payload =
+        new WebhookPayload(
+            settings.username(),
+            settings.avatarUrl(),
+            text.plain(MessageKeys.WEBHOOK_TEST_CONTENT),
+            text.plain(MessageKeys.WEBHOOK_TEST_TITLE),
+            65280,
+            List.of(
+                new WebhookPayload.Field(
+                    text.plain(MessageKeys.WEBHOOK_FIELD_SERVER),
+                    config.get().serverName(),
+                    true)));
+
+    CompletableFuture<Boolean> outcome = new CompletableFuture<>();
+
+    post(gson.toJson(payload.toMap()), 0, "test", outcome::complete);
+
+    return outcome;
+  }
+
   private void send(String event, Report report, String staffName) {
 
-    PluginConfig.Webhook settings = plugin.config().notifications().webhook();
+    PluginConfig.Webhook settings = config.get().notifications().webhook();
 
     if (!settings.enabled() || report == null) {
 
@@ -108,7 +185,7 @@ public final class WebhookService {
       return;
     }
 
-    Messages messages = plugin.messages();
+    Messages text = messages.get();
 
     String titleKey =
         switch (event) {
@@ -133,63 +210,70 @@ public final class WebhookService {
             "id", String.valueOf(report.id()),
             "target", report.targetName(),
             "reporter", report.reporterName(),
-            "category", plugin.categoryDisplay(report.category()),
-            "status", messages.plain(statusKey(report.status())),
+            "category", categoryDisplay.apply(report.category()),
+            "status", text.plain(statusKey(report.status())),
             "staff", staffName == null ? "" : staffName);
 
     List<WebhookPayload.Field> fields = new ArrayList<>();
 
     fields.add(
         new WebhookPayload.Field(
-            messages.plain(MessageKeys.WEBHOOK_FIELD_ID), String.valueOf(report.id()), true));
+            text.plain(MessageKeys.WEBHOOK_FIELD_ID), String.valueOf(report.id()), true));
 
     fields.add(
         new WebhookPayload.Field(
-            messages.plain(MessageKeys.WEBHOOK_FIELD_TARGET), report.targetName(), true));
+            text.plain(MessageKeys.WEBHOOK_FIELD_TARGET), report.targetName(), true));
 
     fields.add(
         new WebhookPayload.Field(
-            messages.plain(MessageKeys.WEBHOOK_FIELD_REPORTER), report.reporterName(), true));
+            text.plain(MessageKeys.WEBHOOK_FIELD_REPORTER), report.reporterName(), true));
 
     fields.add(
         new WebhookPayload.Field(
-            messages.plain(MessageKeys.WEBHOOK_FIELD_CATEGORY),
-            plugin.categoryDisplay(report.category()),
+            text.plain(MessageKeys.WEBHOOK_FIELD_CATEGORY),
+            categoryDisplay.apply(report.category()),
             true));
 
     fields.add(
         new WebhookPayload.Field(
-            messages.plain(MessageKeys.WEBHOOK_FIELD_STATUS),
-            messages.plain(statusKey(report.status())),
+            text.plain(MessageKeys.WEBHOOK_FIELD_STATUS),
+            text.plain(statusKey(report.status())),
             true));
 
     fields.add(
         new WebhookPayload.Field(
-            messages.plain(MessageKeys.WEBHOOK_FIELD_STAFF),
-            staffName == null ? "" : staffName,
-            true));
+            text.plain(MessageKeys.WEBHOOK_FIELD_STAFF), staffName == null ? "" : staffName, true));
 
     fields.add(
         new WebhookPayload.Field(
-            messages.plain(MessageKeys.WEBHOOK_FIELD_SERVER), report.server(), true));
+            text.plain(MessageKeys.WEBHOOK_FIELD_SERVER), report.server(), true));
 
     if (!report.detail().isBlank()) {
 
       fields.add(
           new WebhookPayload.Field(
-              messages.plain(MessageKeys.WEBHOOK_FIELD_DETAIL), report.detail(), false));
+              text.plain(MessageKeys.WEBHOOK_FIELD_DETAIL), report.detail(), false));
     }
 
     WebhookPayload payload =
         new WebhookPayload(
             settings.username(),
             settings.avatarUrl(),
-            messages.plain(contentKey, placeholders),
-            messages.plain(titleKey, placeholders),
+            text.plain(contentKey, placeholders),
+            text.plain(titleKey, placeholders),
             3447003,
             fields);
 
-    String body = gson.toJson(payload.toMap());
+    post(gson.toJson(payload.toMap()), 0, event, null);
+  }
+
+  /**
+   * One attempt of the bounded retry chain. {@code finalOutcome} is completed exactly once:
+   * {@code true} when a channel accepts the payload, {@code false} when the retries exhaust.
+   */
+  private void post(String body, int attempt, String label, Consumer<Boolean> finalOutcome) {
+
+    PluginConfig.Webhook settings = config.get().notifications().webhook();
 
     try {
 
@@ -203,23 +287,110 @@ public final class WebhookService {
 
       client
           .sendAsync(request, HttpResponse.BodyHandlers.discarding())
-          .orTimeout(settings.timeoutSeconds() + 2L, java.util.concurrent.TimeUnit.SECONDS)
+          .orTimeout(settings.timeoutSeconds() + 2L, TimeUnit.SECONDS)
           .whenComplete(
               (response, throwable) -> {
-                if (throwable != null) {
+                if (throwable == null && response != null && response.statusCode() < 400) {
 
-                  warning.accept("send failed: " + throwable.getMessage());
+                  if (finalOutcome != null) {
 
-                } else if (response.statusCode() >= 400) {
+                    finalOutcome.accept(true);
+                  }
 
-                  warning.accept("Discord returned HTTP " + response.statusCode());
+                  return;
                 }
+
+                warning.accept(
+                    label
+                        + " attempt "
+                        + (attempt + 1)
+                        + " failed: "
+                        + (throwable != null
+                            ? String.valueOf(throwable.getMessage())
+                            : "HTTP " + response.statusCode()));
+
+                scheduleNext(body, attempt + 1, label, settings, finalOutcome);
               });
 
     } catch (RuntimeException exception) {
 
-      warning.accept("invalid request: " + exception.getMessage());
+      warning.accept(label + " attempt " + (attempt + 1) + " invalid request: " + exception);
+
+      scheduleNext(body, attempt + 1, label, settings, finalOutcome);
     }
+  }
+
+  /** Bounded by {@code retry-count}; each pending retry is a single scheduled task. */
+  private void scheduleNext(
+      String body, int nextAttempt, String label, PluginConfig.Webhook settings,
+      Consumer<Boolean> finalOutcome) {
+
+    if (nextAttempt > settings.retryCount()) {
+
+      warning.accept(label + " giving up after " + (settings.retryCount() + 1) + " attempts");
+
+      if ("test".equals(label)) {
+
+        if (finalOutcome != null) {
+
+          finalOutcome.accept(false);
+        }
+
+      } else {
+
+        failureAlert.accept(label);
+      }
+
+      return;
+    }
+
+    CompletableFuture.delayedExecutor(delayMillis(settings, nextAttempt), TimeUnit.MILLISECONDS)
+        .execute(() -> post(body, nextAttempt, label, finalOutcome));
+  }
+
+  /** Exponential backoff: base × 2^(attempt-1), capped so the shift cannot overflow. */
+  static long delayMillis(PluginConfig.Webhook settings, int attempt) {
+
+    int base = Math.max(1, Math.min(settings.retryBaseSeconds(), 300));
+
+    return base * (1L << Math.min(attempt - 1, 10)) * 1000L;
+  }
+
+  private static Consumer<String> defaultFailureAlert(ReportDeskPlugin plugin) {
+
+    return label ->
+        Bukkit.getScheduler()
+            .runTask(
+                plugin,
+                () -> {
+                  if (!plugin.config().notifications().webhook().failureAlertEnabled()) {
+
+                    return;
+                  }
+
+                  String permission = plugin.config().notifications().staffPermission();
+
+                  net.kyori.adventure.text.Component text =
+                      plugin
+                          .messages()
+                          .prefixed(MessageKeys.WEBHOOK_FAILURE_ALERT, Map.of("event", label));
+
+                  for (Player online : Bukkit.getOnlinePlayers()) {
+
+                    if (online.hasPermission(permission)) {
+
+                      online.sendMessage(text);
+                    }
+                  }
+                });
+  }
+
+  private static HttpClient defaultClient() {
+
+    return HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(10))
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .build();
   }
 
   private String statusKey(com.reportdesk.core.ReportStatus status) {

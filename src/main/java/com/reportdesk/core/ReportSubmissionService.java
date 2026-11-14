@@ -81,11 +81,15 @@ public final class ReportSubmissionService {
       String detail,
       boolean bypassLimits,
       boolean systemGenerated,
-      List<ReportChatSelection> chatSelections) {
+      List<ReportChatSelection> chatSelections,
+        String reportedFrom,
+        String ipHash) {
 
     public SubmitRequest {
 
       chatSelections = chatSelections == null ? List.of() : List.copyOf(chatSelections);
+
+        reportedFrom = reportedFrom == null ? "" : reportedFrom;
     }
 
     /**
@@ -116,7 +120,9 @@ public final class ReportSubmissionService {
           detail,
           bypassLimits,
           systemGenerated,
-          List.of());
+          List.of(),
+          "",
+          null);
     }
   }
 
@@ -361,7 +367,10 @@ public final class ReportSubmissionService {
             0L,
             List.of(),
             0L,
-            request.chatSelections());
+            request.chatSelections(),
+            0,
+            request.reportedFrom(),
+            request.ipHash());
 
     repository.add(report);
 

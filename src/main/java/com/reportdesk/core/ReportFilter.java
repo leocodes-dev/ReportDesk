@@ -21,8 +21,11 @@ package com.reportdesk.core;
 import java.util.Locale;
 
 /**
- * Filter/sort model used by the admin GUI and the text list. It is deliberately Bukkit-free so
- * pagination and query matching can be unit tested.
+ * Filter/sort model used by the admin GUI, the player history GUI and the text lists. It is
+ * deliberately Bukkit-free so pagination and query matching can be unit tested.
+ *
+ * <p>{@code reporter} restricts a filter to one reporter's reports (the player history feature);
+ * it is {@code null} for the global admin views.
  */
 public record ReportFilter(
     java.util.Set<ReportStatus> statuses,
@@ -31,7 +34,8 @@ public record ReportFilter(
     java.util.UUID claimedBy,
     SortOrder sort,
     java.util.Set<ReportPriority> priorities,
-    boolean overdueOnly) {
+    boolean overdueOnly,
+    java.util.UUID reporter) {
 
   public enum SortOrder {
     NEWEST,
@@ -62,7 +66,20 @@ public record ReportFilter(
       java.util.UUID claimedBy,
       SortOrder sort) {
 
-    this(statuses, category, query, claimedBy, sort, java.util.Set.of(), false);
+    this(statuses, category, query, claimedBy, sort, java.util.Set.of(), false, null);
+  }
+
+  /** Backwards-compatible constructor without the reporter restriction. */
+  public ReportFilter(
+      java.util.Set<ReportStatus> statuses,
+      String category,
+      String query,
+      java.util.UUID claimedBy,
+      SortOrder sort,
+      java.util.Set<ReportPriority> priorities,
+      boolean overdueOnly) {
+
+    this(statuses, category, query, claimedBy, sort, priorities, overdueOnly, null);
   }
 
   public static ReportFilter all() {
@@ -80,11 +97,18 @@ public record ReportFilter(
     if (status == null) {
 
       return new ReportFilter(
-          java.util.Set.of(), category, query, claimedBy, sort, priorities, overdueOnly);
+          java.util.Set.of(), category, query, claimedBy, sort, priorities, overdueOnly, reporter);
     }
 
     return new ReportFilter(
-        java.util.Set.of(status), category, query, claimedBy, sort, priorities, overdueOnly);
+        java.util.Set.of(status),
+        category,
+        query,
+        claimedBy,
+        sort,
+        priorities,
+        overdueOnly,
+        reporter);
   }
 
   public ReportFilter cycleStatus() {
@@ -110,22 +134,26 @@ public record ReportFilter(
 
   public ReportFilter withCategory(String newCategory) {
 
-    return new ReportFilter(statuses, newCategory, query, claimedBy, sort, priorities, overdueOnly);
+    return new ReportFilter(
+        statuses, newCategory, query, claimedBy, sort, priorities, overdueOnly, reporter);
   }
 
   public ReportFilter withQuery(String newQuery) {
 
-    return new ReportFilter(statuses, category, newQuery, claimedBy, sort, priorities, overdueOnly);
+    return new ReportFilter(
+        statuses, category, newQuery, claimedBy, sort, priorities, overdueOnly, reporter);
   }
 
   public ReportFilter withClaimedBy(java.util.UUID staffId) {
 
-    return new ReportFilter(statuses, category, query, staffId, sort, priorities, overdueOnly);
+    return new ReportFilter(
+        statuses, category, query, staffId, sort, priorities, overdueOnly, reporter);
   }
 
   public ReportFilter withSort(SortOrder newSort) {
 
-    return new ReportFilter(statuses, category, query, claimedBy, newSort, priorities, overdueOnly);
+    return new ReportFilter(
+        statuses, category, query, claimedBy, newSort, priorities, overdueOnly, reporter);
   }
 
   public ReportFilter withPriority(ReportPriority priority) {
@@ -137,12 +165,20 @@ public record ReportFilter(
         claimedBy,
         sort,
         priority == null ? java.util.Set.of() : java.util.Set.of(priority),
-        overdueOnly);
+        overdueOnly,
+        reporter);
   }
 
   public ReportFilter withOverdueOnly(boolean overdue) {
 
-    return new ReportFilter(statuses, category, query, claimedBy, sort, priorities, overdue);
+    return new ReportFilter(statuses, category, query, claimedBy, sort, priorities, overdue, reporter);
+  }
+
+  /** Restricts the filter to the reports filed by one reporter (the player history view). */
+  public ReportFilter withReporter(java.util.UUID reporterId) {
+
+    return new ReportFilter(
+        statuses, category, query, claimedBy, sort, priorities, overdueOnly, reporterId);
   }
 
   public ReportFilter cyclePriority() {
@@ -167,6 +203,23 @@ public record ReportFilter(
   }
 
   public boolean matches(Report report) {
+
+    return matches(report, null);
+  }
+
+  /**
+   * Same as {@link #matches(Report)}, but the caller may supply the memoised lower-cased query
+   * fields for the report (as {@link com.reportdesk.core.ReportRepository} does on each filter
+   * pass) so repeated renders do not re-pay the {@code toLowerCase} work.
+   *
+   * @param cachedFields memoised lower-cased search fields, or {@code null} to build them.
+   */
+  public boolean matches(Report report, String[] cachedFields) {
+
+    if (reporter != null && !reporter.equals(report.reporterId())) {
+
+      return false;
+    }
 
     if (!statuses.isEmpty() && !statuses.contains(report.status())) {
 
@@ -198,21 +251,10 @@ public record ReportFilter(
       return true;
     }
 
-    return contains(report.targetName())
-        || contains(report.reporterName())
-        || contains(report.category())
-        || contains(report.detail())
-        || contains(report.claimedByName())
-        || contains(report.closedByName())
-        || contains(report.verdict())
-        || contains(report.priority().id())
-        || contains(String.valueOf(report.id()))
-        || contains("#" + report.id());
-  }
-
-  private boolean contains(String value) {
-
-    return value != null && value.toLowerCase(Locale.ROOT).contains(query);
+    // The per-field lower-casing is memoised by the caller's repository
+    // state, so paging through a long list no longer re-pays it on every
+    // render.
+    return report.matchesQuery(query, cachedFields);
   }
 
   public java.util.Comparator<Report> comparator() {

@@ -33,6 +33,7 @@ import com.reportdesk.util.TimeText;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 
@@ -181,12 +182,22 @@ public final class ReportViewService {
             ? messages.plain(MessageKeys.GENERAL_NONE)
             : report.claimedByName());
 
+    if (!report.claimedByName().isBlank()) {
+
+      ownInfoLine(sender, MessageKeys.GENERAL_CLAIMED_AT, TimeText.absolute(report.claimedAt(), messages));
+    }
+
     ownInfoLine(
         sender,
         MessageKeys.GENERAL_CLOSED_BY,
         report.closedByName().isBlank()
             ? messages.plain(MessageKeys.GENERAL_NONE)
             : report.closedByName());
+
+    if (!report.closedByName().isBlank()) {
+
+      ownInfoLine(sender, MessageKeys.GENERAL_CLOSED_AT, TimeText.absolute(report.closedAt(), messages));
+    }
 
     ownInfoLine(
         sender,
@@ -201,6 +212,23 @@ public final class ReportViewService {
         report.closeNote().isBlank()
             ? messages.plain(MessageKeys.GENERAL_NONE)
             : report.closeNote());
+
+    ownInfoLine(
+        sender,
+        MessageKeys.GENERAL_EVIDENCE,
+        report.evidence().present()
+            ? report.evidence().shortSummary()
+            : messages.plain(MessageKeys.GENERAL_NONE));
+
+    ownInfoLine(
+        sender,
+        MessageKeys.GENERAL_TARGET_HISTORY,
+        messages.plain(
+            MessageKeys.GENERAL_TARGET_HISTORY_VALUE,
+            Map.of(
+                "open",
+                String.valueOf(plugin.repository().countOpenForTarget(report.targetName())),
+                "total", String.valueOf(plugin.repository().countForTarget(report.targetName())))));
 
     ownInfoLine(
         sender,
@@ -240,7 +268,8 @@ public final class ReportViewService {
 
     Messages messages = plugin.messages();
 
-    ReportStats stats = ReportStats.compute(plugin.repository().all());
+    // Unsorted snapshot: the statistics pass does not need the newest-first order.
+    ReportStats stats = ReportStats.compute(plugin.repository().snapshot());
 
     sender.sendMessage(messages.component(MessageKeys.ADMIN_STATS_HEADER, Map.of()));
 
@@ -428,6 +457,81 @@ public final class ReportViewService {
                   "page", String.valueOf(page.page()),
                   "pages", String.valueOf(page.totalPages()))));
     }
+  }
+
+  /**
+   * Player report history with an optional status filter. The list is scoped to the sender's own
+   * reports only; nothing on this path can reach another player's data.
+   */
+  public void sendHistory(CommandSender sender, UUID reporterId, ReportFilter filter, int page) {
+
+    if (sender == null || reporterId == null) {
+
+      return;
+    }
+
+    Messages messages = plugin.messages();
+
+    ReportFilter effective = (filter == null ? ReportFilter.all() : filter).withReporter(reporterId);
+
+    int pageSize = plugin.config().reports().textPageSize();
+
+    Page<Report> result = plugin.repository().page(effective, page, pageSize);
+
+    List<Report> own = plugin.repository().byReporter(reporterId);
+
+    int open = 0;
+
+    int unread = 0;
+
+    for (Report report : own) {
+
+      if (report.isOpen()) {
+
+        open++;
+      }
+
+      unread += report.unreadReplies();
+    }
+
+    sender.sendMessage(
+        messages.component(
+            MessageKeys.REPORT_HISTORY_HEADER,
+            Map.of(
+                "filter", filterLabel(effective),
+                "count", String.valueOf(result.totalItems()))));
+
+    sender.sendMessage(
+        messages.component(
+            MessageKeys.REPORT_HISTORY_STATS,
+            Map.of(
+                "open", String.valueOf(open),
+                "closed", String.valueOf(own.size() - open),
+                "unread", String.valueOf(unread))));
+
+    if (result.items().isEmpty()) {
+
+      sender.sendMessage(messages.component(MessageKeys.REPORT_OWN_EMPTY, Map.of()));
+
+    } else {
+
+      for (Report report : result.items()) {
+
+        sender.sendMessage(messages.component(MessageKeys.REPORT_OWN_LINE, linePlaceholders(report)));
+      }
+    }
+
+    if (result.totalPages() > 1) {
+
+      sender.sendMessage(
+          messages.component(
+              MessageKeys.GENERAL_PAGE,
+              Map.of(
+                  "page", String.valueOf(result.page()),
+                  "pages", String.valueOf(result.totalPages()))));
+    }
+
+    sender.sendMessage(messages.component(MessageKeys.REPORT_HISTORY_HINT, Map.of()));
   }
 
   public void sendAudit(CommandSender sender, int page, List<String> lines) {

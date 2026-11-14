@@ -22,8 +22,10 @@ import com.reportdesk.ReportDeskPlugin;
 import com.reportdesk.core.Page;
 import com.reportdesk.core.Report;
 import com.reportdesk.core.ReportCategory;
+import com.reportdesk.core.ReportFilter;
 import com.reportdesk.core.ReportReply;
 import com.reportdesk.core.ReportSubmissionService;
+import com.reportdesk.core.ReportStatus;
 import com.reportdesk.i18n.MessageKeys;
 import com.reportdesk.service.ReportService;
 import java.util.ArrayList;
@@ -99,6 +101,12 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
       case "status", "list" -> {
         showOwnReports(player, args);
+
+        return true;
+      }
+
+      case "history", "历史" -> {
+        showHistory(player, args);
 
         return true;
       }
@@ -249,9 +257,16 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
       return;
     }
 
-    plugin.view().sendOwnInfo(player, report.get());
+    if (plugin.config().gui().enabled()) {
 
-    plugin.reportService().markReporterRead(report.get());
+      plugin.gui().openHistoryDetail(player, report.get().id());
+
+    } else {
+
+      plugin.view().sendOwnInfo(player, report.get());
+
+      plugin.reportService().markReporterRead(report.get());
+    }
   }
 
   private void reply(Player player, String[] args) {
@@ -395,6 +410,131 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
     plugin.view().sendOwnReports(player, result);
   }
 
+  /**
+   * Player report history. {@code /report history [status] [page]} shows the filtered, paged
+   * history (GUI when enabled, text otherwise); {@code /report history view <id>} opens one
+   * report's detail. All of it is scoped to the caller's own reports.
+   */
+  private void showHistory(Player player, String[] args) {
+
+    if (!plugin.repository().isReady()) {
+
+      player.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+
+      return;
+    }
+
+    // /report history view|info <id>
+    if (args.length >= 3 && ("view".equalsIgnoreCase(args[1]) || "info".equalsIgnoreCase(args[1]))) {
+
+      Report report = ownReport(player, args[2]);
+
+      if (report == null) {
+
+        return;
+      }
+
+      if (plugin.config().gui().enabled()) {
+
+        plugin.gui().openHistoryDetail(player, report.id());
+
+      } else {
+
+        plugin.view().sendOwnInfo(player, report);
+
+        plugin.reportService().markReporterRead(report);
+      }
+
+      return;
+    }
+
+    // /report history [status] [page]
+    ReportFilter filter = ReportFilter.all().withReporter(player.getUniqueId());
+
+    int page = 1;
+
+    if (args.length >= 2) {
+
+      String token = args[1].toLowerCase(Locale.ROOT);
+
+      if ("all".equals(token)) {
+
+        // No status restriction.
+
+      } else if (isHistoryStatus(token)) {
+
+        filter = filter.withStatus(ReportStatus.parse(token, null));
+
+        if (args.length >= 3) {
+
+          page = parsePositivePage(args[2]);
+        }
+
+      } else if (token.matches("\\d+")) {
+
+        page = parsePositivePage(args[1]);
+
+      } else if ("view".equals(token) || "info".equals(token)) {
+
+        player.sendMessage(
+            plugin
+                .messages()
+                .prefixed(
+                    MessageKeys.GENERAL_USAGE,
+                    Map.of("usage", "/report history view <id>")));
+
+        return;
+
+      } else {
+
+        player.sendMessage(
+            plugin
+                .messages()
+                .prefixed(
+                    MessageKeys.REPORT_HISTORY_UNKNOWN_FILTER, Map.of("filter", args[1])));
+
+        player.sendMessage(
+            plugin
+                .messages()
+                .prefixed(
+                    MessageKeys.GENERAL_USAGE,
+                    Map.of("usage", "/report history [all|open|claimed|resolved|rejected|duplicate|auto-closed] [page]")));
+
+        return;
+      }
+    }
+
+    if (plugin.config().gui().enabled()) {
+
+      plugin.gui().openHistory(player, filter, page);
+
+    } else {
+
+      plugin.view().sendHistory(player, player.getUniqueId(), filter, page);
+    }
+  }
+
+  private static boolean isHistoryStatus(String token) {
+
+    return switch (token) {
+      case "open", "claimed", "resolved", "rejected", "duplicate", "auto-closed" -> true;
+
+      default -> false;
+    };
+  }
+
+  private static int parsePositivePage(String value) {
+
+    try {
+
+      return Math.max(1, Integer.parseInt(value));
+
+    } catch (RuntimeException exception) {
+
+      return 1;
+    }
+  }
+
   private void sendHelp(Player player) {
 
     player.sendMessage(plugin.messages().prefixed(MessageKeys.REPORT_HELP_HEADER, Map.of()));
@@ -408,6 +548,7 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
             MessageKeys.REPORT_HELP_LINE_VIEW,
             MessageKeys.REPORT_HELP_LINE_REPLY,
             MessageKeys.REPORT_HELP_LINE_REPLIES,
+            MessageKeys.REPORT_HELP_LINE_HISTORY,
             MessageKeys.REPORT_HELP_LINE_CANCEL)) {
 
       player.sendMessage(plugin.messages().component(key, Map.of()));
@@ -534,7 +675,8 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
     if (args.length == 1) {
 
       List<String> suggestions =
-          new ArrayList<>(List.of("help", "status", "cancel", "view", "reply", "replies"));
+          new ArrayList<>(
+              List.of("help", "status", "history", "cancel", "view", "reply", "replies"));
 
       for (Player online : Bukkit.getOnlinePlayers()) {
 
@@ -565,7 +707,29 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
         return filter(ownReportIds(player), args[1]);
       }
 
+      if (first.equals("history")) {
+
+        return filter(
+            List.of(
+                "all",
+                "open",
+                "claimed",
+                "resolved",
+                "rejected",
+                "duplicate",
+                "auto-closed",
+                "view"),
+            args[1]);
+      }
+
       return filter(plugin.config().categoryRegistry().commandSuggestions(), args[1]);
+    }
+
+    if (args.length == 3
+        && "history".equals(args[0].toLowerCase(Locale.ROOT))
+        && "view".equals(args[1].toLowerCase(Locale.ROOT))) {
+
+      return filter(ownReportIds(player), args[2]);
     }
 
     return List.of();

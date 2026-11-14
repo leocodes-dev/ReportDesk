@@ -181,7 +181,19 @@ config:
 
     assertFalse(keys.isEmpty());
 
-    for (String language : List.of("zh_CN", "en_US")) {
+    for (String language : List.of(
+        "zh_CN",
+        "en_US",
+        "pt_BR",
+        "es_ES",
+        "ru_RU",
+        "de_DE",
+        "fr_FR",
+        "tr_TR",
+        "pl_PL",
+        "ja_JP",
+        "ko_KR",
+        "zh_TW")) {
 
       Messages messages = loadBundled(language);
 

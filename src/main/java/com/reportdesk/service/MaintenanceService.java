@@ -73,7 +73,9 @@ public final class MaintenanceService {
 
           int purgedReports = 0;
 
-          List<Report> snapshot = plugin.repository().all();
+          // Unsorted snapshot: the auto-close pass only visits reports,
+          // the display order is irrelevant here.
+          List<Report> snapshot = plugin.repository().snapshot();
 
           if (config.reports().autoCloseEnabled() && config.reports().autoCloseDays() > 0) {
 
@@ -104,7 +106,7 @@ public final class MaintenanceService {
 
             long cutoff = now - config.reports().retentionDays() * 86_400_000L;
 
-            for (Report report : new ArrayList<>(plugin.repository().all())) {
+            for (Report report : new ArrayList<>(plugin.repository().snapshot())) {
 
               if (report.isTerminal() && report.closedAt() > 0 && report.closedAt() <= cutoff) {
 
@@ -187,7 +189,7 @@ public final class MaintenanceService {
 
           List<Report> overdue = new ArrayList<>();
 
-          for (Report report : plugin.repository().all()) {
+          for (Report report : plugin.repository().snapshot()) {
 
             if (report.isOverdue(now) && report.slaAlertedAt() <= 0L) {
 
@@ -230,7 +232,7 @@ public final class MaintenanceService {
 
           int purgedReports = 0;
 
-          for (Report report : new ArrayList<>(plugin.repository().all())) {
+          for (Report report : plugin.repository().snapshot()) {
 
             if (report.isTerminal() && report.closedAt() > 0 && report.closedAt() <= cutoff) {
 

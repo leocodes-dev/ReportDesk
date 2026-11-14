@@ -270,6 +270,26 @@ public final class ReportDeskPlugin extends JavaPlugin {
     saveResourceIfMissing("lang/zh_CN.yml");
 
     saveResourceIfMissing("lang/en_US.yml");
+
+    saveResourceIfMissing("lang/pt_BR.yml");
+
+    saveResourceIfMissing("lang/es_ES.yml");
+
+    saveResourceIfMissing("lang/ru_RU.yml");
+
+    saveResourceIfMissing("lang/de_DE.yml");
+
+    saveResourceIfMissing("lang/fr_FR.yml");
+
+    saveResourceIfMissing("lang/tr_TR.yml");
+
+    saveResourceIfMissing("lang/pl_PL.yml");
+
+    saveResourceIfMissing("lang/ja_JP.yml");
+
+    saveResourceIfMissing("lang/ko_KR.yml");
+
+    saveResourceIfMissing("lang/zh_TW.yml");
   }
 
   private void saveResourceIfMissing(String resourcePath) {

@@ -51,7 +51,9 @@ general:
   verdict: '处理结果'
   created: '创建时间'
   claimed-by: '受理人'
+  claimed-at: '受理时间'
   closed-by: '处理人'
+  closed-at: '处理时间'
   detail: '详情'
   note: '备注'
   notes: '备注记录'
@@ -70,6 +72,7 @@ general:
   unread: '未读'
   last-reply: '最新回复'
   overdue-label: '仅超时'
+  smart-score: '智能评分'
   staff: '管理员'
 
 status:
@@ -119,12 +122,17 @@ report:
   help-line-view: '<gray>/report view <编号> <yellow>查看自己的举报详情'
   help-line-reply: '<gray>/report reply <编号> <内容...> <yellow>回复举报'
   help-line-replies: '<gray>/report replies <编号> [页码] <yellow>查看举报对话'
+  help-line-history: '<gray>/report history [状态] [页码] <yellow>查看我的举报历史'
   help-line-cancel: '<gray>/report cancel <yellow>取消聊天输入'
   own-header: '<gold>===== 我的举报（%count% 条）====='
   own-line: '<gray>#<white>%id%</white> %priority% <gray>%status% <dark_gray>| <gray>%target% <dark_gray>| <gray>%category% <dark_gray>| <gray>%created%'
   own-empty: '<gray>你还没有提交过举报。'
   own-info-header: '<gold>===== 我的举报 #%id% ====='
   own-info-line: '<gray>%key%：<white>%value%</white>'
+  history-header: '<gold>===== 我的举报历史（%filter% · 共 %count% 条）====='
+  history-stats: '<gray>未处理 <white>%open%</white> <dark_gray>| <gray>已处理 <white>%closed%</white> <dark_gray>| <gray>未读回复 <white>%unread%</white>'
+  history-hint: '<gray>输入 <white>/report view <编号></white> 查看单条详情，<white>/report replies <编号></white> 查看对话。'
+  history-unknown-filter: '<red>未知筛选状态 %filter%。可用：all / open / claimed / resolved / rejected / duplicate / auto-closed。'
   menu-title-players: '<dark_aqua>举报中心 <dark_gray>» <gray>选择玩家'
   menu-title-categories: '<dark_aqua>举报中心 <dark_gray>» <gray>选择分类'
   menu-title-confirm: '<dark_aqua>举报中心 <dark_gray>» <gray>确认举报'
@@ -299,6 +307,55 @@ gui:
   detail-next-lore:
     - '<gray>当前共有 %count% 条未处理举报'
     - '<yellow>点击跳转最早的一条'
+  history-title: '<dark_aqua>我的举报历史 <dark_gray>» <gray>第 %page% / %pages% 页 <dark_gray>（%total% 条）'
+  history-entry-name: '<white>我的举报历史'
+  history-entry-lore:
+    - '<gray>查看我提交过的全部举报'
+    - '<dark_gray>包括状态、处理结果与对话记录'
+  history-header-name: '<white>我的举报历史'
+  history-header-lore:
+    - '<gray>符合条件 <white>%total%</white> 条'
+    - '<gray>未处理 <white>%open%</white> <dark_gray>| <gray>已处理 <white>%closed%</white>'
+    - '<gray>未读回复 <white>%unread%</white>'
+  history-item-name: '<white>#%id% <dark_gray>» <white>%target%'
+  history-item-lore:
+    - '<gray>%status% <dark_gray>| <gray>%category%'
+    - '<gray>提交于 %time%'
+    - '<gray>结果：%verdict%'
+    - '<gray>对话 %replies% 条（%unread% 条未读）'
+    - '<yellow>点击查看完整详情'
+  history-filter-title: '<dark_aqua>我的举报历史 <dark_gray>» <gray>筛选'
+  history-detail-title: '<dark_aqua>我的举报 <white>#%id% <dark_gray>| <white>%target%'
+  history-info-name: '<white>举报 #%id%'
+  history-info-lore:
+    - '<gray>状态：%status%'
+    - '<gray>分类：%category%'
+    - '<gray>目标：%target%'
+    - '<gray>提交于：%created%'
+    - '<gray>优先级：%priority% <dark_gray>| <gray>时限：%sla%'
+  history-result-name: '<white>处理结果'
+  history-result-verdict: '<gray>结果：%verdict%'
+  history-result-claimed: '<gray>受理人：%claimedBy% <dark_gray>（%claimedAt%）'
+  history-result-pending: '<gray>等待处理 <dark_gray>（优先级 %priority%，时限 %sla%）'
+  history-result-closed-by: '<gray>处理人：%closedBy% <dark_gray>（%closedAt%）'
+  history-result-note: '<gray>处理备注：%note%'
+  history-result-target: '<gray>同一目标：%open% 条未处理 <dark_gray>/ 历史共 %total% 条'
+  history-evidence-name: '<white>证据快照'
+  history-evidence-lore:
+    - '<gray>状态：%state%'
+    - '<gray>详情：%summary%'
+  history-replies-name: '<yellow>举报对话（%count% 条）'
+  history-replies-lore:
+    - '<gray>未读 %unread% 条'
+    - '<gray>最新：%lastReply%'
+    - '<yellow>点击查看完整对话'
+  history-reply-name: '<green>回复此举报'
+  history-reply-lore:
+    - '<gray>向处理人员补充说明'
+    - '<yellow>点击后在聊天中输入内容'
+  history-reply-disabled: '<gray>管理员已关闭玩家回复，或此举报不允许回复。'
+  history-reply-prompt: '<yellow>请在聊天中输入回复内容，输入 <white>cancel</white> 取消。'
+  history-replies-title: '<dark_aqua>举报 #%id% <dark_gray>» <gray>我的对话'
   delete-title: '<dark_red>确认删除 #%id%？'
   delete-yes-name: '<red>确认删除'
   delete-yes-lore:
@@ -383,7 +440,7 @@ gui:
       - '<yellow>点击浏览'
     hub-misc-name: '<gray>其它工具'
     hub-misc-lore:
-      - '<gray>导出、维护、清理、重载与帮助'
+      - '<gray>状态、数据工具、审计、Webhook 测试与帮助'
       - '<yellow>点击打开'
     queue-title: '<dark_aqua>举报队列 <dark_gray>» <gray>第 %page% / %pages% 页'
     queue-header-name: '<gold>举报队列 <dark_gray>| <gray>共 %total% 条'
@@ -394,7 +451,13 @@ gui:
       - '<gray>当前搜索：<white>%query%'
       - ''
       - '<yellow>点击举报条目查看详情'
-      - '<gray>顶部：0 筛选 / 2 统计 / 6 搜索 / 8 下一个待处理'
+      - '<gray>顶部：0 筛选 / 1 逾期 / 2 统计 / 6 搜索 / 8 下一个待处理'
+    queue-item-name: '<gray> #%id% <dark_gray>|</dark_gray> <white>%target%</white>'
+
+    queue-item-overdue: '<red> · 逾期</red>'
+
+    queue-item-quick-claim: '<yellow>右键快速接手</yellow>'
+
     filter-header-name: '<gold>筛选与搜索 <dark_gray>| <gray>共 %total% 条举报'
     filter-header-lore:
       - '<gray>当前筛选：<white>%filter%'
@@ -662,6 +725,7 @@ gui:
       audit: '管理操作审计日志的开关、保留与分页。'
       security: '输入长度、备注上限和玩家名校验。'
       config-editor: '在线修改 config.yml 的开关、备份与输入限制。'
+      smart-priority: '可选的智能评分：按多维度给举报打分、提升优先级并过滤垃圾举报。'
     config-label:
       server-name: '服务器名称'
       language: '界面语言'
@@ -755,6 +819,12 @@ gui:
             created: '推送新举报事件'
             claimed: '推送受理事件'
             closed: '推送结案事件'
+          retry-count: 'Webhook 重试次数'
+          retry-base-seconds: 'Webhook 重试基础间隔'
+          failure-alert-enabled: 'Webhook 失败时告警管理组'
+        sla:
+          weekly-enabled: 'SLA 周报'
+          interval-hours: 'SLA 周报间隔'
       evidence:
         enabled: '启用证据采集'
         capture-on-report: '提交时自动采集'
@@ -806,6 +876,21 @@ gui:
         backup-on-save: '保存前备份配置'
         max-backups: '配置备份数量'
         max-value-length: '配置值最大长度'
+      smart-priority:
+        enabled: '启用智能优先级'
+        weights:
+          reporter-credibility: '举报人信誉权重'
+          target-history: '目标历史权重'
+          detail-quality: '详情质量权重'
+          chat-evidence: '聊天证据权重'
+          category-severity: '类别严重度权重'
+        thresholds:
+          urgent-score: '紧急分数阈值'
+          high-score: '高优先级分数阈值'
+          garbage-score: '垃圾举报分数阈值'
+        garbage-action: '垃圾举报处理'
+        ip-hash-enabled: '举报人 IP 哈希'
+        ip-hash-salt: 'IP 哈希盐值'
     config-desc:
       server-name: '显示在插件消息和 GUI 中的服务器名称。'
       language: '插件使用的语言代码，例如 zh_CN 或 en_US。'
@@ -899,6 +984,12 @@ gui:
             created: '举报创建时发送 Webhook。'
             claimed: '举报被受理时发送 Webhook。'
             closed: '举报结案时发送 Webhook。'
+          retry-count: 'Webhook 发送失败后的重试次数（指数退避），0 表示不重试。'
+          retry-base-seconds: 'Webhook 重试的基础间隔（秒），实际间隔按 2 的幂次递增。'
+          failure-alert-enabled: 'Webhook 重试耗尽后向在线管理组发一次站内告警。'
+        sla:
+          weekly-enabled: '周期性把 SLA 超时摘要推送到 Webhook。默认关闭。'
+          interval-hours: 'SLA 摘要推送间隔（小时），168 即每周。'
       evidence:
         enabled: '提交举报时采集服务器证据。'
         capture-on-report: '举报提交后立即采集证据。'
@@ -950,16 +1041,28 @@ gui:
         backup-on-save: '修改 config.yml 前先创建一份备份。'
         max-backups: 'config.yml 最多保留的备份份数。'
         max-value-length: '单个配置值允许输入的最大字符数。'
+      smart-priority:
+        enabled: '启用智能优先级评分层。关闭时提交流程不做任何额外计算。'
+        weights:
+          reporter-credibility: '举报人信誉因子的权重（0-100）。'
+          target-history: '目标历史因子的权重（0-100）。'
+          detail-quality: '详情质量因子的权重（0-100）。'
+          chat-evidence: '聊天证据因子的权重（0-100）。'
+          category-severity: '类别严重度因子的权重（0-100）。'
+        thresholds:
+          urgent-score: '达到该分数时提升为紧急优先级。'
+          high-score: '达到该分数时至少提升为高优先级。'
+          garbage-score: '低于等于该分数时按垃圾举报处理。'
+        garbage-action: '垃圾举报的处理方式：flag 仅标记 / demote 降为低优先级 / auto-close 自动关闭。'
+        ip-hash-enabled: '采集举报人 IP 的加盐 SHA-256 哈希用于封禁溯源，绝不落明文 IP。默认关闭。'
+        ip-hash-salt: 'IP 哈希的盐值；与封禁列表工具共用盐值可互相换算。'
     misc-title: '<dark_aqua>其它工具 <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>插件信息'
     misc-info-lore:
-      - '<gray>版本：<white>%version%'
-      - '<gray>语言：<white>%language%'
-      - '<gray>存储目录：<white>%storage%'
-      - '<gray>缓存举报：<white>%total%'
-      - '<gray>在线玩家：<white>%online%'
-      - '<gray>审计：<white>%audit%'
-      - '<gray>数据保留：<white>%days%</white> 天'
+      - '<gray>版本: <white>%version%'
+      - '<gray>语言: <white>%language%'
+      - '<gray>存储: <white>%storage%'
+      - '<gray>在线玩家: <white>%online%'
     misc-audit-name: '<gold>审计日志'
     misc-audit-lore:
       - '<gray>查看管理员操作记录'
@@ -984,6 +1087,24 @@ gui:
     misc-help-lore:
       - '<gray>在聊天中输出完整命令帮助'
       - '<yellow>点击查看'
+    misc-data-name: '<aqua>数据状态'
+    misc-data-lore:
+      - '<gray>总数: <white>%total%'
+      - '<gray>未结: <white>%open%</white> <dark_gray>| <gray>已关闭: <white>%closed%'
+      - '<gray>逾期: <red>%overdue%</red>'
+    misc-retention-name: '<aqua>保留与审计'
+    misc-retention-lore:
+      - '<gray>举报保留 <white>%retention-days%</white> 天'
+      - '<gray>审计日志保留 <white>%audit-retention-days%</white> 天'
+      - '<gray>自动关闭: %auto-close-state%<gray>（%auto-close-days% 天）'
+    misc-webhook-name: '<aqua>Webhook 测试'
+    misc-webhook-lore:
+      - '<gray>状态: %webhook-state%'
+      - '<gray>频道由 <white>notifications.webhook.url</white> 配置'
+      - '<yellow>点击发送一条测试消息'
+    misc-webhook-disabled: '<red>Webhook 未启用或未配置 URL（notifications.webhook）。'
+    misc-webhook-sent: '<green>测试 Webhook 已发送，请查看 Discord 频道。'
+    misc-webhook-failed: '<red>测试 Webhook 发送失败，请检查控制台日志与 URL。'
     maintenance-started: '<yellow>正在异步执行维护…'
     maintenance-done: '<green>维护完成：自动关闭 %auto% 条，删除 %reports% 条举报、%evidence% 份证据、%audit% 个审计文件。'
     confirm-title: '<dark_red>确认执行：%action%'
@@ -1055,6 +1176,7 @@ gui:
       evidence: '证据采集'
       punishments: '联动处罚'
       audit: '审计'
+      smart-priority: '智能优先级'
 
 notify:
   staff-new: '<gold>新举报 <white>#%id%</white> <gray>| <white>%target%</white> <gray>| %category% <gray>| 举报人 <white>%reporter%</white>'
@@ -1204,6 +1326,9 @@ webhook:
   content-created: '收到一条新举报'
   content-claimed: '举报已被受理'
   content-closed: '举报已处理'
+  failure-alert: '<red>【ReportDesk】Webhook "%event%" 重试耗尽仍失败，请检查 URL 与服务器日志。'
+  test-title: 'ReportDesk Webhook 测试'
+  test-content: '这是一条来自 ReportDesk 的通道测试消息。'
 
 time:
   now: '刚刚'

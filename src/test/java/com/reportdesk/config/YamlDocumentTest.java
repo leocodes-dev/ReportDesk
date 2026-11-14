@@ -68,6 +68,31 @@ reports:
   }
 
   @Test
+  void quotedKeyReplacementKeepsQuotingAndTrailingComment() {
+
+    String source =
+        "section:\n" + "  \"my-key\": 'old'   # keep me\n" + "  other: 1\n";
+
+    String updated = YamlDocument.set(source, "section.my-key", "new");
+
+    assertTrue(updated.contains("\"my-key\": 'new'   # keep me"));
+
+    assertEquals("new", YamlDocument.valueAt(YamlDocument.parse(updated), "section.my-key"));
+
+    assertEquals(1, YamlDocument.valueAt(YamlDocument.parse(updated), "section.other"));
+  }
+
+  @Test
+  void insertsMissingQuotedKeyKeepingStyle() {
+
+    String source = "section:\n  other: 1\n";
+
+    String updated = YamlDocument.set(source, "section.my-key", "fresh");
+
+    assertEquals("fresh", YamlDocument.valueAt(YamlDocument.parse(updated), "section.my-key"));
+  }
+
+  @Test
   void quotesStringsAndRoundTripsSpecialCharacters() {
 
     String value = "He said 'hi' # now";

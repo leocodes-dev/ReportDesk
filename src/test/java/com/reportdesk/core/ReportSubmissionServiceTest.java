@@ -113,7 +113,9 @@ class ReportSubmissionServiceTest {
         detail,
         false,
         false,
-        selections);
+        selections,
+        "",
+        null);
   }
 
   @Test

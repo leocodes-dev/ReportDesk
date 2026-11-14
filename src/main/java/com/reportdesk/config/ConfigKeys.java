@@ -186,6 +186,21 @@ public final class ConfigKeys {
           bool(
               "notifications.webhook.events.closed",
               config -> config.notifications().webhook().eventClosed()),
+          intKey(
+              "notifications.webhook.retry-count",
+              config -> config.notifications().webhook().retryCount()),
+          intKey(
+              "notifications.webhook.retry-base-seconds",
+              config -> config.notifications().webhook().retryBaseSeconds()),
+          bool(
+              "notifications.webhook.failure-alert-enabled",
+              config -> config.notifications().webhook().failureAlertEnabled()),
+          bool(
+              "notifications.sla.weekly-enabled",
+              config -> config.notifications().sla().weeklyEnabled()),
+          intKey(
+              "notifications.sla.interval-hours",
+              config -> config.notifications().sla().weeklyIntervalHours()),
           bool("evidence.enabled", config -> config.evidence().enabled()),
           bool("evidence.capture-on-report", config -> config.evidence().captureOnReport()),
           intKey("evidence.retention-days", config -> config.evidence().retentionDays()),
@@ -236,6 +251,36 @@ public final class ConfigKeys {
           bool("audit.enabled", config -> config.audit().enabled()),
           intKey("audit.retention-days", config -> config.audit().retentionDays()),
           intKey("audit.page-size", config -> config.audit().pageSize()),
+          intKey("audit.max-size-mb", config -> config.audit().maxFileSizeMb()),
+          bool("smart-priority.enabled", config -> config.smartPriority().enabled()),
+          intKey(
+              "smart-priority.weights.reporter-credibility",
+              config -> config.smartPriority().reporterCredibilityWeight()),
+          intKey(
+              "smart-priority.weights.target-history",
+              config -> config.smartPriority().targetHistoryWeight()),
+          intKey(
+              "smart-priority.weights.detail-quality",
+              config -> config.smartPriority().detailQualityWeight()),
+          intKey(
+              "smart-priority.weights.chat-evidence",
+              config -> config.smartPriority().chatEvidenceWeight()),
+          intKey(
+              "smart-priority.weights.category-severity",
+              config -> config.smartPriority().categorySeverityWeight()),
+          intKey(
+              "smart-priority.thresholds.urgent-score",
+              config -> config.smartPriority().urgentScore()),
+          intKey(
+              "smart-priority.thresholds.high-score",
+              config -> config.smartPriority().highScore()),
+          intKey(
+              "smart-priority.thresholds.garbage-score",
+              config -> config.smartPriority().garbageScore()),
+          choice(
+              "smart-priority.garbage-action",
+              java.util.List.of("flag", "demote", "auto-close"),
+              config -> config.smartPriority().garbageAction().name().toLowerCase(Locale.ROOT)),
           longKey(
               "security.admin-cooldown-millis", config -> config.security().adminCooldownMillis()),
           intKey(
@@ -248,6 +293,8 @@ public final class ConfigKeys {
           bool("security.detail-required", config -> config.security().detailRequired()),
           bool("security.allow-color-codes", config -> config.security().allowColorCodes()),
           string("security.player-name-pattern", config -> config.security().playerNamePattern()),
+          bool("security.ip-hash-enabled", config -> config.security().ipHashEnabled()),
+          string("security.ip-hash-salt", config -> config.security().ipHashSalt()),
           bool("config-editor.enabled", config -> config.configEditor().enabled()),
           bool("config-editor.backup-on-save", config -> config.configEditor().backupOnSave()),
           intKey("config-editor.max-backups", config -> config.configEditor().maxBackups()),

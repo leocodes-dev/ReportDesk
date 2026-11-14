@@ -339,4 +339,105 @@ class ReportTest {
 
     assertTrue(ReportPriority.URGENT.weight() > ReportPriority.LOW.weight());
   }
+
+  @Test
+  void matchesQueryCoversAllStableFieldsCaseInsensitively() {
+
+    Report report =
+        TestFixtures.report(
+                42L,
+                TestFixtures.ALICE,
+                "Alice",
+                "BOB",
+                "cheating",
+                ReportStatus.RESOLVED,
+                100L,
+                200L,
+                200L)
+            .withPriority(ReportPriority.URGENT, 1_000L, 150L)
+            .withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "handled", 200L);
+
+    assertTrue(report.matchesQuery("bob")); // target, different case
+
+    assertTrue(report.matchesQuery("alice")); // reporter
+
+    assertTrue(report.matchesQuery("cheating")); // category
+
+    assertTrue(report.matchesQuery("detail 42")); // detail
+
+    assertTrue(report.matchesQuery("staff")); // closed-by name
+
+    assertTrue(report.matchesQuery("resolved")); // verdict
+
+    assertTrue(report.matchesQuery("urgent")); // priority id
+
+    assertTrue(report.matchesQuery("42")); // bare id
+
+    assertTrue(report.matchesQuery("#42")); // prefixed id
+
+    assertFalse(report.matchesQuery("nobody"));
+
+    assertTrue(report.matchesQuery(""));
+
+    assertTrue(report.matchesQuery(null));
+  }
+
+  @Test
+  void matchesQueryMemoisationIsNotPersisted() {
+
+    Report report = TestFixtures.open(7L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
+
+    report.matchesQuery("bob"); // build the memoised cache before serialising
+
+    com.google.gson.Gson gson = new com.google.gson.Gson();
+
+    String json = gson.toJson(report);
+
+    assertFalse(json.contains("searchCache"));
+
+    Report restored = gson.fromJson(json, Report.class);
+
+    assertEquals(7L, restored.id());
+
+    assertTrue(restored.matchesQuery("bob"));
+  }
+
+  @Test
+  void smartScoreSurvivesAllStateTransitions() {
+
+    Report report = TestFixtures.open(8L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
+
+    Report scored = report.withSmartScore(82);
+
+    assertEquals(82, scored.smartScore());
+
+    assertEquals(100L, scored.updatedAt()); // scoring does not bump updatedAt
+
+    assertEquals(82, scored.withPriority(ReportPriority.HIGH, 999L, 200L).smartScore());
+
+    assertEquals(82, scored.withClaim(TestFixtures.STAFF, "Staff", 300L).smartScore());
+
+    assertEquals(
+        82, scored.withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "", 400L).smartScore());
+
+    assertEquals(82, scored.withReopened(500L).smartScore());
+
+    assertEquals(0, scored.withSmartScore(-5).smartScore()); // negative clamps to 0
+  }
+
+  @Test
+  void legacyJsonWithoutSmartScoreLoadsWithZero() {
+
+    com.google.gson.Gson gson = new com.google.gson.Gson();
+
+    String legacy =
+        gson.toJson(TestFixtures.open(9L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L));
+
+    Report restored =
+        gson.fromJson(legacy.replace(",\"smartScore\":0", ""), Report.class);
+
+    assertEquals(9L, restored.id());
+
+    assertEquals(0, restored.smartScore());
+  }
 }

@@ -11,7 +11,7 @@
 # 服务器名称，仅用于展示、审计与 Webhook。
 server-name: 'ReportDesk Server'
 
-# 消息语言：zh_CN 或 en_US（缺失时使用 zh_CN）。
+# 消息语言：zh_CN / zh_TW / en_US / pt_BR / es_ES / ru_RU / de_DE / fr_FR / tr_TR / pl_PL / ja_JP / ko_KR（缺失时回退内置 en_US）。
 language: zh_CN
 
 storage:
@@ -242,6 +242,17 @@ notifications:
       created: true
       claimed: true
       closed: true
+    # 发送失败时的重试次数（指数退避：间隔 = retry-base-seconds × 2^n）。0 表示不重试。
+    retry-count: 2
+    # 重试基础间隔（秒）。
+    retry-base-seconds: 5
+    # 重试耗尽后向在线管理员发一次站内告警。
+    failure-alert-enabled: true
+  # SLA 周报（增强层，默认关闭）：周期性把超时统计摘要推送到 Webhook。
+  sla:
+    weekly-enabled: false
+    # 推送间隔（小时），默认 168 即每周。
+    interval-hours: 168
 
 evidence:
   # 证据层总开关。默认 false。
@@ -302,6 +313,40 @@ punishments:
   # 举报被判定为不成立时执行的命令。
   rejected-commands: []
 
+# ------------------------------------------------------------
+# 智能优先级评分（增强层，默认关闭）。
+# 启用后，每条举报提交时会按五个维度加权计算 0-100 的智能分：
+#   举报人信誉（历史举报被确认的比例）
+#   目标历史（该目标的历史确认数与未结数）
+#   详情质量（长度与内容丰富度，打击纯灌水）
+#   聊天证据（举报时选中的聊天消息数）
+#   类别严重度（类别配置里的 severity）
+# 分数与阈值的关系：
+#   分数 >= urgent-score      提升为紧急优先级
+#   分数 >= high-score        至少提升到高优先级
+#   分数 <= garbage-score     按 garbage-action 处理垃圾举报
+# 该功能默认关闭；关闭时提交流程不做任何额外计算。
+# ------------------------------------------------------------
+smart-priority:
+  enabled: false
+  # 各维度权重（0-100；为 0 表示该维度不参与评分）。
+  weights:
+    reporter-credibility: 30
+    target-history: 20
+    detail-quality: 25
+    chat-evidence: 10
+    category-severity: 15
+  # 分数阈值（0-100）。加载时强制 garbage <= high <= urgent。
+  thresholds:
+    urgent-score: 90
+    high-score: 70
+    garbage-score: 30
+  # 垃圾举报（分数 <= garbage-score）的处理方式：
+  #   flag       只标记分数（队列与详情页可见），不改变优先级
+  #   demote     强制降为低优先级
+  #   auto-close 自动按"证据不足"关闭，并写审计日志
+  garbage-action: flag
+
 audit:
   # 是否记录管理操作审计日志（异步写入）。
   enabled: true
@@ -309,6 +354,8 @@ audit:
   retention-days: 180
   # /reports audit 每页条数。
   page-size: 10
+  # 审计日志总大小上限（MB），超过则从最旧文件清理。0 表示不限（只按天数保留）。
+  max-size-mb: 0
 
 config-editor:
   # 是否允许管理员在游戏内通过 /reports config set 修改配置。
@@ -342,3 +389,7 @@ security:
   player-name-pattern: '^[A-Za-z0-9_]{3,16}$'
   # 举报详情中禁止出现的词（不区分大小写）。
   blocked-words: []
+  # 采集举报人 IP 的加盐哈希用于封禁溯源。只存哈希，绝不落明文 IP。默认关闭。
+  ip-hash-enabled: false
+  # IP 哈希的盐值（与封禁列表工具共用盐值可互相换算）。修改后新举报的哈希随之变化。
+  ip-hash-salt: ''

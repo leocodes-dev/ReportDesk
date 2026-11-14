@@ -114,6 +114,52 @@ class ReportStatsTest {
   }
 
   @Test
+  void computeCountsAgreesWithComputeAndSkipsBreakdowns() {
+
+    List<Report> reports =
+        List.of(
+            TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "cheating", 1_000L),
+            TestFixtures.report(
+                2L,
+                TestFixtures.ALICE,
+                "Alice",
+                "Bob",
+                "cheating",
+                ReportStatus.RESOLVED,
+                2_000L,
+                9_000L,
+                9_000L));
+
+    ReportStats full = ReportStats.compute(reports);
+
+    ReportStats counts = ReportStats.computeCounts(reports);
+
+    assertEquals(full.total(), counts.total());
+
+    assertEquals(full.open(), counts.open());
+
+    assertEquals(full.claimed(), counts.claimed());
+
+    assertEquals(full.resolved(), counts.resolved());
+
+    assertEquals(full.rejected(), counts.rejected());
+
+    assertEquals(full.duplicate(), counts.duplicate());
+
+    assertEquals(full.autoClosed(), counts.autoClosed());
+
+    assertEquals(full.averageHandlingMillis(), counts.averageHandlingMillis());
+
+    assertTrue(counts.byCategory().isEmpty());
+
+    assertTrue(counts.byTarget().isEmpty());
+
+    assertTrue(counts.byStaff().isEmpty());
+
+    assertEquals(0, ReportStats.computeCounts(null).total());
+  }
+
+  @Test
   void emptyStatsAreSafe() {
 
     ReportStats stats = ReportStats.compute(null);

@@ -40,6 +40,7 @@ ReportDesk 是一个面向 Minecraft 服务器的玩家举报工作台：完整�
 | `/report <玩家>` | 直接对某玩家发起举报 |
 | `/report <玩家> <分类> [详情...]` | 指定分类与详情文本 |
 | `/report status [页码]` | 查看自己提交的举报列表 |
+| `/report history [状态] [页码]` | 查看我的举报历史（状态：all / open / claimed / resolved / rejected / duplicate / auto-closed；GUI 开启时为图形界面，另支持 `/report history view <id>` 查看单条详情） |
 | `/report view <id>` | 查看自己某条举报详情 |
 | `/report reply <id> <内容>` | 回复自己的举报 |
 | `/report replies <id>` | 查看某条举报的回复串 |

@@ -20,6 +20,7 @@ package com.reportdesk.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.reportdesk.test.TestFixtures;
@@ -50,6 +51,53 @@ class ReportFilterTest {
     assertEquals(TestFixtures.STAFF, cleared.claimedBy());
 
     assertEquals(ReportFilter.SortOrder.OLDEST, cleared.sort());
+  }
+
+  @Test
+  void reporterFilterRestrictsMatchesToOneReportersReports() {
+
+    Report aliceOpen = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L);
+
+    Report bobOpen = TestFixtures.open(2L, TestFixtures.BOB, "Bob", "Charlie", "grief", 1_000L);
+
+    ReportFilter aliceOnly = ReportFilter.all().withReporter(TestFixtures.ALICE);
+
+    assertTrue(aliceOnly.matches(aliceOpen));
+
+    assertFalse(aliceOnly.matches(bobOpen));
+
+    assertFalse(ReportFilter.all().withReporter(TestFixtures.STAFF).matches(aliceOpen));
+  }
+
+  @Test
+  void reporterSurvivesEveryFilterTransformation() {
+
+    ReportFilter base = ReportFilter.all().withReporter(TestFixtures.ALICE);
+
+    assertTrue(base.withStatus(ReportStatus.OPEN).reporter().equals(TestFixtures.ALICE));
+
+    assertTrue(base.withCategory("chat").reporter().equals(TestFixtures.ALICE));
+
+    assertTrue(base.withQuery("bob").reporter().equals(TestFixtures.ALICE));
+
+    assertTrue(base.withClaimedBy(TestFixtures.STAFF).reporter().equals(TestFixtures.ALICE));
+
+    assertTrue(
+        base.withSort(ReportFilter.SortOrder.OLDEST).reporter().equals(TestFixtures.ALICE));
+
+    assertTrue(
+        base.withPriority(ReportPriority.HIGH).reporter().equals(TestFixtures.ALICE));
+
+    assertTrue(base.withOverdueOnly(true).reporter().equals(TestFixtures.ALICE));
+
+    assertTrue(base.cycleStatus().reporter().equals(TestFixtures.ALICE));
+
+    assertTrue(base.cyclePriority().reporter().equals(TestFixtures.ALICE));
+
+    // The admin-facing factories stay reporter-free.
+    assertNull(ReportFilter.all().reporter());
+
+    assertNull(ReportFilter.ofStatus(ReportStatus.OPEN).reporter());
   }
 
   @Test

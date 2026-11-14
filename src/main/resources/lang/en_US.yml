@@ -51,7 +51,9 @@ general:
   verdict: 'Verdict'
   created: 'Created'
   claimed-by: 'Claimed by'
+  claimed-at: 'Claimed at'
   closed-by: 'Closed by'
+  closed-at: 'Closed at'
   detail: 'Details'
   note: 'Note'
   notes: 'Notes'
@@ -70,6 +72,7 @@ general:
   unread: 'Unread'
   last-reply: 'Latest reply'
   overdue-label: 'overdue only'
+  smart-score: 'Smart Score'
   staff: 'Staff'
 
 status:
@@ -119,12 +122,17 @@ report:
   help-line-view: '<gray>/report view <id> <yellow>View one of your reports'
   help-line-reply: '<gray>/report reply <id> <message...> <yellow>Reply to a report'
   help-line-replies: '<gray>/report replies <id> [page] <yellow>Read a report conversation'
+  help-line-history: '<gray>/report history [status] [page] <yellow>View my report history'
   help-line-cancel: '<gray>/report cancel <yellow>Cancel a chat input'
   own-header: '<gold>===== Your reports (%count%) ====='
   own-line: '<gray>#<white>%id%</white> %priority% <gray>%status% <dark_gray>| <gray>%target% <dark_gray>| <gray>%category% <dark_gray>| <gray>%created%'
   own-empty: '<gray>You have not submitted any reports yet.'
   own-info-header: '<gold>===== Your report #%id% ====='
   own-info-line: '<gray>%key%: <white>%value%</white>'
+  history-header: '<gold>===== My report history (%filter% · %count% total)====='
+  history-stats: '<gray>Unprocessed <white>%open%</white> <dark_gray>| <gray>Processed <white>%closed%</white> <dark_gray>| <gray>Unread replies <white>%unread%</white>'
+  history-hint: '<gray>Use <white>/report view <id></white> for the full detail and <white>/report replies <id></white> for the conversation.'
+  history-unknown-filter: '<red>Unknown status filter %filter%. Use: all / open / claimed / resolved / rejected / duplicate / auto-closed.'
   menu-title-players: '<dark_aqua>Report Desk <dark_gray>» <gray>Choose a player'
   menu-title-categories: '<dark_aqua>Report Desk <dark_gray>» <gray>Choose a category'
   menu-title-confirm: '<dark_aqua>Report Desk <dark_gray>» <gray>Confirm report'
@@ -299,6 +307,55 @@ gui:
   detail-next-lore:
     - '<gray>%count% open reports in total'
     - '<yellow>Click to jump to the oldest one'
+  history-title: '<dark_aqua>My report history <dark_gray>» <gray>page %page% / %pages% <dark_gray>(%total% reports)'
+  history-entry-name: '<white>My report history'
+  history-entry-lore:
+    - '<gray>Every report you have filed'
+    - '<dark_gray>status, outcomes and conversations included'
+  history-header-name: '<white>My report history'
+  history-header-lore:
+    - '<gray>Matching <white>%total%</white> reports'
+    - '<gray>Unprocessed <white>%open%</white> <dark_gray>| <gray>Processed <white>%closed%</white>'
+    - '<gray>Unread replies <white>%unread%</white>'
+  history-item-name: '<white>#%id% <dark_gray>» <white>%target%'
+  history-item-lore:
+    - '<gray>%status% <dark_gray>| <gray>%category%'
+    - '<gray>Filed %time%'
+    - '<gray>Outcome: %verdict%'
+    - '<gray>%replies% replies (%unread% unread)'
+    - '<yellow>Click for the full detail'
+  history-filter-title: '<dark_aqua>My report history <dark_gray>» <gray>Filters'
+  history-detail-title: '<dark_aqua>My report <white>#%id% <dark_gray>| <white>%target%'
+  history-info-name: '<white>Report #%id%'
+  history-info-lore:
+    - '<gray>Status: %status%'
+    - '<gray>Category: %category%'
+    - '<gray>Target: %target%'
+    - '<gray>Filed: %created%'
+    - '<gray>Priority: %priority% <dark_gray>| <gray>SLA: %sla%'
+  history-result-name: '<white>Outcome'
+  history-result-verdict: '<gray>Verdict: %verdict%'
+  history-result-claimed: '<gray>Claimed by %claimedBy% <dark_gray>(%claimedAt%)'
+  history-result-pending: '<gray>Pending <dark_gray>(priority %priority%, due %sla%)'
+  history-result-closed-by: '<gray>Closed by %closedBy% <dark_gray>(%closedAt%)'
+  history-result-note: '<gray>Close note: %note%'
+  history-result-target: '<gray>Same target: %open% open <dark_gray>/ %total% in total'
+  history-evidence-name: '<white>Evidence snapshot'
+  history-evidence-lore:
+    - '<gray>State: %state%'
+    - '<gray>Details: %summary%'
+  history-replies-name: '<yellow>Report conversation (%count%)'
+  history-replies-lore:
+    - '<gray>%unread% unread'
+    - '<gray>Latest: %lastReply%'
+    - '<yellow>Click to read the full thread'
+  history-reply-name: '<green>Reply to this report'
+  history-reply-lore:
+    - '<gray>Add a comment for the staff'
+    - '<yellow>Then type it in chat'
+  history-reply-disabled: '<gray>Staff has disabled player replies, or this report does not accept replies.'
+  history-reply-prompt: '<yellow>Type your reply in chat, or <white>cancel</white> to abort.'
+  history-replies-title: '<dark_aqua>Report #%id% <dark_gray>» <gray>My conversation'
   delete-title: '<dark_red>Delete #%id%?'
   delete-yes-name: '<red>Delete permanently'
   delete-yes-lore:
@@ -383,7 +440,7 @@ gui:
       - '<yellow>Click to browse'
     hub-misc-name: '<gray>Other Tools'
     hub-misc-lore:
-      - '<gray>Export, maintenance, purge, reload and help'
+      - '<gray>Status, data tools, audit, webhook test and help'
       - '<yellow>Click to open'
     queue-title: '<dark_aqua>Report Queue <dark_gray>» <gray>Page %page% / %pages%'
     queue-header-name: '<gold>Report Queue <dark_gray>| <gray>%total% total'
@@ -394,7 +451,13 @@ gui:
       - '<gray>Search: <white>%query%'
       - ''
       - '<yellow>Click a report to open its details'
-      - '<gray>Top row: 0 filter / 2 stats / 6 search / 8 next open'
+      - '<gray>Top row: 0 filter / 1 overdue / 2 stats / 6 search / 8 next open'
+    queue-item-name: '<gray> #%id% <dark_gray>|</dark_gray> <white>%target%</white>'
+
+    queue-item-overdue: '<red> · Overdue</red>'
+
+    queue-item-quick-claim: '<yellow>Right-click to claim directly</yellow>'
+
     filter-header-name: '<gold>Filter & Search <dark_gray>| <gray>%total% reports'
     filter-header-lore:
       - '<gray>Current filter: <white>%filter%'
@@ -662,6 +725,7 @@ gui:
       audit: 'Audit log toggles, retention and paging.'
       security: 'Input lengths, note limits and player name validation.'
       config-editor: 'Toggles, backups and input limits for editing config.yml in game.'
+      smart-priority: 'Optional smart scoring that ranks reports and filters out junk.'
     config-label:
       server-name: 'Server Name'
       language: 'Interface Language'
@@ -755,6 +819,12 @@ gui:
             created: 'Webhook on Created'
             claimed: 'Webhook on Claimed'
             closed: 'Webhook on Closed'
+          retry-count: 'Webhook Retry Count'
+          retry-base-seconds: 'Webhook Retry Base Interval'
+          failure-alert-enabled: 'Alert Staff On Webhook Failure'
+        sla:
+          weekly-enabled: 'Weekly SLA Report'
+          interval-hours: 'SLA Report Interval'
       evidence:
         enabled: 'Enable Evidence Capture'
         capture-on-report: 'Capture on Report'
@@ -806,6 +876,21 @@ gui:
         backup-on-save: 'Backup Config Before Save'
         max-backups: 'Config Backup Limit'
         max-value-length: 'Max Config Value Length'
+      smart-priority:
+        enabled: 'Enable Smart Priority'
+        weights:
+          reporter-credibility: 'Reporter Credibility Weight'
+          target-history: 'Target History Weight'
+          detail-quality: 'Detail Quality Weight'
+          chat-evidence: 'Chat Evidence Weight'
+          category-severity: 'Category Severity Weight'
+        thresholds:
+          urgent-score: 'Urgent Score Threshold'
+          high-score: 'High Score Threshold'
+          garbage-score: 'Garbage Score Threshold'
+        garbage-action: 'Garbage Action'
+        ip-hash-enabled: 'Reporter IP Hash'
+        ip-hash-salt: 'IP Hash Salt'
     config-desc:
       server-name: 'Server name shown in plugin messages and the GUI.'
       language: 'Language code used by the plugin, for example zh_CN or en_US.'
@@ -899,6 +984,12 @@ gui:
             created: 'Send a webhook when a report is created.'
             claimed: 'Send a webhook when a report is claimed.'
             closed: 'Send a webhook when a report is closed.'
+          retry-count: 'How many times a failed webhook send is retried before giving up (exponential backoff).'
+          retry-base-seconds: 'Base seconds of the exponential backoff between webhook retries.'
+          failure-alert-enabled: 'Notify online staff in game when a webhook send fails after all retries.'
+        sla:
+          weekly-enabled: 'Push a weekly SLA summary to the webhook. Off by default.'
+          interval-hours: 'Hours between SLA summary pushes (168 = weekly).'
       evidence:
         enabled: 'Capture server evidence when a report is submitted.'
         capture-on-report: 'Capture evidence immediately after a report is submitted.'
@@ -950,16 +1041,28 @@ gui:
         backup-on-save: 'Create a backup before config.yml is modified.'
         max-backups: 'How many config.yml backups are kept.'
         max-value-length: 'Maximum characters allowed for one config value.'
+      smart-priority:
+        enabled: 'Enable the smart-priority scoring layer. When off, submissions cost no extra work.'
+        weights:
+          reporter-credibility: 'Weight of the reporter history factor (0-100).'
+          target-history: 'Weight of the target history factor (0-100).'
+          detail-quality: 'Weight of the description quality factor (0-100).'
+          chat-evidence: 'Weight of the selected chat evidence factor (0-100).'
+          category-severity: 'Weight of the category severity factor (0-100).'
+        thresholds:
+          urgent-score: 'Score that upgrades a report to urgent priority.'
+          high-score: 'Score that upgrades a report to at least high priority.'
+          garbage-score: 'Score at or below which the garbage action applies.'
+        garbage-action: 'What happens to garbage-band reports: flag, demote, or auto-close.'
+        ip-hash-enabled: 'Collects a salted SHA-256 hash of the reporter IP for ban provenance. The plaintext IP is never stored. Off by default.'
+        ip-hash-salt: 'Salt mixed into the IP hash; share it with ban-list tooling to correlate.'
     misc-title: '<dark_aqua>Other Tools <dark_gray>» <gray>%server%'
     misc-info-name: '<gold>Plugin Info'
     misc-info-lore:
       - '<gray>Version: <white>%version%'
       - '<gray>Language: <white>%language%'
       - '<gray>Storage: <white>%storage%'
-      - '<gray>Cached reports: <white>%total%'
       - '<gray>Online players: <white>%online%'
-      - '<gray>Audit: <white>%audit%'
-      - '<gray>Retention: <white>%days%</white> days'
     misc-audit-name: '<gold>Audit Log'
     misc-audit-lore:
       - '<gray>Read administrator actions'
@@ -984,6 +1087,24 @@ gui:
     misc-help-lore:
       - '<gray>Print the full command help in chat'
       - '<yellow>Click to view'
+    misc-data-name: '<aqua>Data Status'
+    misc-data-lore:
+      - '<gray>Total: <white>%total%'
+      - '<gray>Open: <white>%open%</white> <dark_gray>| <gray>Closed: <white>%closed%'
+      - '<gray>Overdue: <red>%overdue%</red>'
+    misc-retention-name: '<aqua>Retention & Audit'
+    misc-retention-lore:
+      - '<gray>Reports kept for <white>%retention-days%</white> days'
+      - '<gray>Audit log kept for <white>%audit-retention-days%</white> days'
+      - '<gray>Auto-close: %auto-close-state%<gray> (%auto-close-days% days)'
+    misc-webhook-name: '<aqua>Webhook Test'
+    misc-webhook-lore:
+      - '<gray>State: %webhook-state%'
+      - '<gray>Channel set by <white>notifications.webhook.url</white>'
+      - '<yellow>Click to send a test message'
+    misc-webhook-disabled: '<red>The webhook is disabled or has no URL (notifications.webhook).'
+    misc-webhook-sent: '<green>Test webhook sent. Check your Discord channel.'
+    misc-webhook-failed: '<red>The test webhook failed. Check the console log and the URL.'
     maintenance-started: '<yellow>Running maintenance asynchronously…'
     maintenance-done: '<green>Maintenance finished: auto-closed %auto%, deleted %reports% reports, %evidence% evidence files and %audit% audit files.'
     confirm-title: '<dark_red>Confirm: %action%'
@@ -1055,6 +1176,7 @@ gui:
       evidence: 'Evidence'
       punishments: 'Punishments'
       audit: 'Audit'
+      smart-priority: 'Smart Priority'
 
 notify:
   staff-new: '<gold>New report <white>#%id%</white> <gray>| <white>%target%</white> <gray>| %category% <gray>| reporter <white>%reporter%</white>'
@@ -1204,6 +1326,9 @@ webhook:
   content-created: 'A new report was submitted'
   content-claimed: 'A report was claimed'
   content-closed: 'A report was closed'
+  failure-alert: '<red>[ReportDesk] Webhook "%event%" failed after all retries. Check the URL and server log.'
+  test-title: 'ReportDesk Webhook Test'
+  test-content: 'This is a channel test from ReportDesk.'
 
 time:
   now: 'just now'

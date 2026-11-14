@@ -19,6 +19,7 @@
 package com.reportdesk.gui;
 
 import com.reportdesk.ReportDeskPlugin;
+import com.reportdesk.config.PluginConfig;
 import com.reportdesk.core.BreakSample;
 import com.reportdesk.core.ChatSample;
 import com.reportdesk.core.ChatSelectionSupport;
@@ -35,10 +36,12 @@ import com.reportdesk.core.ReportStats;
 import com.reportdesk.core.ReportStatus;
 import com.reportdesk.core.Verdict;
 import com.reportdesk.i18n.MessageKeys;
+import com.reportdesk.i18n.Messages;
 import com.reportdesk.service.NotificationService;
 import com.reportdesk.service.ReportService;
 import com.reportdesk.util.TimeText;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -99,6 +102,9 @@ public final class GuiService {
 
   /** Utility slots on the top border row. */
   static final int TOP_LEFT_SLOT = 0;
+
+  /** Overdue toggle badge on the top border row, next to the filter button. */
+  static final int OVERDUE_BADGE_SLOT = 1;
 
   static final int TOP_MIDDLE_SLOT = 2;
 
@@ -189,6 +195,14 @@ public final class GuiService {
     private int page = 1;
   }
 
+  /** Working filter + page of the player's own report history view. */
+  private static final class HistoryState {
+
+    private ReportFilter filter = ReportFilter.all();
+
+    private int page = 1;
+  }
+
   private final ReportDeskPlugin plugin;
 
   private final AdminGuiService adminGui;
@@ -196,6 +210,8 @@ public final class GuiService {
   private final Map<UUID, FlowState> flows = new ConcurrentHashMap<>();
 
   private final Map<UUID, AdminState> adminStates = new ConcurrentHashMap<>();
+
+  private final Map<UUID, HistoryState> historyStates = new ConcurrentHashMap<>();
 
   private final Map<UUID, ChatReviewState> chatReviews = new ConcurrentHashMap<>();
 
@@ -223,6 +239,8 @@ public final class GuiService {
     flows.remove(playerId);
 
     adminStates.remove(playerId);
+
+    historyStates.remove(playerId);
 
     chatReviews.remove(playerId);
 
@@ -371,6 +389,13 @@ public final class GuiService {
             Material.COMPASS,
             component(MessageKeys.GUI_SEARCH_NAME),
             components(MessageKeys.GUI_SEARCH_LORE)));
+
+    inventory.setItem(
+        HUB_SLOT,
+        item(
+            Material.BOOK,
+            component(MessageKeys.GUI_HISTORY_ENTRY_NAME),
+            components(MessageKeys.GUI_HISTORY_ENTRY_LORE)));
 
     backButton(inventory);
 
@@ -743,17 +768,23 @@ public final class GuiService {
 
     Inventory inventory = create(holder, MessageKeys.REPORT_MENU_TITLE_CONFIRM, Map.of());
 
+    // Overview strip: target, category and detail cards across the top row so
+    // the whole submission is visible at a glance before the action row.
+    boolean targetOnline = Bukkit.getPlayerExact(flow.target) != null;
+
+    List<Component> targetLore =
+        new ArrayList<>(
+            plugin.messages().components(
+                MessageKeys.REPORT_CONFIRM_TARGET, Map.of("target", flow.target)));
+
+    targetLore.add(plugin.messages().component(targetOnline ? MessageKeys.ADMIN_GUI_ONLINE : MessageKeys.ADMIN_GUI_OFFLINE));
+
     inventory.setItem(
-        11,
+        0,
         item(
             Material.PLAYER_HEAD,
-            plugin
-                .messages()
-                .component(MessageKeys.REPORT_PLAYER_ITEM_NAME, Map.of("player", flow.target)),
-            List.of(
-                plugin
-                    .messages()
-                    .component(MessageKeys.REPORT_CONFIRM_TARGET, Map.of("target", flow.target)))));
+            plugin.messages().component(MessageKeys.REPORT_PLAYER_ITEM_NAME, Map.of("player", flow.target)),
+            targetLore));
 
     ReportCategory category =
         plugin
@@ -769,7 +800,7 @@ public final class GuiService {
                                 "other", "Other", "PAPER", List.of(), true, 0, List.of())));
 
     inventory.setItem(
-        13,
+        2,
         item(
             material(category.icon(), Material.PAPER),
             plugin
@@ -796,7 +827,7 @@ public final class GuiService {
               .component(MessageKeys.REPORT_CONFIRM_DETAIL, Map.of("detail", flow.detail)));
     }
 
-    inventory.setItem(15, item(Material.BOOK, component(MessageKeys.GENERAL_DETAIL), detailLore));
+    inventory.setItem(4, item(Material.BOOK, component(MessageKeys.GENERAL_DETAIL), detailLore));
 
     if (flow.chatFlow) {
 
@@ -825,7 +856,7 @@ public final class GuiService {
       }
 
       inventory.setItem(
-          22,
+          6,
           item(
               Material.WRITTEN_BOOK,
               plugin
@@ -836,7 +867,7 @@ public final class GuiService {
               chatLore));
 
       inventory.setItem(
-          27,
+          8,
           item(
               Material.PAPER,
               component(MessageKeys.REPORT_CONFIRM_CHAT_EDIT_NAME),
@@ -844,25 +875,46 @@ public final class GuiService {
     }
 
     inventory.setItem(
-        29,
+        44,
         item(
             Material.LIME_CONCRETE,
             component(MessageKeys.REPORT_CONFIRM_SUBMIT),
             List.of(plugin.messages().component(MessageKeys.GENERAL_CONFIRM))));
 
     inventory.setItem(
-        31,
+        46,
         item(
             Material.WRITABLE_BOOK,
             component(MessageKeys.REPORT_CONFIRM_EDIT),
             List.of(plugin.messages().component(MessageKeys.REPORT_DETAIL_PROMPT))));
 
     inventory.setItem(
-        33,
+        48,
+        item(
+            Material.OAK_DOOR,
+            component(MessageKeys.GENERAL_BACK),
+            List.of()));
+
+    inventory.setItem(
+        49,
+        item(
+            Material.SUNFLOWER,
+            component(MessageKeys.ADMIN_GUI_REFRESH_NAME),
+            components(MessageKeys.ADMIN_GUI_REFRESH_LORE)));
+
+    inventory.setItem(
+        52,
         item(
             Material.RED_CONCRETE,
             component(MessageKeys.REPORT_CONFIRM_CANCEL),
             List.of(plugin.messages().component(MessageKeys.GENERAL_CANCEL))));
+
+    inventory.setItem(
+        53,
+        item(
+            Material.BOOK,
+            component(MessageKeys.GUI_HISTORY_ENTRY_NAME),
+            components(MessageKeys.GUI_HISTORY_ENTRY_LORE)));
 
     closeButton(inventory);
 
@@ -914,7 +966,12 @@ public final class GuiService {
 
     ReportDeskHolder holder = ReportDeskHolder.list(state.filter, page.page());
 
-    ReportStats stats = ReportStats.compute(plugin.repository().all());
+    // One unsorted snapshot feeds both the stats and the overdue count; the
+    // full breakdown maps are not shown on this screen, so only the counts
+    // are computed (no per-category/target/staff map merges or sorts).
+    List<Report> snapshot = plugin.repository().snapshot();
+
+    ReportStats stats = ReportStats.computeCounts(snapshot);
 
     String filterLabel = plugin.view().filterLabel(state.filter);
 
@@ -928,7 +985,7 @@ public final class GuiService {
 
     placeholders.put("closed", String.valueOf(stats.total() - stats.open() - stats.claimed()));
 
-    placeholders.put("overdue", String.valueOf(overdueCount()));
+    placeholders.put("overdue", String.valueOf(overdueCount(snapshot)));
 
     placeholders.put("filter", filterLabel);
 
@@ -954,6 +1011,25 @@ public final class GuiService {
             Material.HOPPER,
             plugin.messages().component(MessageKeys.GUI_FILTER_NAME, filterPlaceholders),
             plugin.messages().components(MessageKeys.GUI_FILTER_LORE, filterPlaceholders)));
+
+    String overdueState =
+        plugin
+            .messages()
+            .plain(
+                state.filter.overdueOnly()
+                    ? MessageKeys.GENERAL_ENABLED
+                    : MessageKeys.GENERAL_DISABLED);
+
+    inventory.setItem(
+        OVERDUE_BADGE_SLOT,
+        item(
+            Material.CLOCK,
+            plugin
+                .messages()
+                .component(MessageKeys.GUI_FILTER_OVERDUE_NAME, Map.of("state", overdueState)),
+            plugin
+                .messages()
+                .components(MessageKeys.GUI_FILTER_OVERDUE_LORE, Map.of("state", overdueState))));
 
     inventory.setItem(
         TOP_MIDDLE_SLOT,
@@ -987,6 +1063,8 @@ public final class GuiService {
 
     int index = 0;
 
+    long now = System.currentTimeMillis();
+
     for (Report report : page.items()) {
 
       if (index >= pageSize) {
@@ -1000,12 +1078,49 @@ public final class GuiService {
 
       Map<String, String> itemPlaceholders = plugin.notification().placeholders(report);
 
-      inventory.setItem(
-          slot,
-          item(
-              statusMaterial(report.status()),
-              plugin.messages().component(MessageKeys.GUI_LIST_ITEM_NAME, itemPlaceholders),
-              plugin.messages().components(MessageKeys.GUI_LIST_ITEM_LORE, itemPlaceholders)));
+      // Queue entries are built from three layers: the priority word keeps its
+      // status color, the gray id/target structure follows, and open reports
+      // that passed their SLA gain a red overdue flag.
+      Component name =
+          plugin
+              .messages()
+              .component(NotificationService.priorityKey(report.priority()))
+              .append(
+                  plugin
+                      .messages()
+                      .component(MessageKeys.ADMIN_GUI_QUEUE_ITEM_NAME, itemPlaceholders));
+
+      boolean overdue =
+          report.status() == ReportStatus.OPEN && report.isOverdue(now);
+
+      if (overdue) {
+
+        name =
+            name.append(
+                plugin.messages().component(MessageKeys.ADMIN_GUI_QUEUE_ITEM_OVERDUE, Map.of()));
+      }
+
+      List<Component> lore =
+          plugin.messages().components(MessageKeys.GUI_LIST_ITEM_LORE, itemPlaceholders);
+
+      if (report.smartScore() > 0) {
+
+        lore.add(
+            plugin
+                .messages()
+                .component(
+                    MessageKeys.ADMIN_GUI_STATS_LINE,
+                    Map.of(
+                        "key", plugin.messages().plain(MessageKeys.GENERAL_SMART_SCORE),
+                        "value", String.valueOf(report.smartScore()))));
+      }
+
+      if (report.status() == ReportStatus.OPEN) {
+
+        lore.add(plugin.messages().component(MessageKeys.ADMIN_GUI_QUEUE_ITEM_QUICK_CLAIM, Map.of()));
+      }
+
+      inventory.setItem(slot, item(statusMaterial(report.status()), name, lore));
 
       index++;
     }
@@ -1032,13 +1147,14 @@ public final class GuiService {
     player.openInventory(inventory);
   }
 
-  private int overdueCount() {
+  /** Counts overdue reports within a single snapshot instead of re-copying the whole map. */
+  private static int overdueCount(Collection<Report> reports) {
 
     long now = System.currentTimeMillis();
 
     int count = 0;
 
-    for (Report report : plugin.repository().all()) {
+    for (Report report : reports) {
 
       if (report.isOverdue(now)) {
 
@@ -1079,7 +1195,9 @@ public final class GuiService {
 
     ReportDeskHolder holder = ReportDeskHolder.filter(state.filter, state.page);
 
-    ReportStats stats = ReportStats.compute(plugin.repository().all());
+    List<Report> snapshot = plugin.repository().snapshot();
+
+    ReportStats stats = ReportStats.computeCounts(snapshot);
 
     Map<String, String> placeholders = new LinkedHashMap<>();
 
@@ -1089,7 +1207,7 @@ public final class GuiService {
 
     placeholders.put("claimed", String.valueOf(stats.claimed()));
 
-    placeholders.put("overdue", String.valueOf(overdueCount()));
+    placeholders.put("overdue", String.valueOf(overdueCount(snapshot)));
 
     placeholders.put("filter", plugin.view().filterLabel(state.filter));
 
@@ -1255,12 +1373,111 @@ public final class GuiService {
 
     Inventory inventory = create(holder, MessageKeys.GUI_DETAIL_TITLE, placeholders);
 
+    // Top strip: priority card, status-colored banner and target card.
+    Material priorityMaterial =
+        switch (report.priority()) {
+          case URGENT -> Material.NETHER_STAR;
+
+          case HIGH -> Material.GOLD_INGOT;
+
+          case NORMAL -> Material.IRON_INGOT;
+
+          case LOW -> Material.STONE;
+        };
+
+    List<Component> priorityLore = new ArrayList<>();
+
+    priorityLore.add(
+        plugin
+            .messages()
+            .component(
+                MessageKeys.ADMIN_GUI_STATS_LINE,
+                Map.of(
+                    "key", plugin.messages().plain(MessageKeys.GENERAL_PRIORITY),
+                    "value",
+                        plugin
+                            .messages()
+                            .plain(NotificationService.priorityKey(report.priority())))));
+
+    priorityLore.add(
+        plugin
+            .messages()
+            .component(
+                MessageKeys.ADMIN_GUI_STATS_LINE,
+                Map.of(
+                    "key", plugin.messages().plain(MessageKeys.GENERAL_SLA),
+                    "value", placeholders.get("sla"))));
+
+    if (report.smartScore() > 0) {
+
+      priorityLore.add(
+          plugin
+              .messages()
+              .component(
+                  MessageKeys.ADMIN_GUI_STATS_LINE,
+                  Map.of(
+                      "key", plugin.messages().plain(MessageKeys.GENERAL_SMART_SCORE),
+                      "value", String.valueOf(report.smartScore()))));
+    }
+
+    inventory.setItem(
+        2,
+        item(
+            priorityMaterial,
+            plugin.messages().component(NotificationService.priorityKey(report.priority())),
+            priorityLore));
+
     inventory.setItem(
         4,
         item(
-            Material.BOOK,
+            statusMaterial(report.status()),
             plugin.messages().component(MessageKeys.GUI_DETAIL_INFO_NAME, placeholders),
             plugin.messages().components(MessageKeys.GUI_DETAIL_INFO_LORE, placeholders)));
+
+    List<Component> targetLore = new ArrayList<>();
+
+    targetLore.add(
+        plugin
+            .messages()
+            .component(
+                MessageKeys.ADMIN_GUI_STATS_LINE,
+                Map.of(
+                    "key", plugin.messages().plain(MessageKeys.GENERAL_TARGET),
+                    "value", report.targetName())));
+
+    targetLore.add(
+        plugin
+            .messages()
+            .component(
+                Bukkit.getPlayerExact(report.targetName()) != null
+                    ? MessageKeys.ADMIN_GUI_ONLINE
+                    : MessageKeys.ADMIN_GUI_OFFLINE));
+
+    targetLore.add(
+        plugin
+            .messages()
+            .component(
+                MessageKeys.ADMIN_GUI_STATS_LINE,
+                Map.of(
+                    "key", plugin.messages().plain(MessageKeys.GENERAL_TARGET_HISTORY),
+                    "value",
+                        plugin
+                            .messages()
+                            .plain(
+                                MessageKeys.GENERAL_TARGET_HISTORY_VALUE,
+                                Map.of(
+                                    "open", placeholders.get("targetOpen"),
+                                    "total", placeholders.get("targetTotal"))))));
+
+    inventory.setItem(
+        8,
+        item(
+            Material.PLAYER_HEAD,
+            plugin
+                .messages()
+                .component(
+                    MessageKeys.REPORT_PLAYER_ITEM_NAME, Map.of("player", report.targetName())),
+            targetLore));
 
     inventory.setItem(
         10,
@@ -1383,7 +1600,7 @@ public final class GuiService {
                 .messages()
                 .components(
                     MessageKeys.GUI_DETAIL_NEXT_LORE,
-                    Map.of("count", String.valueOf(plugin.repository().openReports().size())))));
+                    Map.of("count", String.valueOf(plugin.repository().openCount())))));
 
     inventory.setItem(
         40,
@@ -1408,6 +1625,8 @@ public final class GuiService {
 
     backButton(inventory);
 
+    hubButton(inventory);
+
     closeButton(inventory);
 
     fill(inventory, holder);
@@ -1428,8 +1647,26 @@ public final class GuiService {
 
     ReportDeskHolder holder = ReportDeskHolder.of(ReportDeskHolder.Type.VERDICT, report.id());
 
+    Map<String, String> summaryPlaceholders = plugin.notification().placeholders(report);
+
+    summaryPlaceholders.put(
+        "targetOpen", String.valueOf(plugin.repository().countOpenForTarget(report.targetName())));
+
+    summaryPlaceholders.put(
+        "targetTotal", String.valueOf(plugin.repository().countForTarget(report.targetName())));
+
     Inventory inventory =
         create(holder, MessageKeys.GUI_VERDICT_TITLE, Map.of("id", String.valueOf(report.id())));
+
+    // Summary card so the judge always sees which report is on the table.
+    inventory.setItem(
+        4,
+        item(
+            Material.BOOK,
+            plugin.messages().component(MessageKeys.GUI_DETAIL_INFO_NAME, summaryPlaceholders),
+            plugin
+                .messages()
+                .components(MessageKeys.GUI_DETAIL_INFO_LORE, summaryPlaceholders)));
 
     inventory.setItem(
         11,
@@ -1458,6 +1695,17 @@ public final class GuiService {
             Material.YELLOW_CONCRETE,
             component(MessageKeys.GUI_VERDICT_INSUFFICIENT_NAME),
             components(MessageKeys.GUI_VERDICT_INSUFFICIENT_LORE)));
+
+    inventory.setItem(
+        45,
+        item(
+            Material.SPECTRAL_ARROW,
+            plugin.messages().component(MessageKeys.GUI_DETAIL_NEXT_NAME),
+            plugin
+                .messages()
+                .components(
+                    MessageKeys.GUI_DETAIL_NEXT_LORE,
+                    Map.of("count", String.valueOf(plugin.repository().openCount())))));
 
     backButton(inventory);
 
@@ -2220,6 +2468,625 @@ public final class GuiService {
 
   // ---------------------------------------------------------------------
 
+  // Player report history (view-only: players can never modify or delete
+  // their own reports from these screens; only staff actions exist on the
+  // admin side, all of which are permission-gated elsewhere)
+
+  // ---------------------------------------------------------------------
+
+  /** The filter every history screen works with: always restricted to one player's own reports. */
+  private ReportFilter ownBaseFilter(Player player) {
+
+    return ReportFilter.all().withReporter(player.getUniqueId());
+  }
+
+  /** Opens the player's report history list with the given status/category/sort filter. */
+  public void openHistory(Player player, ReportFilter filter, int requestedPage) {
+
+    if (!plugin.config().gui().enabled()) {
+
+      send(player, MessageKeys.REPORT_GUI_DISABLED, Map.of());
+
+      return;
+    }
+
+    if (!plugin.repository().isReady()) {
+
+      send(player, MessageKeys.GENERAL_LOADING, Map.of());
+
+      return;
+    }
+
+    renderHistoryList(player, (filter == null ? ReportFilter.all() : filter), requestedPage);
+  }
+
+  private void renderHistoryList(Player player, ReportFilter filter, int requestedPage) {
+
+    // The reporter restriction is forced here regardless of the incoming
+    // filter, so a tampered or stale filter can never leak other players' data.
+    ReportFilter effective = filter.withReporter(player.getUniqueId());
+
+    HistoryState state =
+        historyStates.computeIfAbsent(player.getUniqueId(), ignored -> new HistoryState());
+
+    state.filter = effective;
+
+    state.page = Math.max(1, requestedPage);
+
+    int pageSize = Math.min(plugin.config().reports().guiPageSize(), listCapacity());
+
+    Page<Report> page = plugin.repository().page(effective, state.page, pageSize);
+
+    state.page = page.page();
+
+    ReportDeskHolder holder = ReportDeskHolder.historyList(effective, page.page());
+
+    Map<String, String> placeholders = new LinkedHashMap<>();
+
+    placeholders.put("page", String.valueOf(page.page()));
+
+    placeholders.put("pages", String.valueOf(page.totalPages()));
+
+    placeholders.put("total", String.valueOf(page.totalItems()));
+
+    placeholders.put("filter", plugin.view().filterLabel(effective));
+
+    List<Report> own = plugin.repository().byReporter(player.getUniqueId());
+
+    int open = 0;
+
+    int unread = 0;
+
+    for (Report report : own) {
+
+      if (report.isOpen()) {
+
+        open++;
+      }
+
+      unread += report.unreadReplies();
+    }
+
+    placeholders.put("open", String.valueOf(open));
+
+    placeholders.put("closed", String.valueOf(own.size() - open));
+
+    placeholders.put("unread", String.valueOf(unread));
+
+    Inventory inventory = create(holder, MessageKeys.GUI_HISTORY_TITLE, Map.of("page", String.valueOf(page.page()), "pages", String.valueOf(page.totalPages()), "total", String.valueOf(page.totalItems())));
+
+    header(
+        inventory,
+        Material.BOOK,
+        MessageKeys.GUI_HISTORY_HEADER_NAME,
+        plugin.messages().components(MessageKeys.GUI_HISTORY_HEADER_LORE, placeholders));
+
+    inventory.setItem(
+        TOP_LEFT_SLOT,
+        item(
+            Material.HOPPER,
+            plugin.messages().component(MessageKeys.GUI_FILTER_NAME, Map.of("status", plugin.view().filterLabel(effective))),
+            plugin.messages().components(MessageKeys.GUI_FILTER_LORE, Map.of("status", plugin.view().filterLabel(effective)))));
+
+    inventory.setItem(
+        TOP_RIGHT_SLOT,
+        item(
+            Material.COMPASS,
+            plugin.messages().component(MessageKeys.GUI_SEARCH_NAME),
+            plugin.messages().components(MessageKeys.GUI_SEARCH_LORE)));
+
+    int index = 0;
+
+    for (Report report : page.items()) {
+
+      if (index >= pageSize) {
+
+        break;
+      }
+
+      int slot = listSlot(index);
+
+      holder.putReportId(slot, report.id());
+
+      inventory.setItem(
+          slot,
+          item(
+              statusMaterial(report.status()),
+              plugin
+                  .messages()
+                  .component(
+                      MessageKeys.GUI_HISTORY_ITEM_NAME,
+                      Map.of("id", String.valueOf(report.id()), "target", report.targetName())),
+              plugin
+                  .messages()
+                  .components(
+                      MessageKeys.GUI_HISTORY_ITEM_LORE,
+                      historyItemPlaceholders(report))));
+
+      index++;
+    }
+
+    if (page.items().isEmpty()) {
+
+      inventory.setItem(
+          EMPTY_SLOT,
+          item(Material.PAPER, plugin.messages().component(MessageKeys.REPORT_OWN_EMPTY), List.of()));
+    }
+
+    backButton(inventory);
+
+    refreshButton(inventory);
+
+    pageNavigation(inventory, page);
+
+    closeButton(inventory);
+
+    fill(inventory, holder);
+
+    player.openInventory(inventory);
+  }
+
+  private Map<String, String> historyItemPlaceholders(Report report) {
+
+    Messages messages = plugin.messages();
+
+    Map<String, String> placeholders = new LinkedHashMap<>();
+
+    placeholders.put(
+        "status", messages.plain(NotificationService.statusKey(report.status())));
+
+    placeholders.put("category", plugin.categoryDisplay(report.category()));
+
+    placeholders.put("time", TimeText.absolute(report.createdAt(), messages));
+
+    placeholders.put(
+        "verdict",
+        report.isTerminal()
+            ? messages.plain(NotificationService.verdictKey(report.verdict()))
+            : messages.plain(NotificationService.statusKey(report.status())));
+
+    placeholders.put("replies", String.valueOf(report.replies().size()));
+
+    placeholders.put("unread", String.valueOf(report.unreadReplies()));
+
+    return placeholders;
+  }
+
+  private void openHistoryFilter(Player player, int requestedPage) {
+
+    HistoryState state =
+        historyStates.computeIfAbsent(player.getUniqueId(), ignored -> new HistoryState());
+
+    ReportFilter effective = state.filter == null ? ownBaseFilter(player) : state.filter;
+
+    int pageSize = Math.min(plugin.config().reports().guiPageSize(), listCapacity());
+
+    Page<Report> page = plugin.repository().page(effective, requestedPage, pageSize);
+
+    state.page = page.page();
+
+    ReportDeskHolder holder = ReportDeskHolder.historyFilter(effective, page.page());
+
+    Inventory inventory =
+        create(
+            holder,
+            MessageKeys.GUI_HISTORY_FILTER_TITLE,
+            Map.of("page", String.valueOf(page.page()), "pages", String.valueOf(page.totalPages())));
+
+    Map<String, String> filterPlaceholders =
+        Map.of("status", plugin.view().filterLabel(effective));
+
+    inventory.setItem(
+        TOP_LEFT_SLOT,
+        item(
+            Material.BOOK,
+            plugin.messages().component(MessageKeys.GUI_FILTER_NAME, filterPlaceholders),
+            plugin.messages().components(MessageKeys.GUI_FILTER_LORE, filterPlaceholders)));
+
+    header(
+        inventory,
+        Material.HOPPER,
+        MessageKeys.GUI_HISTORY_HEADER_NAME,
+        plugin.messages().components(MessageKeys.GUI_HISTORY_HEADER_LORE, historySummary(player)));
+
+    for (int index = 0; index < FILTER_STATUSES.length; index++) {
+
+      ReportStatus status = FILTER_STATUSES[index];
+
+      int slot = FILTER_STATUS_START + index;
+
+      boolean selected =
+          status == null
+              ? effective.statuses().isEmpty()
+              : effective.statuses().contains(status);
+
+      List<Component> lore = new ArrayList<>(components(MessageKeys.GUI_FILTER_STATUS_LORE));
+
+      if (selected) {
+
+        lore.add(component(MessageKeys.GUI_FILTER_SELECTED));
+      }
+
+      inventory.setItem(
+          slot,
+          item(
+              status == null ? Material.NETHER_STAR : statusMaterial(status),
+              status == null
+                  ? component(MessageKeys.STATUS_ALL)
+                  : component(NotificationService.statusKey(status)),
+              lore));
+    }
+
+    String category =
+        effective.category().isBlank()
+            ? plugin.messages().plain(MessageKeys.GUI_FILTER_ALL_CATEGORIES)
+            : plugin.categoryDisplay(effective.category());
+
+    inventory.setItem(
+        FILTER_CATEGORY_SLOT,
+        item(
+            Material.CHEST,
+            plugin
+                .messages()
+                .component(MessageKeys.GUI_FILTER_CATEGORY_NAME, Map.of("category", category)),
+            components(MessageKeys.GUI_FILTER_CATEGORY_LORE)));
+
+    String sort =
+        switch (effective.sort()) {
+          case OLDEST -> plugin.messages().plain(MessageKeys.GUI_FILTER_SORT_OLDEST);
+
+          case PRIORITY -> plugin.messages().plain(MessageKeys.GUI_FILTER_SORT_PRIORITY);
+
+          default -> plugin.messages().plain(MessageKeys.GUI_FILTER_SORT_NEWEST);
+        };
+
+    inventory.setItem(
+        FILTER_SORT_SLOT,
+        item(
+            Material.CLOCK,
+            plugin.messages().component(MessageKeys.GUI_FILTER_SORT_NAME, Map.of("sort", sort)),
+            components(MessageKeys.GUI_FILTER_SORT_LORE)));
+
+    inventory.setItem(
+        FILTER_RESET_SLOT,
+        item(
+            Material.BARRIER,
+            component(MessageKeys.GUI_FILTER_RESET_NAME),
+            components(MessageKeys.GUI_FILTER_RESET_LORE)));
+
+    backButton(inventory);
+
+    closeButton(inventory);
+
+    fill(inventory, holder);
+
+    player.openInventory(inventory);
+  }
+
+  private Map<String, String> historySummary(Player player) {
+
+    List<Report> own = plugin.repository().byReporter(player.getUniqueId());
+
+    int open = 0;
+
+    int unread = 0;
+
+    for (Report report : own) {
+
+      if (report.isOpen()) {
+
+        open++;
+      }
+
+      unread += report.unreadReplies();
+    }
+
+    Map<String, String> placeholders = new LinkedHashMap<>();
+
+    placeholders.put("total", String.valueOf(own.size()));
+
+    placeholders.put("open", String.valueOf(open));
+
+    placeholders.put("closed", String.valueOf(own.size() - open));
+
+    placeholders.put("unread", String.valueOf(unread));
+
+    return placeholders;
+  }
+
+  /**
+   * Player-safe detail view of one of the player's own reports. Ownership is
+   *
+   * <p>re-checked on every open; the screens expose no modification actions at all.
+   */
+  public void openHistoryDetail(Player player, long reportId) {
+
+    Report report = plugin.repository().get(reportId).orElse(null);
+
+    if (report == null || !player.getUniqueId().equals(report.reporterId())) {
+
+      send(player, MessageKeys.GENERAL_REPORT_NOT_FOUND, Map.of("id", String.valueOf(reportId)));
+
+      return;
+    }
+
+    plugin.reportService().markReporterRead(report);
+
+    ReportDeskHolder holder =
+        ReportDeskHolder.of(ReportDeskHolder.Type.HISTORY_DETAIL, report.id());
+
+    Map<String, String> placeholders = plugin.notification().placeholders(report);
+
+    placeholders.put(
+        "targetOpen", String.valueOf(plugin.repository().countOpenForTarget(report.targetName())));
+
+    placeholders.put(
+        "targetTotal", String.valueOf(plugin.repository().countForTarget(report.targetName())));
+
+    Inventory inventory =
+        create(
+            holder,
+            MessageKeys.GUI_HISTORY_DETAIL_TITLE,
+            Map.of("id", String.valueOf(report.id()), "target", report.targetName()));
+
+    inventory.setItem(
+        4,
+        item(
+            Material.BOOK,
+            plugin.messages().component(MessageKeys.GUI_HISTORY_INFO_NAME, placeholders),
+            plugin.messages().components(MessageKeys.GUI_HISTORY_INFO_LORE, placeholders)));
+
+    inventory.setItem(
+        10,
+        item(
+            Material.WRITABLE_BOOK,
+            plugin.messages().component(MessageKeys.GUI_DETAIL_DETAIL_NAME),
+            plugin
+                .messages()
+                .components(
+                    MessageKeys.GUI_DETAIL_DETAIL_LORE,
+                    Map.of(
+                        "detail",
+                        report.detail().isBlank()
+                            ? plugin.messages().plain(MessageKeys.GENERAL_NONE)
+                            : report.detail()))));
+
+    List<Component> resultLore = new ArrayList<>();
+
+    Messages messages = plugin.messages();
+
+    if (report.isTerminal()) {
+
+      resultLore.add(
+          messages.component(
+              MessageKeys.GUI_HISTORY_RESULT_VERDICT,
+              Map.of("verdict", messages.plain(NotificationService.verdictKey(report.verdict())))));
+
+      if (!report.closedByName().isBlank()) {
+
+        resultLore.add(
+            messages.component(
+                MessageKeys.GUI_HISTORY_RESULT_CLOSED_BY,
+                Map.of(
+                    "closedBy", report.closedByName(),
+                    "closedAt", TimeText.absolute(report.closedAt(), messages))));
+      }
+
+      if (!report.closeNote().isBlank()) {
+
+        resultLore.add(
+            messages.component(
+                MessageKeys.GUI_HISTORY_RESULT_NOTE, Map.of("note", report.closeNote())));
+      }
+
+    } else {
+
+      if (report.isClaimed()) {
+
+        resultLore.add(
+            messages.component(
+                MessageKeys.GUI_HISTORY_RESULT_CLAIMED,
+                Map.of(
+                    "claimedBy", report.claimedByName(),
+                    "claimedAt", TimeText.absolute(report.claimedAt(), messages))));
+      }
+
+      resultLore.add(
+          messages.component(
+              MessageKeys.GUI_HISTORY_RESULT_PENDING,
+              Map.of(
+                  "priority",
+                  messages.plain(NotificationService.priorityKey(report.priority())),
+                  "sla", slaValue(report))));
+    }
+
+    resultLore.add(
+        messages.component(
+            MessageKeys.GUI_HISTORY_RESULT_TARGET,
+            Map.of(
+                "open", placeholders.getOrDefault("targetOpen", "0"),
+                "total", placeholders.getOrDefault("targetTotal", "0"))));
+
+    inventory.setItem(
+        12,
+        item(
+            Material.SPYGLASS,
+            plugin.messages().component(MessageKeys.GUI_HISTORY_RESULT_NAME, placeholders),
+            resultLore));
+
+    inventory.setItem(
+        14,
+        item(
+            Material.CHEST,
+            plugin.messages().component(MessageKeys.GUI_HISTORY_EVIDENCE_NAME, placeholders),
+            plugin
+                .messages()
+                .components(
+                    MessageKeys.GUI_HISTORY_EVIDENCE_LORE,
+                    Map.of(
+                        "state",
+                        messages.plain(
+                            report.evidence().present()
+                                ? MessageKeys.GENERAL_YES
+                                : MessageKeys.GENERAL_NO),
+                        "summary", report.evidence().shortSummary()))));
+
+    Map<String, String> repliesPlaceholders =
+        Map.of(
+            "count", String.valueOf(report.replies().size()),
+            "unread", String.valueOf(report.unreadReplies()),
+            "lastReply",
+                report.lastReply()
+                    .map(
+                        reply ->
+                            reply.authorName()
+                                + ": "
+                                + (reply.text().length() > 48
+                                    ? reply.text().substring(0, 48) + "…"
+                                    : reply.text()))
+                    .orElseGet(() -> messages.plain(MessageKeys.GENERAL_NONE)));
+
+    inventory.setItem(
+        28,
+        item(
+            Material.WRITABLE_BOOK,
+            plugin.messages().component(MessageKeys.GUI_HISTORY_REPLIES_NAME, repliesPlaceholders),
+            plugin.messages().components(
+                MessageKeys.GUI_HISTORY_REPLIES_LORE, repliesPlaceholders)));
+
+    if (playerRepliesAllowed()) {
+
+      inventory.setItem(
+          29,
+          item(
+              Material.LIME_DYE,
+              component(MessageKeys.GUI_HISTORY_REPLY_NAME),
+              components(MessageKeys.GUI_HISTORY_REPLY_LORE)));
+
+    } else {
+
+      inventory.setItem(
+          29,
+          item(
+              Material.GRAY_DYE,
+              component(MessageKeys.GUI_HISTORY_REPLY_DISABLED),
+              List.of()));
+    }
+
+    backButton(inventory);
+
+    refreshButton(inventory);
+
+    closeButton(inventory);
+
+    fill(inventory, holder);
+
+    player.openInventory(inventory);
+  }
+
+  private String slaValue(Report report) {
+
+    return report.slaDueAt() <= 0L
+        ? plugin.messages().plain(MessageKeys.GENERAL_SLA_NONE)
+        : TimeText.absolute(report.slaDueAt(), plugin.messages());
+  }
+
+  private boolean playerRepliesAllowed() {
+
+    PluginConfig.Replies settings = plugin.config().replies();
+
+    return settings.enabled() && settings.allowPlayerReplies();
+  }
+
+  public void openHistoryReplies(Player player, long reportId, int requestedPage) {
+
+    Report report = plugin.repository().get(reportId).orElse(null);
+
+    if (report == null || !player.getUniqueId().equals(report.reporterId())) {
+
+      send(player, MessageKeys.GENERAL_REPORT_NOT_FOUND, Map.of("id", String.valueOf(reportId)));
+
+      return;
+    }
+
+    int pageSize = plugin.config().reports().guiPageSize();
+
+    Page<ReportReply> page = Page.of(report.replies(), requestedPage, pageSize);
+
+    ReportDeskHolder holder =
+        ReportDeskHolder.of(ReportDeskHolder.Type.HISTORY_REPLIES, report.id(), page.page());
+
+    Inventory inventory =
+        create(
+            holder,
+            MessageKeys.GUI_HISTORY_REPLIES_TITLE,
+            Map.of("id", String.valueOf(report.id()), "target", report.targetName()));
+
+    int slot = 0;
+
+    for (ReportReply reply : page.items()) {
+
+      if (slot >= pageSize) {
+
+        break;
+      }
+
+      Map<String, String> placeholders =
+          Map.of(
+              "author", reply.authorName(),
+              "time", TimeText.absolute(reply.createdAt(), plugin.messages()),
+              "text", reply.text(),
+              "role",
+                  plugin
+                      .messages()
+                      .plain(
+                          reply.staff()
+                              ? MessageKeys.GENERAL_STAFF
+                              : MessageKeys.GENERAL_REPORTER));
+
+      inventory.setItem(
+          slot,
+          item(
+              reply.staff() ? Material.WRITTEN_BOOK : Material.PAPER,
+              plugin.messages().component(MessageKeys.GUI_REPLIES_ITEM_NAME, placeholders),
+              plugin.messages().components(MessageKeys.GUI_REPLIES_ITEM_LORE, placeholders)));
+
+      slot++;
+    }
+
+    if (page.items().isEmpty()) {
+
+      inventory.setItem(
+          EMPTY_SLOT,
+          item(
+              Material.PAPER,
+              plugin.messages().component(MessageKeys.GUI_REPLIES_EMPTY),
+              List.of()));
+    }
+
+    if (playerRepliesAllowed()) {
+
+      inventory.setItem(
+          ACTION_MIDDLE_SLOT,
+          item(
+              Material.EMERALD,
+              component(MessageKeys.GUI_HISTORY_REPLY_NAME),
+              components(MessageKeys.GUI_HISTORY_REPLY_LORE)));
+    }
+
+    backButton(inventory);
+
+    pageNavigation(inventory, page);
+
+    closeButton(inventory);
+
+    fill(inventory, holder);
+
+    player.openInventory(inventory);
+  }
+
+  // ---------------------------------------------------------------------
+
   // Click handling
 
   // ---------------------------------------------------------------------
@@ -2269,7 +3136,7 @@ public final class GuiService {
 
       case CONFIRM -> clickConfirm(player, slot);
 
-      case ADMIN_LIST -> clickAdminList(player, holder, slot);
+      case ADMIN_LIST -> clickAdminList(player, holder, slot, event.isRightClick());
 
       case ADMIN_FILTER -> clickAdminFilter(player, holder, slot);
 
@@ -2286,6 +3153,14 @@ public final class GuiService {
       case REPLIES -> clickReplies(player, holder, slot);
 
       case ADMIN_CHAT -> clickAdminChat(player, holder, slot);
+
+      case HISTORY_LIST -> clickHistoryList(player, holder, slot);
+
+      case HISTORY_FILTER -> clickHistoryFilter(player, holder, slot);
+
+      case HISTORY_DETAIL -> clickHistoryDetail(player, holder, slot);
+
+      case HISTORY_REPLIES -> clickHistoryReplies(player, holder, slot);
 
       case ADMIN_HUB,
               ADMIN_PLAYERS,
@@ -2322,6 +3197,15 @@ public final class GuiService {
     }
 
     FlowState flow = flow(player);
+
+    if (slot == HUB_SLOT) {
+
+      play(player, plugin.config().gui().soundClick());
+
+      openHistory(player, null, 1);
+
+      return;
+    }
 
     if (slot == ACTION_RIGHT_SLOT) {
 
@@ -2446,7 +3330,7 @@ public final class GuiService {
     FlowState flow = flow(player);
 
     switch (slot) {
-      case 27 -> {
+      case 8 -> {
         if (flow.chatFlow) {
 
           play(player, plugin.config().gui().soundClick());
@@ -2455,9 +3339,9 @@ public final class GuiService {
         }
       }
 
-      case 29 -> submitFlow(player, flow);
+      case 44 -> submitFlow(player, flow);
 
-      case 31 -> {
+      case 46 -> {
         player.closeInventory();
 
         plugin
@@ -2480,12 +3364,30 @@ public final class GuiService {
                 });
       }
 
-      case 33 -> {
+      case 48 -> {
+        play(player, plugin.config().gui().soundClick());
+
+        openCategorySelect(player);
+      }
+
+      case 49 -> {
+        play(player, plugin.config().gui().soundClick());
+
+        openConfirm(player);
+      }
+
+      case 52 -> {
         flows.remove(player.getUniqueId());
 
         player.closeInventory();
 
         send(player, MessageKeys.GENERAL_CANCELLED, Map.of());
+      }
+
+      case 53 -> {
+        play(player, plugin.config().gui().soundClick());
+
+        openHistory(player, null, 1);
       }
 
       default -> {
@@ -2513,7 +3415,14 @@ public final class GuiService {
     var result =
         plugin
             .reportService()
-            .submit(player, flow.target, flow.category, flow.detail, bypass, selections);
+            .submit(
+                player,
+                flow.target,
+                flow.category,
+                flow.detail,
+                bypass,
+                selections,
+                flow.chatFlow ? "chat" : "gui");
 
     String key = ReportService.messageKey(result.reason());
 
@@ -2546,7 +3455,8 @@ public final class GuiService {
     send(player, key, placeholders);
   }
 
-  private void clickAdminList(Player player, ReportDeskHolder holder, int slot) {
+  private void clickAdminList(
+      Player player, ReportDeskHolder holder, int slot, boolean rightClick) {
 
     AdminState state =
         adminStates.computeIfAbsent(player.getUniqueId(), ignored -> new AdminState());
@@ -2562,6 +3472,16 @@ public final class GuiService {
         play(player, plugin.config().gui().soundClick());
 
         openFilter(player, state.filter, state.page);
+      }
+
+      case OVERDUE_BADGE_SLOT -> {
+        play(player, plugin.config().gui().soundClick());
+
+        state.filter = state.filter.withOverdueOnly(!state.filter.overdueOnly());
+
+        state.page = 1;
+
+        renderAdminList(player, state);
       }
 
       case TOP_MIDDLE_SLOT -> showStats(player);
@@ -2658,12 +3578,42 @@ public final class GuiService {
       default -> {
         Long reportId = holder.reportId(slot);
 
-        if (reportId != null) {
+        if (reportId == null) {
 
-          play(player, plugin.config().gui().soundClick());
-
-          openDetail(player, reportId);
+          return;
         }
+
+        Report report = plugin.repository().get(reportId).orElse(null);
+
+        if (report == null) {
+
+          renderAdminList(player, state);
+
+          return;
+        }
+
+        if (rightClick && report.status() == ReportStatus.OPEN) {
+
+          // Quick claim: same permission, rate limit and audit path as the
+          // detail page claim button; left click still opens the details.
+
+          if (!adminActionAllowed(player)) {
+
+            return;
+          }
+
+          ReportService.OpResult result = plugin.reportService().claim(report, player);
+
+          notifyResult(player, result);
+
+          renderAdminList(player, state);
+
+          return;
+        }
+
+        play(player, plugin.config().gui().soundClick());
+
+        openDetail(player, reportId);
       }
     }
   }
@@ -2991,6 +3941,12 @@ public final class GuiService {
         openDetail(player, report.id());
       }
 
+      case HUB_SLOT -> {
+        play(player, plugin.config().gui().soundClick());
+
+        adminGui.openHub(player);
+      }
+
       default -> {
 
         // Decorative slot.
@@ -3052,6 +4008,15 @@ public final class GuiService {
     if (slot == BACK_SLOT) {
 
       openDetail(player, holder.reportId());
+
+      return;
+    }
+
+    if (slot == 45) {
+
+      play(player, plugin.config().gui().soundClick());
+
+      openNextOpenReport(player, holder.reportId());
 
       return;
     }
@@ -3275,6 +4240,421 @@ public final class GuiService {
     if (slot == BACK_SLOT) {
 
       openDetail(player, holder.reportId());
+    }
+  }
+
+  // ---------------------------------------------------------------------
+
+  // Player history click handling
+
+  // ---------------------------------------------------------------------
+
+  private void clickHistoryList(Player player, ReportDeskHolder holder, int slot) {
+
+    if (slot == CLOSE_SLOT || slot == BACK_SLOT) {
+
+      player.closeInventory();
+
+      return;
+    }
+
+    if (slot == REFRESH_SLOT) {
+
+      play(player, plugin.config().gui().soundClick());
+
+      renderHistoryList(player, holder.filter(), holder.page());
+
+      return;
+    }
+
+    if (slot == TOP_LEFT_SLOT) {
+
+      play(player, plugin.config().gui().soundClick());
+
+      openHistoryFilter(player, holder.page());
+
+      return;
+    }
+
+    if (slot == TOP_RIGHT_SLOT) {
+
+      player.closeInventory();
+
+      plugin
+          .chatInput()
+          .request(
+              player,
+              MessageKeys.GUI_SEARCH_PROMPT,
+              Map.of(),
+              text -> {
+                if (!player.isOnline()) {
+
+                  return;
+                }
+
+                if (!plugin.validator().validateQuery(text).valid()) {
+
+                  send(
+                      player,
+                      MessageKeys.GENERAL_INVALID_INPUT,
+                      Map.of("reason", "illegal_characters"));
+
+                  return;
+                }
+
+                HistoryState state =
+                    historyStates.computeIfAbsent(
+                        player.getUniqueId(), ignored -> new HistoryState());
+
+                state.filter =
+                    state.filter == null
+                        ? ownBaseFilter(player)
+                        : state.filter.withQuery(text.trim());
+
+                renderHistoryList(player, state.filter, 1);
+              });
+
+      return;
+    }
+
+    if (slot == PREVIOUS_SLOT) {
+
+      renderHistoryList(player, holder.filter(), holder.page() - 1);
+
+      return;
+    }
+
+    if (slot == NEXT_SLOT) {
+
+      renderHistoryList(player, holder.filter(), holder.page() + 1);
+
+      return;
+    }
+
+    Long reportId = holder.reportId(slot);
+
+    if (reportId != null) {
+
+      play(player, plugin.config().gui().soundClick());
+
+      openHistoryDetail(player, reportId);
+    }
+  }
+
+  private void clickHistoryFilter(Player player, ReportDeskHolder holder, int slot) {
+
+    if (slot == CLOSE_SLOT) {
+
+      player.closeInventory();
+
+      return;
+    }
+
+    HistoryState state =
+        historyStates.computeIfAbsent(player.getUniqueId(), ignored -> new HistoryState());
+
+    ReportFilter current = holder.filter();
+
+    if (slot == BACK_SLOT) {
+
+      play(player, plugin.config().gui().soundClick());
+
+      renderHistoryList(player, current, state.page);
+
+      return;
+    }
+
+    if (slot == FILTER_CATEGORY_SLOT) {
+
+      List<String> ids = enabledCategories().stream().map(ReportCategory::id).toList();
+
+      int index = ids.indexOf(current.category());
+
+      String next;
+
+      if (index < 0) {
+
+        next = ids.isEmpty() ? "" : ids.get(0);
+
+      } else if (index + 1 >= ids.size()) {
+
+        next = "";
+
+      } else {
+
+        next = ids.get(index + 1);
+      }
+
+      state.filter = current.withCategory(next);
+
+      state.page = 1;
+
+      play(player, plugin.config().gui().soundClick());
+
+      openHistoryFilter(player, 1);
+
+      return;
+    }
+
+    if (slot == FILTER_SORT_SLOT) {
+
+      state.filter =
+          current.withSort(
+              switch (current.sort()) {
+                case NEWEST -> ReportFilter.SortOrder.PRIORITY;
+
+                case PRIORITY -> ReportFilter.SortOrder.OLDEST;
+
+                default -> ReportFilter.SortOrder.NEWEST;
+              });
+
+      state.page = 1;
+
+      play(player, plugin.config().gui().soundClick());
+
+      openHistoryFilter(player, 1);
+
+      return;
+    }
+
+    if (slot == FILTER_RESET_SLOT) {
+
+      state.filter = ownBaseFilter(player);
+
+      state.page = 1;
+
+      play(player, plugin.config().gui().soundClick());
+
+      openHistoryFilter(player, 1);
+
+      return;
+    }
+
+    int index = slot - FILTER_STATUS_START;
+
+    if (index < 0 || index >= FILTER_STATUSES.length) {
+
+      return;
+    }
+
+    state.filter = current.withStatus(FILTER_STATUSES[index]);
+
+    state.page = 1;
+
+    play(player, plugin.config().gui().soundClick());
+
+    openHistoryFilter(player, 1);
+  }
+
+  private void clickHistoryDetail(Player player, ReportDeskHolder holder, int slot) {
+
+    Report report = ownHistoryReport(player, holder.reportId());
+
+    if (report == null) {
+
+      player.closeInventory();
+
+      return;
+    }
+
+    switch (slot) {
+      case CLOSE_SLOT -> player.closeInventory();
+
+      case BACK_SLOT -> {
+        play(player, plugin.config().gui().soundClick());
+
+        renderHistoryList(player, ownBaseFilter(player), 1);
+      }
+
+      case REFRESH_SLOT -> {
+        play(player, plugin.config().gui().soundClick());
+
+        openHistoryDetail(player, holder.reportId());
+      }
+
+      case 28 -> {
+        play(player, plugin.config().gui().soundClick());
+
+        openHistoryReplies(player, holder.reportId(), 1);
+      }
+
+      case 29 -> {
+        if (!playerRepliesAllowed()) {
+
+          return;
+        }
+
+        if (!allowPlayerReply(player)) {
+
+          return;
+        }
+
+        player.closeInventory();
+
+        plugin
+            .chatInput()
+            .request(
+                player,
+                MessageKeys.GUI_HISTORY_REPLY_PROMPT,
+                Map.of(),
+                text -> {
+                  if (!player.isOnline()) {
+
+                    return;
+                  }
+
+                  Report current =
+                      plugin.repository().get(holder.reportId()).orElse(null);
+
+                  if (current == null
+                      || !player.getUniqueId().equals(current.reporterId())) {
+
+                    return;
+                  }
+
+                  ReportService.OpResult result =
+                      plugin.reportService().addReply(current, player, text, false);
+
+                  notifyResult(player, result);
+
+                  if (result.success()) {
+
+                    openHistoryDetail(player, holder.reportId());
+                  }
+                });
+      }
+
+      default -> {
+
+        // Read-only screen; every other slot is decorative.
+
+      }
+    }
+  }
+
+  /** Re-checks ownership before any history screen work; null when the report is not the player's. */
+  private Report ownHistoryReport(Player player, long reportId) {
+
+    Report report = plugin.repository().get(reportId).orElse(null);
+
+    if (report == null || !player.getUniqueId().equals(report.reporterId())) {
+
+      send(player, MessageKeys.GENERAL_REPORT_NOT_FOUND, Map.of("id", String.valueOf(reportId)));
+
+      return null;
+    }
+
+    return report;
+  }
+
+  /** Reuses the command-level cooldown so history replies cannot be flooded either. */
+  private boolean allowPlayerReply(Player player) {
+
+    long cooldown = plugin.config().limits().commandCooldownMillis();
+
+    if (cooldown <= 0 || player.hasPermission(plugin.config().limits().bypassPermission())) {
+
+      return true;
+    }
+
+    long now = System.currentTimeMillis();
+
+    Map<UUID, Long> lastUse = lastAdminAction;
+
+    Long last = lastUse.get(player.getUniqueId());
+
+    if (last != null && now - last < cooldown) {
+
+      send(player, MessageKeys.GENERAL_ACTION_COOLDOWN, Map.of());
+
+      return false;
+    }
+
+    lastUse.put(player.getUniqueId(), now);
+
+    return true;
+  }
+
+  private void clickHistoryReplies(Player player, ReportDeskHolder holder, int slot) {
+
+    Report report = ownHistoryReport(player, holder.reportId());
+
+    if (report == null) {
+
+      player.closeInventory();
+
+      return;
+    }
+
+    if (slot == CLOSE_SLOT) {
+
+      player.closeInventory();
+
+      return;
+    }
+
+    if (slot == BACK_SLOT) {
+
+      play(player, plugin.config().gui().soundClick());
+
+      openHistoryDetail(player, holder.reportId());
+
+      return;
+    }
+
+    if (slot == ACTION_MIDDLE_SLOT) {
+
+      if (!playerRepliesAllowed() || !allowPlayerReply(player)) {
+
+        return;
+      }
+
+      player.closeInventory();
+
+      plugin
+          .chatInput()
+          .request(
+              player,
+              MessageKeys.GUI_HISTORY_REPLY_PROMPT,
+              Map.of(),
+              text -> {
+                if (!player.isOnline()) {
+
+                  return;
+                }
+
+                Report current =
+                    plugin.repository().get(holder.reportId()).orElse(null);
+
+                if (current == null || !player.getUniqueId().equals(current.reporterId())) {
+
+                  return;
+                }
+
+                ReportService.OpResult result =
+                    plugin.reportService().addReply(current, player, text, false);
+
+                notifyResult(player, result);
+
+                if (result.success()) {
+
+                  openHistoryReplies(player, holder.reportId(), holder.page());
+                }
+              });
+
+      return;
+    }
+
+    if (slot == PREVIOUS_SLOT) {
+
+      openHistoryReplies(player, holder.reportId(), holder.page() - 1);
+
+      return;
+    }
+
+    if (slot == NEXT_SLOT) {
+
+      openHistoryReplies(player, holder.reportId(), holder.page() + 1);
     }
   }
 

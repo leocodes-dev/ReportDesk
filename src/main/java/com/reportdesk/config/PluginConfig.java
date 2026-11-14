@@ -44,7 +44,8 @@ public record PluginConfig(
     ConfigEditor configEditor,
     Security security,
     List<ReportCategory> categories,
-    String defaultCategory) {
+    String defaultCategory,
+    SmartPriority smartPriority) {
 
   public PluginConfig {
 
@@ -55,6 +56,26 @@ public record PluginConfig(
     categories = categories == null ? List.of() : List.copyOf(categories);
 
     defaultCategory = blankTo(defaultCategory, "other");
+
+    smartPriority = smartPriority == null ? defaultSmartPriority() : smartPriority;
+  }
+
+  private static SmartPriority defaultSmartPriority() {
+
+    return new SmartPriority(
+        false,
+        30,
+        20,
+        25,
+        10,
+        15,
+        90,
+        70,
+        30,
+        SmartPriority.GarbageAction.FLAG,
+        2,
+        200,
+        5);
   }
 
   public CategoryRegistry categoryRegistry() {
@@ -268,7 +289,8 @@ public record PluginConfig(
       int watchlistMaxTargets,
       boolean watchlistNotifyOnReport,
       boolean broadcastEnabled,
-      Webhook webhook) {}
+      Webhook webhook,
+      Sla sla) {}
 
   public record Webhook(
       boolean enabled,
@@ -278,7 +300,10 @@ public record PluginConfig(
       String avatarUrl,
       boolean eventCreated,
       boolean eventClaimed,
-      boolean eventClosed) {}
+      boolean eventClosed,
+      int retryCount,
+      int retryBaseSeconds,
+      boolean failureAlertEnabled) {}
 
   public record Evidence(
       boolean enabled,
@@ -314,7 +339,10 @@ public record PluginConfig(
   public record Punishments(
       boolean enabled, List<String> resolvedCommands, List<String> rejectedCommands) {}
 
-  public record Audit(boolean enabled, int retentionDays, int pageSize) {}
+  public record Audit(boolean enabled, int retentionDays, int pageSize, int maxFileSizeMb) {}
+
+  /** Optional weekly SLA summary pushed to the webhook (enhanced layer, off by default). */
+  public record Sla(boolean weeklyEnabled, int weeklyIntervalHours) {}
 
   /**
    * Settings for the in-game config editor itself. These are read from the
@@ -334,7 +362,55 @@ public record PluginConfig(
       boolean detailRequired,
       boolean allowColorCodes,
       String playerNamePattern,
-      List<String> blockedWords) {}
+      List<String> blockedWords,
+      boolean ipHashEnabled,
+      String ipHashSalt) {}
+
+  /**
+   * Optional smart-priority scoring (enhanced layer, disabled by default).
+   *
+   * <p>When enabled, every submission is scored 0-100 from five weighted
+   *
+   * <p>factors (reporter credibility, target history, detail quality, chat
+   *
+   * <p>evidence and category severity). The score can upgrade the effective
+   *
+   * <p>priority and, below {@code garbageScore}, trigger the configured
+   *
+   * <p>garbage action.
+   */
+  public record SmartPriority(
+      boolean enabled,
+      int reporterCredibilityWeight,
+      int targetHistoryWeight,
+      int detailQualityWeight,
+      int chatEvidenceWeight,
+      int categorySeverityWeight,
+      int urgentScore,
+      int highScore,
+      int garbageScore,
+      GarbageAction garbageAction,
+      int detailMinLength,
+      int detailMaxLength,
+      int chatMaxSelected) {
+
+    public SmartPriority {
+
+      garbageAction = garbageAction == null ? GarbageAction.FLAG : garbageAction;
+    }
+
+    public enum GarbageAction {
+
+      /** Keep the report; the score is visible in the queue and detail views. */
+      FLAG,
+
+      /** Force the priority down to {@link com.reportdesk.core.ReportPriority#LOW}. */
+      DEMOTE,
+
+      /** Close the report automatically with the INSUFFICIENT verdict. */
+      AUTO_CLOSE
+    }
+  }
 
   private static String blankTo(String value, String fallback) {
 

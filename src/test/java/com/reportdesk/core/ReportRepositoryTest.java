@@ -158,6 +158,27 @@ class ReportRepositoryTest {
   }
 
   @Test
+  void pageHonoursTheReporterFilterForHistoryViews() {
+
+    // Alice filed 5 and 9, Bob filed 2, the staff entry 7 is someone else's.
+    Page<Report> page = repository.page(ReportFilter.all().withReporter(TestFixtures.ALICE), 1, 10);
+
+    assertEquals(List.of(9L, 5L), page.items().stream().map(Report::id).toList());
+
+    Page<Report> filtered =
+        repository.page(
+            ReportFilter.ofStatus(ReportStatus.RESOLVED).withReporter(TestFixtures.ALICE), 1, 10);
+
+    assertEquals(List.of(9L), filtered.items().stream().map(Report::id).toList());
+
+    Page<Report> emptyPage =
+        repository.page(
+            ReportFilter.ofStatus(ReportStatus.RESOLVED).withReporter(TestFixtures.BOB), 1, 10);
+
+    assertEquals(0, emptyPage.totalItems());
+  }
+
+  @Test
   void findOpenDuplicateHonoursCutoffAndOpenState() {
 
     assertTrue(repository.findOpenDuplicate(TestFixtures.ALICE, "bob", 0L).isPresent());
@@ -217,5 +238,136 @@ class ReportRepositoryTest {
     assertFalse(repository.contains(5L));
 
     assertTrue(repository.get(5L).isEmpty());
+  }
+
+  @Test
+  void openIndexFollowsStatusChanges() {
+
+    assertEquals(3, repository.openCount());
+
+    assertEquals(1, repository.countOpenForTarget("Bob"));
+
+    assertEquals(2, repository.countForTarget("Bob"));
+
+    // Close report 5: the open index drops, the total index stays.
+    repository.put(
+        TestFixtures.report(
+            5L,
+            TestFixtures.ALICE,
+            "Alice",
+            "Bob",
+            "cheating",
+            ReportStatus.RESOLVED,
+            1_000L,
+            5_000L,
+            5_000L));
+
+    assertEquals(2, repository.openCount());
+
+    assertEquals(0, repository.countOpenForTarget("Bob"));
+
+    assertEquals(2, repository.countForTarget("Bob"));
+
+    // Reopen report 5: the open index comes back, the total index stays.
+    repository.put(TestFixtures.open(5L, TestFixtures.ALICE, "Alice", "Bob", "cheating", 1_000L));
+
+    assertEquals(3, repository.openCount());
+
+    assertEquals(1, repository.countOpenForTarget("Bob"));
+
+    assertEquals(2, repository.countForTarget("Bob"));
+  }
+
+  @Test
+  void removingAReportDecrementsBothIndexes() {
+
+    assertTrue(repository.remove(2L)); // open report against Charlie
+
+    assertEquals(0, repository.countOpenForTarget("Charlie"));
+
+    assertEquals(0, repository.countForTarget("Charlie"));
+
+    assertEquals(2, repository.openCount());
+  }
+
+  @Test
+  void seedingTheSameReportsAgainDoesNotDuplicateIndexEntries() {
+
+    int openBefore = repository.openCount();
+
+    int totalBefore = repository.countForTarget("Bob");
+
+    repository.seed(
+        List.of(TestFixtures.open(5L, TestFixtures.ALICE, "Alice", "Bob", "cheating", 1_000L)));
+
+    assertEquals(openBefore, repository.openCount());
+
+    assertEquals(totalBefore, repository.countForTarget("Bob"));
+  }
+
+  @Test
+  void snapshotIsAnUnsortedIndependentCopy() {
+
+    List<Report> snapshot = repository.snapshot();
+
+    assertEquals(4, snapshot.size());
+
+    repository.remove(5L);
+
+    assertEquals(4, snapshot.size());
+
+    assertEquals(3, repository.size());
+  }
+
+  @Test
+  void queryFieldCacheInvalidatesWhenAReportStateChanges() {
+
+    // No seeded report carries a verdict yet, so only a freshly closed one
+    // can ever match this query.
+    ReportFilter query = ReportFilter.all().withQuery("resolved");
+
+    // Prime the cache: zero matches.
+    assertEquals(0, repository.filter(query).size());
+
+    // Closing report 5 changes its updatedAt, so the cached fields must be
+    // rebuilt; the closed-by name now matches the query.
+    repository.put(
+        TestFixtures.open(5L, TestFixtures.ALICE, "Alice", "Bob", "cheating", 1_000L)
+            .withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "note", 5_000L));
+
+    assertEquals(1, repository.filter(query).size());
+
+    // Reopening clears the closed-by name again, which must be picked up on
+    // the very next pass as well.
+    repository.put(
+        TestFixtures.open(5L, TestFixtures.ALICE, "Alice", "Bob", "cheating", 1_000L)
+            .withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "note", 5_000L)
+            .withReopened(6_000L));
+
+    assertEquals(0, repository.filter(query).size());
+  }
+
+  @Test
+  void findOpenDuplicateSeesOnlyOpenReportsOfThatTarget() {
+
+    // Close report 5 so only report 9 (terminal) remains against "Bob".
+    repository.put(
+        TestFixtures.report(
+            5L,
+            TestFixtures.ALICE,
+            "Alice",
+            "Bob",
+            "cheating",
+            ReportStatus.RESOLVED,
+            1_000L,
+            5_000L,
+            5_000L));
+
+    assertTrue(repository.findOpenDuplicate(TestFixtures.ALICE, "bob", 0L).isEmpty());
+
+    // Reopening it makes the duplicate visible again.
+    repository.put(TestFixtures.open(5L, TestFixtures.ALICE, "Alice", "Bob", "cheating", 1_000L));
+
+    assertTrue(repository.findOpenDuplicate(TestFixtures.ALICE, "bob", 0L).isPresent());
   }
 }

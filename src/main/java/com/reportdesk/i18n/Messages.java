@@ -54,11 +54,32 @@ public final class Messages {
 
   private final String language;
 
+  /**
+   * The parsed date format. {@code values} is immutable for the life of the instance, so the
+   * pattern can be parsed exactly once per language file instead of on every timestamp render.
+   */
+  private final DateTimeFormatter dateFormatter;
+
   private Messages(Map<String, Object> values, String language) {
 
     this.values = values;
 
     this.language = language;
+
+    String pattern = raw(MessageKeys.TIME_FORMAT_DATE);
+
+    DateTimeFormatter formatter;
+
+    try {
+
+      formatter = DateTimeFormatter.ofPattern(pattern);
+
+    } catch (IllegalArgumentException | DateTimeParseException exception) {
+
+      formatter = DEFAULT_DATE;
+    }
+
+    this.dateFormatter = formatter;
   }
 
   public static Messages empty() {
@@ -290,16 +311,7 @@ public final class Messages {
 
   public DateTimeFormatter dateFormatter() {
 
-    String pattern = raw(MessageKeys.TIME_FORMAT_DATE);
-
-    try {
-
-      return DateTimeFormatter.ofPattern(pattern);
-
-    } catch (IllegalArgumentException | DateTimeParseException exception) {
-
-      return DEFAULT_DATE;
-    }
+    return dateFormatter;
   }
 
   /**

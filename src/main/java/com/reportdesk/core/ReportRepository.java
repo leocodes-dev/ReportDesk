@@ -22,14 +22,34 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Thread-safe in-memory report index. All GUI/command reads hit this map, never the disk.
  * Persistence is handled by the async storage layer.
+ *
+ * <p>Two secondary indexes keep the per-target lookups cheap instead of O(N) full scans:
+ *
+ * <ul>
+ *   <li>{@code openByTarget} — the ids of the reports currently open, grouped by the normalised
+ *       (lower-cased) target name, so {@link #countOpenForTarget} and {@link
+ *       #findOpenDuplicate} only touch one target's handful of open reports;
+ *   <li>{@code totalByTarget} — the total number of reports ever recorded per target, so {@link
+ *       #countForTarget} is a map lookup.
+ * </ul>
+ *
+ * <p>Both are maintained on every {@code put} / {@code remove} / {@code seed}; the target name of a
+ * report never changes for a given report id (all {@code with*} copies in {@link Report} preserve
+ * it), so the indexes cannot drift from the primary map.
+ *
+ * <p>Filtering additionally reuses a small per-id cache of lower-cased query fields (see {@code
+ * queryFields}), so a text query over an unchanged repository costs no lower-casing at all; the
+ * cache invalidates on every state change and is evicted on removal.
  */
 public final class ReportRepository {
 
@@ -38,6 +58,36 @@ public final class ReportRepository {
   private final AtomicLong nextId = new AtomicLong(1L);
 
   private volatile boolean ready;
+
+  /** Open report ids grouped by normalised target name; the inner map acts as a set. */
+  private final ConcurrentHashMap<String, ConcurrentHashMap<Long, Boolean>> openByTarget =
+      new ConcurrentHashMap<>();
+
+  /** Total report count per normalised target name (open and terminal alike). */
+  private final ConcurrentHashMap<String, AtomicInteger> totalByTarget =
+      new ConcurrentHashMap<>();
+
+  /**
+   * Memoised lower-cased query fields per report id, keyed by the {@code updatedAt} they were
+   * built for. Entries are rebuilt lazily whenever a report is replaced with a newer state, so a
+   * filter pass over an unchanged repository costs zero lower-casing. Evicted on removal.
+   */
+  private final ConcurrentHashMap<Long, SearchFieldEntry> searchFields =
+      new ConcurrentHashMap<>();
+
+  private static final class SearchFieldEntry {
+
+    final long updatedAt;
+
+    final String[] fields;
+
+    SearchFieldEntry(long updatedAt, String[] fields) {
+
+      this.updatedAt = updatedAt;
+
+      this.fields = fields;
+    }
+  }
 
   /**
    * Merges reports loaded from disk. Any report already added before the load
@@ -57,7 +107,10 @@ public final class ReportRepository {
           continue;
         }
 
-        reports.putIfAbsent(report.id(), report);
+        if (reports.putIfAbsent(report.id(), report) == null) {
+
+          indexAdded(report);
+        }
 
         maxId = Math.max(maxId, report.id());
       }
@@ -82,9 +135,27 @@ public final class ReportRepository {
 
   public void put(Report report) {
 
-    if (report != null) {
+    if (report == null) {
 
-      reports.put(report.id(), report);
+      return;
+    }
+
+    Report old = reports.put(report.id(), report);
+
+    if (old == null) {
+
+      indexAdded(report);
+    } else if (old.isOpen() != report.isOpen()) {
+
+      // Same report id, same target: only the open state changed.
+      //
+      if (report.isOpen()) {
+
+        indexOpenAdd(report.id(), report.targetName());
+      } else {
+
+        indexOpenRemove(report.id(), report.targetName());
+      }
     }
   }
 
@@ -100,7 +171,16 @@ public final class ReportRepository {
 
   public boolean remove(long id) {
 
-    return reports.remove(id) != null;
+    Report old = reports.remove(id);
+
+    if (old != null) {
+
+      indexRemoved(old);
+
+      searchFields.remove(id);
+    }
+
+    return old != null;
   }
 
   public boolean contains(long id) {
@@ -122,6 +202,29 @@ public final class ReportRepository {
     return snapshot;
   }
 
+  /**
+   * Unsorted copy of every current report. Use this from loops that only need to *visit* the
+   * reports (maintenance passes, statistics, player summaries) instead of {@link #all()}, which
+   * copies <em>and</em> sorts the whole collection.
+   */
+  public List<Report> snapshot() {
+
+    return new ArrayList<>(reports.values());
+  }
+
+  /** Number of reports that are currently open; a lookup, not a scan. */
+  public int openCount() {
+
+    int total = 0;
+
+    for (ConcurrentHashMap<Long, Boolean> set : openByTarget.values()) {
+
+      total += set.size();
+    }
+
+    return total;
+  }
+
   public List<Report> filter(ReportFilter filter) {
 
     ReportFilter effective = filter == null ? ReportFilter.all() : filter;
@@ -130,7 +233,7 @@ public final class ReportRepository {
 
     for (Report report : reports.values()) {
 
-      if (effective.matches(report)) {
+      if (effective.matches(report, queryFields(report))) {
 
         matches.add(report);
       }
@@ -139,6 +242,27 @@ public final class ReportRepository {
     matches.sort(effective.comparator());
 
     return matches;
+  }
+
+  /**
+   * The memoised lower-cased query fields for one report. A cached entry is reused while the
+   * report's {@code updatedAt} is unchanged, which (by the invariant documented on {@link
+   * Report#matchesQuery(String, String[])}) means the searched fields are unchanged too.
+   */
+  private String[] queryFields(Report report) {
+
+    SearchFieldEntry entry = searchFields.get(report.id());
+
+    if (entry != null && entry.updatedAt == report.updatedAt()) {
+
+      return entry.fields;
+    }
+
+    String[] fields = Report.searchFields(report);
+
+    searchFields.put(report.id(), new SearchFieldEntry(report.updatedAt(), fields));
+
+    return fields;
   }
 
   public Page<Report> page(ReportFilter filter, int page, int pageSize) {
@@ -173,11 +297,22 @@ public final class ReportRepository {
       return Optional.empty();
     }
 
-    for (Report report : reports.values()) {
+    // Only this target's open reports are considered; the weakly-consistent
+    // key-set iteration stays safe while other threads add/remove entries.
+    ConcurrentHashMap<Long, Boolean> openIds = openByTarget.get(normalizeTarget(targetName));
 
-      if (report.isOpen()
+    if (openIds == null) {
+
+      return Optional.empty();
+    }
+
+    for (Long id : openIds.keySet()) {
+
+      Report report = reports.get(id);
+
+      if (report != null
+          && report.isOpen()
           && reporterId.equals(report.reporterId())
-          && report.targetName().equalsIgnoreCase(targetName)
           && report.createdAt() >= since) {
 
         return Optional.of(report);
@@ -194,17 +329,9 @@ public final class ReportRepository {
       return 0;
     }
 
-    int count = 0;
+    ConcurrentHashMap<Long, Boolean> openIds = openByTarget.get(normalizeTarget(targetName));
 
-    for (Report report : reports.values()) {
-
-      if (report.isOpen() && report.targetName().equalsIgnoreCase(targetName)) {
-
-        count++;
-      }
-    }
-
-    return count;
+    return openIds == null ? 0 : openIds.size();
   }
 
   /**
@@ -219,17 +346,9 @@ public final class ReportRepository {
       return 0;
     }
 
-    int count = 0;
+    AtomicInteger count = totalByTarget.get(normalizeTarget(targetName));
 
-    for (Report report : reports.values()) {
-
-      if (report.targetName().equalsIgnoreCase(targetName)) {
-
-        count++;
-      }
-    }
-
-    return count;
+    return count == null ? 0 : count.get();
   }
 
   public List<Report> openReports() {
@@ -245,5 +364,82 @@ public final class ReportRepository {
     }
 
     return matches;
+  }
+
+  // ---------------------------------------------------------------------
+
+  // Secondary index maintenance
+
+  // ---------------------------------------------------------------------
+
+  private void indexAdded(Report report) {
+
+    indexTotalAdd(report.targetName());
+
+    if (report.isOpen()) {
+
+      indexOpenAdd(report.id(), report.targetName());
+    }
+  }
+
+  private void indexRemoved(Report report) {
+
+    indexTotalRemove(report.targetName());
+
+    if (report.isOpen()) {
+
+      indexOpenRemove(report.id(), report.targetName());
+    }
+  }
+
+  private void indexOpenAdd(long reportId, String targetName) {
+
+    synchronized (openByTarget) {
+
+      openByTarget
+          .computeIfAbsent(normalizeTarget(targetName), ignored -> new ConcurrentHashMap<>())
+          .put(reportId, Boolean.TRUE);
+    }
+  }
+
+  private void indexOpenRemove(long reportId, String targetName) {
+
+    synchronized (openByTarget) {
+
+      ConcurrentHashMap<Long, Boolean> set = openByTarget.get(normalizeTarget(targetName));
+
+      if (set != null) {
+
+        set.remove(reportId);
+      }
+    }
+  }
+
+  private void indexTotalAdd(String targetName) {
+
+    totalByTarget
+        .computeIfAbsent(normalizeTarget(targetName), ignored -> new AtomicInteger(0))
+        .incrementAndGet();
+  }
+
+  private void indexTotalRemove(String targetName) {
+
+    AtomicInteger count = totalByTarget.get(normalizeTarget(targetName));
+
+    if (count != null) {
+
+      count.decrementAndGet();
+    }
+  }
+
+  /** Normalises a target name the same way the reports store it (blank-safe, case-folded). */
+  private static String normalizeTarget(String targetName) {
+
+    if (targetName == null || targetName.isBlank()) {
+
+      return "";
+    }
+
+    return targetName.trim().toLowerCase(Locale.ROOT);
   }
 }

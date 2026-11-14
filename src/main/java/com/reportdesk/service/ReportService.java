@@ -30,6 +30,7 @@ import com.reportdesk.core.ReportNote;
 import com.reportdesk.core.ReportPriority;
 import com.reportdesk.core.ReportReply;
 import com.reportdesk.core.ReportSubmissionService;
+import com.reportdesk.core.SmartPriorityPolicy;
 import com.reportdesk.core.Verdict;
 import com.reportdesk.i18n.MessageKeys;
 import java.util.LinkedHashMap;
@@ -76,7 +77,7 @@ public final class ReportService {
   public ReportSubmissionService.SubmitResult submit(
       Player reporter, String targetName, String category, String detail, boolean bypassLimits) {
 
-    return submit(reporter, targetName, category, detail, bypassLimits, List.of());
+    return submit(reporter, targetName, category, detail, bypassLimits, List.of(), "command");
   }
 
   public ReportSubmissionService.SubmitResult submit(
@@ -86,6 +87,19 @@ public final class ReportService {
       String detail,
       boolean bypassLimits,
       List<ReportChatSelection> chatSelections) {
+
+    return submit(
+        reporter, targetName, category, detail, bypassLimits, chatSelections, "gui");
+  }
+
+  public ReportSubmissionService.SubmitResult submit(
+      Player reporter,
+      String targetName,
+      String category,
+      String detail,
+      boolean bypassLimits,
+      List<ReportChatSelection> chatSelections,
+      String reportedFrom) {
 
     Player onlineTarget = Bukkit.getPlayerExact(targetName);
 
@@ -103,7 +117,9 @@ public final class ReportService {
             detail,
             bypassLimits,
             false,
-            chatSelections);
+            chatSelections,
+            reportedFrom,
+            reporterIpHash(reporter));
 
     ReportSubmissionService.SubmitResult result = plugin.submissionService().submit(request);
 
@@ -140,7 +156,10 @@ public final class ReportService {
             category,
             detail,
             true,
-            true);
+            true,
+            List.of(),
+            "auto",
+            null);
 
     ReportSubmissionService.SubmitResult result = plugin.submissionService().submit(request);
 
@@ -529,7 +548,7 @@ public final class ReportService {
 
     plugin.notification().onCreated(updated);
 
-    return updated;
+    return garbageAutoClose(updated);
   }
 
   private Report applyPriority(Report report) {
@@ -547,13 +566,128 @@ public final class ReportService {
 
     ReportPriority effective = policy.resolve(categorySeverity, openForTarget);
 
+    PluginConfig.SmartPriority smart = plugin.config().smartPriority();
+
+    Report updated = report;
+
+    if (smart.enabled()) {
+
+      // Optional smart layer: score the submission and let the score move the
+      // priority (and, below the garbage band, trigger the configured action).
+
+      SmartPriorityPolicy.Evaluation evaluation =
+          new SmartPriorityPolicy()
+              .evaluate(report, scoreFactors(report), smart, categorySeverity);
+
+      updated = updated.withSmartScore(evaluation.score());
+
+      if (evaluation.garbage()
+          && smart.garbageAction() == PluginConfig.SmartPriority.GarbageAction.DEMOTE) {
+
+        effective = ReportPriority.LOW;
+
+      } else if (!evaluation.garbage()) {
+
+        if (evaluation.score() >= smart.urgentScore()) {
+
+          effective = ReportPriority.URGENT;
+
+        } else if (evaluation.score() >= smart.highScore()
+            && effective.ordinal() < ReportPriority.HIGH.ordinal()) {
+
+          effective = ReportPriority.HIGH;
+        }
+      }
+    }
+
     long dueAt = policy.dueAt(effective, report.createdAt());
 
-    Report updated = report.withPriority(effective, dueAt, report.createdAt());
+    updated = updated.withPriority(effective, dueAt, report.createdAt());
 
     plugin.repository().put(updated);
 
     return updated;
+  }
+
+  /** Single in-memory pass over the repository snapshot; no storage IO. */
+  private SmartPriorityPolicy.Factors scoreFactors(Report report) {
+
+    int reporterTotal = 0;
+
+    int reporterResolved = 0;
+
+    int targetResolved = 0;
+
+    String target = report.targetName().toLowerCase(java.util.Locale.ROOT);
+
+    for (Report other : plugin.repository().snapshot()) {
+
+      if (other.id() == report.id()) {
+
+        continue;
+      }
+
+      if (other.reporterId().equals(report.reporterId())) {
+
+        reporterTotal++;
+
+        if (other.status() == com.reportdesk.core.ReportStatus.RESOLVED) {
+
+          reporterResolved++;
+        }
+      }
+
+      if (other.status() == com.reportdesk.core.ReportStatus.RESOLVED
+          && other.targetName().toLowerCase(java.util.Locale.ROOT).equals(target)) {
+
+        targetResolved++;
+      }
+    }
+
+    return new SmartPriorityPolicy.Factors(
+        reporterTotal,
+        reporterResolved,
+        plugin.repository().countOpenForTarget(report.targetName()),
+        targetResolved);
+  }
+
+  /**
+   * Closes garbage-band reports automatically when the smart layer is on and the garbage
+   * action is AUTO_CLOSE; everything else is persisted asynchronously like every other
+   *
+   * <p>mutation.
+   */
+  private Report garbageAutoClose(Report report) {
+
+    PluginConfig.SmartPriority smart = plugin.config().smartPriority();
+
+    if (!smart.enabled()
+        || smart.garbageAction() != PluginConfig.SmartPriority.GarbageAction.AUTO_CLOSE
+        || report.smartScore() == 0
+        || report.smartScore() > smart.garbageScore()) {
+
+      return report;
+    }
+
+    long now = System.currentTimeMillis();
+
+    Report closed =
+        report.withClosed(
+            Verdict.INSUFFICIENT,
+            null,
+            "system",
+            "smart-priority: score " + report.smartScore(),
+            now);
+
+    plugin.repository().put(closed);
+
+    plugin.storage().saveReport(closed);
+
+    plugin.audit("SMART_GARBAGE_CLOSE", null, closed.id(), "score=" + closed.smartScore());
+
+    plugin.notification().onClosed(closed, "system");
+
+    return closed;
   }
 
   private void update(Report report) {
@@ -561,5 +695,27 @@ public final class ReportService {
     plugin.repository().put(report);
 
     plugin.storage().saveReport(report);
+  }
+
+  /**
+   * Optional provenance layer, off by default: when enabled, only the salted SHA-256 of the
+   * reporter's IP is attached; the plaintext address never leaves this method.
+   */
+  private String reporterIpHash(Player reporter) {
+
+    if (!plugin.config().security().ipHashEnabled()) {
+
+      return "";
+    }
+
+    java.net.InetSocketAddress remote = reporter.getAddress();
+
+    if (remote == null || remote.getAddress() == null) {
+
+      return "";
+    }
+
+    return com.reportdesk.util.IpHasher.hash(
+        plugin.config().security().ipHashSalt(), remote.getAddress().getHostAddress());
   }
 }

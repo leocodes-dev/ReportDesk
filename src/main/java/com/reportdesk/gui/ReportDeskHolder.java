@@ -79,7 +79,15 @@ public final class ReportDeskHolder implements InventoryHolder {
 
     ADMIN_CONFIRM,
 
-    ADMIN_CHAT
+    ADMIN_CHAT,
+
+    HISTORY_LIST,
+
+    HISTORY_FILTER,
+
+    HISTORY_DETAIL,
+
+    HISTORY_REPLIES
   }
 
   private final Type type;
@@ -134,6 +142,18 @@ public final class ReportDeskHolder implements InventoryHolder {
 
     return new ReportDeskHolder(
         Type.ADMIN_FILTER, 0L, page, filter == null ? ReportFilter.all() : filter);
+  }
+
+  public static ReportDeskHolder historyList(ReportFilter filter, int page) {
+
+    return new ReportDeskHolder(
+        Type.HISTORY_LIST, 0L, page, filter == null ? ReportFilter.all() : filter);
+  }
+
+  public static ReportDeskHolder historyFilter(ReportFilter filter, int page) {
+
+    return new ReportDeskHolder(
+        Type.HISTORY_FILTER, 0L, page, filter == null ? ReportFilter.all() : filter);
   }
 
   public static ReportDeskHolder paged(Type type, int page) {

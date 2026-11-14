@@ -42,7 +42,7 @@ public final class CsvExporter {
 
     builder
         .append(
-            "id,created_at,status,category,target,reporter,claimed_by,closed_by,verdict,detail,notes")
+            "id,created_at,status,category,target,reporter,claimed_by,closed_by,verdict,detail,notes,reported_from,ip_hash")
         .append('\n');
 
     if (reports != null) {
@@ -90,6 +90,14 @@ public final class CsvExporter {
         builder.append(',');
 
         append(builder, String.valueOf(report.notes().size()));
+
+        builder.append(',');
+
+        append(builder, report.reportedFrom());
+
+        builder.append(',');
+
+        append(builder, report.ipHash());
 
         builder.append('\n');
       }
