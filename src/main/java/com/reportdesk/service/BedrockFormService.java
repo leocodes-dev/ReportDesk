@@ -225,6 +225,17 @@ public final class BedrockFormService {
    */
   public boolean openHistoryForm(Player player) {
 
+    return openHistoryForm(player, null);
+  }
+
+  /**
+   * Opens a Bedrock simple form listing the player's own reports, optionally
+   * restricted by the given status filter. Java players, a disabled feature
+   * or an unavailable bridge return false so the caller falls back to the
+   * Java-side history path.
+   */
+  public boolean openHistoryForm(Player player, ReportFilter filter) {
+
     if (!enabled()) {
 
       return false;
@@ -244,11 +255,21 @@ public final class BedrockFormService {
       return false;
     }
 
-    List<Report> own = plugin.repository().byReporter(uuid);
+    // Force the reporter restriction so a tampered filter can never leak
+    // other players' reports (mirrors the GUI history guard).
+    ReportFilter effective =
+        (filter == null ? ReportFilter.all() : filter).withReporter(uuid);
+
+    List<Report> own = plugin.repository().filter(effective);
+
+    // A simple form has no pagination; show only the most recent configured
+    // page-size worth of reports.
+    int shown = Math.min(own.size(), plugin.config().reports().guiPageSize());
 
     List<String> buttons = new ArrayList<>();
 
-    for (Report report : own) {
+    for (int i = 0; i < shown; i++) {
+      Report report = own.get(i);
 
       String statusLabel =
           plugin

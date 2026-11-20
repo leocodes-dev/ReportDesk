@@ -108,6 +108,13 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
       }
 
       case "status", "list" -> {
+        // Bedrock clients get the native history form; Java players (or a
+        // disabled bridge) fall through to the text list.
+        if (plugin.bedrockForm().openHistoryForm(player)) {
+
+          return true;
+        }
+
         showOwnReports(player, args);
 
         return true;
@@ -510,6 +517,13 @@ public final class ReportCommand implements CommandExecutor, TabCompleter {
 
         return;
       }
+    }
+
+    // Bedrock clients get the native simple form; Java players keep the
+    // GUI or text history list.
+    if (plugin.bedrockForm().openHistoryForm(player, filter)) {
+
+      return;
     }
 
     if (plugin.config().gui().enabled()) {
