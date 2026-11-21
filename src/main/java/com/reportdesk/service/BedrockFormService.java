@@ -110,7 +110,7 @@ public final class BedrockFormService {
 
     String contentLabel =
         plugin
-            .messages()
+            .messagesFor(player)
             .plain(
                 MessageKeys.BEDROCK_FORM_REPORT_CONTENT,
                 Map.of("player", presetTarget == null || presetTarget.isBlank() ? "" : presetTarget));
@@ -168,7 +168,7 @@ public final class BedrockFormService {
 
                             current.sendMessage(
                                 plugin
-                                    .messages()
+                                    .messagesFor(current)
                                     .prefixed(MessageKeys.GENERAL_CANCELLED, Map.of()));
                           }
                         }));
