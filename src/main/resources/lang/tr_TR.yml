@@ -1440,3 +1440,6 @@ bedrock:
   admin-btn-reopen: 'Yeniden aç'
   admin-btn-close: 'Kapat…'
   admin-verdict-title: 'Sonuç seç'
+  admin-done-title: 'Bitti'
+  admin-btn-back-queue: 'Kuyruğa dön'
+  admin-btn-view: 'Bu raporu gör'

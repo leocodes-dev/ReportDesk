@@ -1440,3 +1440,6 @@ bedrock:
   admin-btn-reopen: 'Ponownie otwórz'
   admin-btn-close: 'Zamknij…'
   admin-verdict-title: 'Wybierz wynik'
+  admin-done-title: 'Gotowe'
+  admin-btn-back-queue: 'Wróć do kolejki'
+  admin-btn-view: 'Zobacz to zgłoszenie'

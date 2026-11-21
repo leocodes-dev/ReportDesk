@@ -1416,6 +1416,9 @@ bedrock:
   admin-btn-reopen: '重开'
   admin-btn-close: '关闭…'
   admin-verdict-title: '选择处理结果'
+  admin-done-title: '操作完成'
+  admin-btn-back-queue: '返回队列'
+  admin-btn-view: '查看当前'
 
 categories:
   # 内置分类的本地化名称。config.yml 里的 display 只是兜底，这里优先。

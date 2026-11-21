@@ -1440,3 +1440,6 @@ bedrock:
   admin-btn-reopen: 'Открыть снова'
   admin-btn-close: 'Закрыть…'
   admin-verdict-title: 'Выбрать исход'
+  admin-done-title: 'Готово'
+  admin-btn-back-queue: 'Вернуться в очередь'
+  admin-btn-view: 'Посмотреть этот'

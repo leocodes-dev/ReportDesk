@@ -1440,3 +1440,6 @@ bedrock:
   admin-btn-reopen: '재개'
   admin-btn-close: '닫기…'
   admin-verdict-title: '결과 선택'
+  admin-done-title: '완료'
+  admin-btn-back-queue: '큐로 돌아가기'
+  admin-btn-view: '이 신고 보기'

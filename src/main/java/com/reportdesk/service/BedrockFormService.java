@@ -577,48 +577,109 @@ public final class BedrockFormService {
 
   private void handleAdminAction(Player staff, Report report, String action) {
 
+    String resultKey;
+
+    boolean success = false;
+
     switch (action) {
 
       case "claim" -> {
         var result = plugin.reportService().claim(report, staff);
 
-        staff.sendMessage(
-            plugin.messagesFor(staff)
-                .prefixed(
-                    result.success()
-                        ? MessageKeys.ADMIN_CLAIMED
-                        : MessageKeys.ADMIN_ALREADY_CLAIMED,
-                    Map.of("id", String.valueOf(report.id()))));
+        success = result.success();
+
+        resultKey =
+            success ? MessageKeys.ADMIN_CLAIMED : MessageKeys.ADMIN_ALREADY_CLAIMED;
       }
 
       case "release" -> {
         var result = plugin.reportService().release(report, staff);
 
-        staff.sendMessage(
-            plugin.messagesFor(staff)
-                .prefixed(
-                    result.success()
-                        ? MessageKeys.ADMIN_RELEASED
-                        : MessageKeys.ADMIN_NOT_CLAIMED,
-                    Map.of("id", String.valueOf(report.id()))));
+        success = result.success();
+
+        resultKey = success ? MessageKeys.ADMIN_RELEASED : MessageKeys.ADMIN_NOT_CLAIMED;
       }
 
       case "reopen" -> {
         var result = plugin.reportService().reopen(report, staff);
 
-        staff.sendMessage(
-            plugin.messagesFor(staff)
-                .prefixed(
-                    result.success()
-                        ? MessageKeys.ADMIN_REOPENED
-                        : MessageKeys.ADMIN_NOT_CLOSED,
-                    Map.of("id", String.valueOf(report.id()))));
+        success = result.success();
+
+        resultKey =
+            success ? MessageKeys.ADMIN_REOPENED : MessageKeys.ADMIN_NOT_CLOSED;
       }
 
-      case "close" -> openAdminVerdictForm(staff, report);
+      case "close" -> {
 
-      default -> {}
+        openAdminVerdictForm(staff, report);
+
+        return;
+      }
+
+      default ->
+          {
+            return;
+          }
     }
+
+    if (!success) {
+
+      staff.sendMessage(
+          plugin
+              .messagesFor(staff)
+              .prefixed(resultKey, Map.of("id", String.valueOf(report.id()))));
+
+      return;
+    }
+
+    // Success: show a "done" form with navigation buttons
+    openAdminDoneForm(staff, report, resultKey);
+  }
+
+  /**
+   * Shows a post-action "done" form with two navigation buttons: back to the queue and view
+   * the current report. Called on the main thread after a successful admin action.
+   */
+  private void openAdminDoneForm(Player staff, Report report, String resultKey) {
+
+    Messages m = plugin.messagesFor(staff);
+
+    UUID uuid = staff.getUniqueId();
+
+    String title = m.plain(MessageKeys.BEDROCK_ADMIN_DONE_TITLE, Map.of());
+
+    String content = m.plain(resultKey, Map.of("id", String.valueOf(report.id())));
+
+    String btnQueue = m.plain(MessageKeys.BEDROCK_ADMIN_BTN_BACK_QUEUE, Map.of());
+
+    String btnView = m.plain(MessageKeys.BEDROCK_ADMIN_BTN_VIEW, Map.of());
+
+    bridge.sendSimpleForm(
+        uuid,
+        title,
+        content,
+        List.of(btnQueue, btnView),
+        index ->
+            Bukkit.getScheduler()
+                .runTask(
+                    plugin,
+                    () -> {
+                      Player current = Bukkit.getPlayer(uuid);
+
+                      if (current == null) {
+
+                        return;
+                      }
+
+                      if (index == 0) {
+
+                        openAdminQueueForm(current, ReportFilter.all());
+
+                      } else if (index == 1) {
+
+                        openAdminDetailForm(current, report.id());
+                      }
+                    }));
   }
 
   private void openAdminVerdictForm(Player player, Report report) {

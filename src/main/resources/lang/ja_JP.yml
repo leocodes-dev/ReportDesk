@@ -1440,3 +1440,6 @@ bedrock:
   admin-btn-reopen: '再開'
   admin-btn-close: 'クローズ…'
   admin-verdict-title: '結果を選択'
+  admin-done-title: '完了'
+  admin-btn-back-queue: 'キューへ戻る'
+  admin-btn-view: 'この報告を見る'
