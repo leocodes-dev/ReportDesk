@@ -67,7 +67,9 @@ public final class ReportSubmissionService {
 
     DUPLICATE,
 
-    MAX_OPEN
+    MAX_OPEN,
+
+    CANCELLED
   }
 
   public record SubmitRequest(

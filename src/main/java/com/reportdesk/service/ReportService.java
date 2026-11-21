@@ -29,14 +29,19 @@ import com.reportdesk.core.ReportChatSelection;
 import com.reportdesk.core.ReportNote;
 import com.reportdesk.core.ReportPriority;
 import com.reportdesk.core.ReportReply;
+import com.reportdesk.core.ReportStatus;
 import com.reportdesk.core.ReportSubmissionService;
 import com.reportdesk.core.SmartPriorityPolicy;
 import com.reportdesk.core.Verdict;
+import com.reportdesk.event.ReportPreSubmitEvent;
+import com.reportdesk.event.ReportStatusChangedEvent;
+import com.reportdesk.event.ReportSubmittedEvent;
 import com.reportdesk.i18n.MessageKeys;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -105,6 +110,18 @@ public final class ReportService {
 
     String normalizedTarget = plugin.validator().normalizeName(targetName);
 
+    ReportPreSubmitEvent preSubmit =
+        new ReportPreSubmitEvent(
+            reporter.getUniqueId(), reporter.getName(), targetName, category, detail);
+
+    Bukkit.getPluginManager().callEvent(preSubmit);
+
+    if (preSubmit.isCancelled()) {
+
+      return ReportSubmissionService.SubmitResult.error(
+          ReportSubmissionService.SubmitReason.CANCELLED, Map.of("player", targetName));
+    }
+
     ReportSubmissionService.SubmitRequest request =
         new ReportSubmissionService.SubmitRequest(
             reporter.getUniqueId(),
@@ -126,6 +143,8 @@ public final class ReportService {
     if (result.success()) {
 
       Report finalized = finalizeNewReport(result.report(), onlineTarget);
+
+      fireSubmitted(finalized, reporter.getUniqueId(), reportedFrom);
 
       return new ReportSubmissionService.SubmitResult(
           result.reason(), finalized, result.placeholders());
@@ -201,7 +220,11 @@ public final class ReportService {
 
     Report updated = report.withClaim(staff.getUniqueId(), staff.getName(), now);
 
+    Report from = report;
+
     update(updated);
+
+    fireStatusChanged(updated, from.status(), updated.status());
 
     plugin.audit("CLAIM", staff, report.id(), "");
 
@@ -224,9 +247,13 @@ public final class ReportService {
           MessageKeys.ADMIN_NOT_CLAIMED, Map.of("id", String.valueOf(report.id())));
     }
 
+    Report from = report;
+
     Report updated = report.withClaimReleased(System.currentTimeMillis());
 
     update(updated);
+
+    fireStatusChanged(updated, from.status(), updated.status());
 
     plugin.audit("RELEASE", staff, report.id(), "");
 
@@ -266,11 +293,15 @@ public final class ReportService {
       }
     }
 
+    Report from = report;
+
     Report updated =
         report.withClosed(
             verdict, staff.getUniqueId(), staff.getName(), safeNote, System.currentTimeMillis());
 
     update(updated);
+
+    fireStatusChanged(updated, from.status(), updated.status());
 
     plugin.audit(
         "CLOSE", staff, report.id(), verdict.name() + (safeNote.isBlank() ? "" : " | " + safeNote));
@@ -299,9 +330,13 @@ public final class ReportService {
       return OpResult.fail(MessageKeys.ADMIN_NOT_CLOSED, Map.of("id", String.valueOf(report.id())));
     }
 
+    Report from = report;
+
     Report updated = report.withReopened(System.currentTimeMillis());
 
     update(updated);
+
+    fireStatusChanged(updated, from.status(), updated.status());
 
     plugin.audit("REOPEN", staff, report.id(), "");
 
@@ -517,6 +552,8 @@ public final class ReportService {
       case DUPLICATE -> MessageKeys.REPORT_DUPLICATE;
 
       case MAX_OPEN -> MessageKeys.REPORT_MAX_OPEN;
+
+      case CANCELLED -> MessageKeys.GENERAL_CANCELLED;
     };
   }
 
@@ -695,6 +732,32 @@ public final class ReportService {
     plugin.repository().put(report);
 
     plugin.storage().saveReport(report);
+  }
+
+  private void fireSubmitted(Report report, UUID reporterId, String source) {
+
+    try {
+
+      Bukkit.getPluginManager()
+          .callEvent(new ReportSubmittedEvent(report, reporterId, source == null ? "" : source));
+
+    } catch (Throwable ignored) {
+
+      // A misbehaving listener must never break the core submission path.
+    }
+  }
+
+  private void fireStatusChanged(Report report, ReportStatus from, ReportStatus to) {
+
+    try {
+
+      Bukkit.getPluginManager()
+          .callEvent(new ReportStatusChangedEvent(report, from, to));
+
+    } catch (Throwable ignored) {
+
+      // A misbehaving listener must never break the admin workflow.
+    }
   }
 
   /**
