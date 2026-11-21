@@ -302,7 +302,8 @@ public record PluginConfig(
       boolean watchlistNotifyOnReport,
       boolean broadcastEnabled,
       Webhook webhook,
-      Sla sla) {}
+      Sla sla,
+      boolean assignNotifyEnabled) {}
 
   public record Webhook(
       boolean enabled,

@@ -329,6 +329,13 @@ public final class ReportViewService {
                   "staff", entry.getKey(),
                   "count", String.valueOf(entry.getValue()))));
     }
+
+    sender.sendMessage(
+        messages.component(
+            MessageKeys.ADMIN_STATS_PER_STAFF,
+            Map.of(
+                "count", String.valueOf(stats.perStaffClosed()),
+                "staff", String.valueOf(stats.byStaff().size()))));
   }
 
   /**

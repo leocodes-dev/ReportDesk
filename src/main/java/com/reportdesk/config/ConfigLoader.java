@@ -308,7 +308,8 @@ public final class ConfigLoader {
             webhookSettings,
             new PluginConfig.Sla(
                 bool(sla, "weekly-enabled", false),
-                integer(sla, "interval-hours", 168, 6, 8_760)));
+                integer(sla, "interval-hours", 168, 6, 8_760)),
+            bool(notifications, "assign-notify-enabled", true));
 
     PluginConfig.Evidence evidenceSettings =
         new PluginConfig.Evidence(

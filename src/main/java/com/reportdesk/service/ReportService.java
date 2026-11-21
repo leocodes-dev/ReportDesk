@@ -234,6 +234,141 @@ public final class ReportService {
         MessageKeys.ADMIN_CLAIMED, Map.of("id", String.valueOf(updated.id())), updated);
   }
 
+  /**
+   * Assigns an unclaimed report to a specific online admin (roadmap P1#4). Idempotent: assigning
+   * a report that already carries the target's claim succeeds without side effects, so repeated
+   * calls never duplicate notifications. The actor may be {@code null} for the console.
+   */
+  public OpResult assign(Report report, Player actor, Player target) {
+
+    if (report == null) {
+
+      return OpResult.fail(MessageKeys.GENERAL_REPORT_NOT_FOUND, Map.of("id", "?"));
+    }
+
+    if (target == null) {
+
+      return OpResult.fail(
+          MessageKeys.ADMIN_ASSIGN_TARGET_OFFLINE, Map.of("id", String.valueOf(report.id())));
+    }
+
+    var outcome = plugin.assignmentService().assign(report, target.getUniqueId(), target.getName());
+
+    switch (outcome.outcome()) {
+      case ASSIGNED:
+
+        update(outcome.report());
+
+        fireStatusChanged(outcome.report(), ReportStatus.OPEN, ReportStatus.CLAIMED);
+
+        plugin.audit("ASSIGN", actor, report.id(), "to " + target.getName());
+
+        plugin.notification().onAssigned(outcome.report(), target.getName(), false);
+
+        return OpResult.ok(MessageKeys.ADMIN_ASSIGNED, outcome.placeholders(), outcome.report());
+
+      case ALREADY_ASSIGNED:
+
+        return OpResult.ok(
+            MessageKeys.ADMIN_ALREADY_ASSIGNED,
+            placeholders(report, target.getName()),
+            report);
+
+      case CLAIMED_BY_OTHER:
+
+        return OpResult.fail(MessageKeys.ADMIN_ALREADY_CLAIMED, outcome.placeholders());
+
+      default:
+
+        return OpResult.fail(
+            MessageKeys.ADMIN_ALREADY_CLOSED, Map.of("id", String.valueOf(report.id())));
+    }
+  }
+
+  /**
+   * Hands the claim of a claimed report to another online admin, keeping the original claim time
+   * so the handling timeline survives the hand-off. Only the current claimer or an actor holding
+   * {@code override} rights (console, or a {@code reportdesk.admin.close} admin) may transfer.
+   */
+  public OpResult transfer(Report report, Player actor, Player target, boolean override) {
+
+    if (report == null) {
+
+      return OpResult.fail(MessageKeys.GENERAL_REPORT_NOT_FOUND, Map.of("id", "?"));
+    }
+
+    if (target == null) {
+
+      return OpResult.fail(
+          MessageKeys.ADMIN_ASSIGN_TARGET_OFFLINE, Map.of("id", String.valueOf(report.id())));
+    }
+
+    UUID actorId = actor == null ? new java.util.UUID(0L, 0L) : actor.getUniqueId();
+
+    var outcome =
+        plugin
+            .assignmentService()
+            .transfer(report, actorId, override, target.getUniqueId(), target.getName());
+
+    switch (outcome.outcome()) {
+      case TRANSFERRED:
+
+        update(outcome.report());
+
+        plugin.audit(
+            "TRANSFER",
+            actor,
+            report.id(),
+            "from " + (report.claimedByName().isBlank() ? "-" : report.claimedByName())
+                + " to "
+                + target.getName());
+
+        plugin.notification().onAssigned(outcome.report(), target.getName(), true);
+
+        Map<String, String> transferPlaceholders =
+            new java.util.LinkedHashMap<>(outcome.placeholders());
+
+        transferPlaceholders.put(
+            "from", report.claimedByName().isBlank() ? "-" : report.claimedByName());
+
+        return OpResult.ok(
+            MessageKeys.ADMIN_TRANSFERRED, transferPlaceholders, outcome.report());
+
+      case ALREADY_ASSIGNED:
+
+        return OpResult.ok(
+            MessageKeys.ADMIN_ALREADY_ASSIGNED,
+            placeholders(report, target.getName()),
+            report);
+
+      case NOT_CLAIMED:
+
+        return OpResult.fail(MessageKeys.ADMIN_NOT_CLAIMED, Map.of("id", String.valueOf(report.id())));
+
+      case NOT_OWNER:
+
+        return OpResult.fail(
+            MessageKeys.ADMIN_TRANSFER_NOT_OWNER,
+            Map.of("id", String.valueOf(report.id()), "staff", report.claimedByName()));
+
+      default:
+
+        return OpResult.fail(
+            MessageKeys.ADMIN_ALREADY_CLOSED, Map.of("id", String.valueOf(report.id())));
+    }
+  }
+
+  private static Map<String, String> placeholders(Report report, String staff) {
+
+    Map<String, String> values = new java.util.LinkedHashMap<>();
+
+    values.put("id", String.valueOf(report.id()));
+
+    values.put("staff", staff == null ? "" : staff);
+
+    return values;
+  }
+
   public OpResult release(Report report, Player staff) {
 
     if (report == null) {

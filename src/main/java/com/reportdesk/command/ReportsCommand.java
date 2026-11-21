@@ -68,6 +68,8 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
           "view",
           "claim",
           "release",
+          "assign",
+          "transfer",
           "close",
           "reopen",
           "tp",
@@ -144,6 +146,10 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
       case "claim" -> claim(sender, args);
 
       case "release" -> release(sender, args);
+
+      case "assign" -> assign(sender, args);
+
+      case "transfer" -> transfer(sender, args);
 
       case "close" -> close(sender, args);
 
@@ -480,6 +486,107 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
     }
 
     sendResult(sender, plugin.reportService().release(report, staff));
+  }
+
+  /**
+   * /reports assign <id> <admin>
+   */
+  private void assign(CommandSender sender, String[] args) {
+
+    if (args.length < 3) {
+
+      usage(sender, "/reports assign <id> <admin>");
+
+      return;
+    }
+
+    Report report = report(sender, args, 1);
+
+    if (report == null || !allowAction(sender) || !require(sender, "reportdesk.admin.assign")) {
+
+      return;
+    }
+
+    Player target = Bukkit.getPlayerExact(args[2]);
+
+    if (target == null) {
+
+      sender.sendMessage(
+          plugin
+              .messages()
+              .prefixed(
+                  MessageKeys.ADMIN_ASSIGN_TARGET_OFFLINE,
+                  Map.of("id", String.valueOf(report.id()), "admin", args[2])));
+
+      return;
+    }
+
+    if (!target.hasPermission("reportdesk.admin")) {
+
+      sender.sendMessage(
+          plugin
+              .messages()
+              .prefixed(
+                  MessageKeys.ADMIN_ASSIGN_TARGET_NOT_ADMIN,
+                  Map.of("id", String.valueOf(report.id()), "admin", args[2])));
+
+      return;
+    }
+
+    sendResult(sender, plugin.reportService().assign(report, actor(sender), target));
+  }
+
+  /**
+   * /reports transfer <id> <admin>
+   */
+  private void transfer(CommandSender sender, String[] args) {
+
+    if (args.length < 3) {
+
+      usage(sender, "/reports transfer <id> <admin>");
+
+      return;
+    }
+
+    Report report = report(sender, args, 1);
+
+    if (report == null || !allowAction(sender) || !require(sender, "reportdesk.admin.assign")) {
+
+      return;
+    }
+
+    Player target = Bukkit.getPlayerExact(args[2]);
+
+    if (target == null) {
+
+      sender.sendMessage(
+          plugin
+              .messages()
+              .prefixed(
+                  MessageKeys.ADMIN_ASSIGN_TARGET_OFFLINE,
+                  Map.of("id", String.valueOf(report.id()), "admin", args[2])));
+
+      return;
+    }
+
+    if (!target.hasPermission("reportdesk.admin")) {
+
+      sender.sendMessage(
+          plugin
+              .messages()
+              .prefixed(
+                  MessageKeys.ADMIN_ASSIGN_TARGET_NOT_ADMIN,
+                  Map.of("id", String.valueOf(report.id()), "admin", args[2])));
+
+      return;
+    }
+
+    // A player who does not hold the claim needs the close node to override;
+    // the console always overrides.
+
+    boolean override = sender.hasPermission("reportdesk.admin.close");
+
+    sendResult(sender, plugin.reportService().transfer(report, actor(sender), target, override));
   }
 
   private void close(CommandSender sender, String[] args) {
@@ -1787,6 +1894,8 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
             MessageKeys.ADMIN_HELP_VIEW,
             MessageKeys.ADMIN_HELP_CLAIM,
             MessageKeys.ADMIN_HELP_RELEASE,
+            MessageKeys.ADMIN_HELP_ASSIGN,
+            MessageKeys.ADMIN_HELP_TRANSFER,
             MessageKeys.ADMIN_HELP_CLOSE,
             MessageKeys.ADMIN_HELP_REOPEN,
             MessageKeys.ADMIN_HELP_TP,
@@ -2004,6 +2113,8 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
               "info",
               "claim",
               "release",
+              "assign",
+              "transfer",
               "reopen",
               "tp",
               "evidence",
@@ -2016,6 +2127,12 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
 
         return filter(reportIds(), args[1]);
       }
+    }
+
+    if (args.length == 3
+        && (args[0].equalsIgnoreCase("assign") || args[0].equalsIgnoreCase("transfer"))) {
+
+      return filter(onlineAdminNames(), args[2]);
     }
 
     if (args.length == 3 && args[0].equalsIgnoreCase("close")) {
@@ -2115,6 +2232,22 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
     for (Player online : Bukkit.getOnlinePlayers()) {
 
       names.add(online.getName());
+    }
+
+    return names;
+  }
+
+  /** Online players holding the admin node, for assign/transfer tab completion. */
+  private List<String> onlineAdminNames() {
+
+    List<String> names = new ArrayList<>();
+
+    for (Player online : Bukkit.getOnlinePlayers()) {
+
+      if (online.hasPermission("reportdesk.admin")) {
+
+        names.add(online.getName());
+      }
     }
 
     return names;

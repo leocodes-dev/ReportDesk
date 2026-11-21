@@ -268,6 +268,15 @@ public record ReportStats(
     return byStaff.entrySet().stream().limit(Math.max(0, limit)).toList();
   }
 
+  /**
+   * Average closed reports per staff member who closed at least one report; 0 when no staff
+   * breakdown data exists. Used for the "per-capita handling" line of the statistics panel.
+   */
+  public int perStaffClosed() {
+
+    return byStaff.isEmpty() ? 0 : closed() / byStaff.size();
+  }
+
   public static ReportStats empty() {
 
     return new ReportStats(0, 0, 0, 0, 0, 0, 0, 0L, Map.of(), Map.of());

@@ -147,6 +147,9 @@ public final class ConfigKeys {
               config -> config.notifications().staffSoundEnabled()),
           string("notifications.staff.sound", config -> config.notifications().staffSound()),
           bool(
+              "notifications.assign-notify-enabled",
+              config -> config.notifications().assignNotifyEnabled()),
+          bool(
               "notifications.reporter.enabled", config -> config.notifications().reporterEnabled()),
           bool(
               "notifications.reporter.queue-offline",

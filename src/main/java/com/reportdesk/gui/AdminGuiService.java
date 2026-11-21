@@ -796,6 +796,8 @@ public final class AdminGuiService {
 
     placeholders.put("staff", String.valueOf(plugin.config().reports().staffStatsTop()));
 
+    placeholders.put("per-staff", String.valueOf(stats.perStaffClosed()));
+
     ReportDeskHolder holder = ReportDeskHolder.of(ReportDeskHolder.Type.ADMIN_STATS);
 
     Inventory inventory = gui.create(holder, MessageKeys.ADMIN_GUI_STATS_TITLE, placeholders);
@@ -858,6 +860,15 @@ public final class AdminGuiService {
                 .component(MessageKeys.ADMIN_GUI_STATS_STAFF_NAME, placeholders)
                 .decoration(TextDecoration.BOLD, true),
             allSortedLore(stats.byStaff())));
+
+    inventory.setItem(
+        22,
+        gui.item(
+            Material.BOOK,
+            messages()
+                .component(MessageKeys.ADMIN_GUI_STATS_PER_STAFF_NAME, placeholders)
+                .decoration(TextDecoration.BOLD, true),
+            messages().components(MessageKeys.ADMIN_GUI_STATS_PER_STAFF_LORE, placeholders)));
 
     inventory.setItem(
         28,

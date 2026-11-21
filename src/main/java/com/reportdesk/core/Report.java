@@ -357,6 +357,36 @@ public record Report(
         ipHash);
   }
 
+  /**
+   * Moves the claim to a different admin while keeping the original claim timestamp, so the
+   * "when was this report picked up" answer (and the SLA timeline) survives a hand-off.
+   */
+  public Report withTransfer(UUID staffId, String staffName, long now) {
+
+    return copy(
+        status,
+        now,
+        staffId,
+        staffName == null ? "" : staffName,
+        claimedAt,
+        closedBy,
+        closedByName,
+        closedAt,
+        verdict,
+        closeNote,
+        notes,
+        evidence,
+        priority,
+        slaDueAt,
+        slaAlertedAt,
+        replies,
+        reporterReadAt,
+        chatSelections,
+        smartScore,
+        reportedFrom,
+        ipHash);
+  }
+
   public Report withClosed(Verdict result, UUID staffId, String staffName, String note, long now) {
 
     return copy(

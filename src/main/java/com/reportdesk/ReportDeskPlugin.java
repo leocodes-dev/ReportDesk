@@ -124,6 +124,8 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
   private ReportService reportService;
 
+  private com.reportdesk.core.ReportAssignmentService assignmentService;
+
   private AutoDetectService autoDetect;
 
   private MaintenanceService maintenance;
@@ -211,6 +213,9 @@ public final class ReportDeskPlugin extends JavaPlugin {
     maintenance = new MaintenanceService(this);
 
     reportService = new ReportService(this);
+
+    assignmentService =
+        new com.reportdesk.core.ReportAssignmentService(this.repository, java.time.Clock.systemUTC());
 
     gui = new GuiService(this);
 
@@ -555,6 +560,9 @@ public final class ReportDeskPlugin extends JavaPlugin {
     permission("reportdesk.admin", "Access the ReportDesk admin workflow", PermissionDefault.OP);
 
     permission("reportdesk.admin.close", "Close and reopen reports", PermissionDefault.OP);
+
+    permission("reportdesk.admin.assign", "Assign and transfer reports between admins",
+        PermissionDefault.OP);
 
     permission("reportdesk.admin.delete", "Delete and purge reports", PermissionDefault.OP);
 
@@ -1007,6 +1015,12 @@ public final class ReportDeskPlugin extends JavaPlugin {
   public ReportService reportService() {
 
     return reportService;
+  }
+
+  /** Pure assign/transfer rules; the Bukkit layer (ReportService) adds persistence and audits. */
+  public com.reportdesk.core.ReportAssignmentService assignmentService() {
+
+    return assignmentService;
   }
 
   public AutoDetectService autoDetect() {

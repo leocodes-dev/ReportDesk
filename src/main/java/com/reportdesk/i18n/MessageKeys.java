@@ -1292,6 +1292,33 @@ public final class MessageKeys {
 
   public static final String ADMIN_CONSOLE_ACTOR = "admin.console-actor";
 
+  // Assign / transfer (multi-admin collaboration, roadmap P1#4).
+  public static final String ADMIN_ASSIGNED = "admin.assigned";
+
+  public static final String ADMIN_ALREADY_ASSIGNED = "admin.already-assigned";
+
+  public static final String ADMIN_ASSIGN_TARGET_OFFLINE = "admin.assign-target-offline";
+
+  public static final String ADMIN_ASSIGN_TARGET_NOT_ADMIN = "admin.assign-target-not-admin";
+
+  public static final String ADMIN_TRANSFERRED = "admin.transferred";
+
+  public static final String ADMIN_TRANSFER_NOT_OWNER = "admin.transfer-not-owner";
+
+  public static final String ADMIN_STATS_PER_STAFF = "admin.stats-per-staff";
+
+  public static final String ADMIN_HELP_ASSIGN = "admin.help-assign";
+
+  public static final String ADMIN_HELP_TRANSFER = "admin.help-transfer";
+
+  public static final String NOTIFY_STAFF_ASSIGNED = "notify.staff-assigned";
+
+  public static final String NOTIFY_STAFF_TRANSFERRED = "notify.staff-transferred";
+
+  public static final String ADMIN_GUI_STATS_PER_STAFF_NAME = "gui.admin.stats-per-staff-name";
+
+  public static final String ADMIN_GUI_STATS_PER_STAFF_LORE = "gui.admin.stats-per-staff-lore";
+
   public static final String EVIDENCE_HEADER = "evidence.header";
 
   public static final String EVIDENCE_TARGET = "evidence.target";

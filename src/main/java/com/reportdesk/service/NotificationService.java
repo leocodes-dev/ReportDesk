@@ -104,6 +104,41 @@ public final class NotificationService {
         });
   }
 
+  /**
+   * Notifies staff that a report was assigned or transferred. The staff-wide line is gated by
+   * {@code notifications.staff.enabled}; in addition, when the staff broadcast is off the assignee
+   * gets a dedicated ping gated by {@code notifications.assign-notify-enabled} and the staff
+   * permission, so an admin without the permission stays muted.
+   */
+  public void onAssigned(Report report, String staffName, boolean transfer) {
+
+    runSync(
+        () -> {
+          Messages messages = plugin.messages();
+
+          Map<String, String> placeholders = placeholders(report);
+
+          placeholders.put("staff", staffName == null ? "" : staffName);
+
+          String key =
+              transfer ? MessageKeys.NOTIFY_STAFF_TRANSFERRED : MessageKeys.NOTIFY_STAFF_ASSIGNED;
+
+          if (plugin.config().notifications().staffEnabled()) {
+
+            sendStaff(messages.prefixed(key, placeholders));
+          } else if (plugin.config().notifications().assignNotifyEnabled()) {
+
+            Player assignee = Bukkit.getPlayer(report.claimedBy());
+
+            if (assignee != null
+                && assignee.hasPermission(plugin.config().notifications().staffPermission())) {
+
+              assignee.sendMessage(plugin.messagesFor(assignee).prefixed(key, placeholders));
+            }
+          }
+        });
+  }
+
   public void onClosed(Report report, String staffName) {
 
     runSync(

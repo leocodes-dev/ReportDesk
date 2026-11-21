@@ -239,6 +239,10 @@ notifications:
     max-targets: 20
     # 被关注玩家收到新举报时是否立即提醒关注者。
     notify-on-report: true
+  # 指派/转派举报时是否单独提醒被指派的管理员。
+  # 仅当上面的 staff 广播关闭时才补发这条定向提醒；被指派者没有
+  # notifications.staff.permission 权限时视为静音，收不到提醒。
+  assign-notify-enabled: true
   broadcast:
     # 是否向全服广播新举报（默认关闭，避免刷屏）。
     enabled: false
