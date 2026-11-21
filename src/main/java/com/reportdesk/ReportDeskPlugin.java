@@ -206,6 +206,13 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
     bedrockForm = new com.reportdesk.service.BedrockFormService(this, bedrockBridge);
 
+    getLogger()
+        .info(
+            "Bedrock forms bridge: backend="
+                + bedrockBridge.backend()
+                + ", available="
+                + bedrockBridge.available());
+
     // Per-player language detection: resolve on join, serve cached Messages per player. The
     // 12 bundled languages are pre-warmed asynchronously so the first join never pays file IO.
     playerLanguageResolver = new com.reportdesk.i18n.PlayerLanguageResolver();
