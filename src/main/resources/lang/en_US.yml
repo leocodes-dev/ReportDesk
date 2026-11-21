@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>Tap a report to view details'
   admin-title: '<dark_aqua>Report Queue'
   admin-content: '<gray>Page %page% · %total% total'
+  admin-btn-claim: 'Claim'
+  admin-btn-release: 'Release'
+  admin-btn-reopen: 'Reopen'
+  admin-btn-close: 'Close…'
+  admin-verdict-title: 'Choose outcome'

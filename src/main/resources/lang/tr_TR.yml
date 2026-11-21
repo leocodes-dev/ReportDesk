@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>Detaylar için bir şikayete dokunun'
   admin-title: '<dark_aqua>Şikayet Kuyruğu'
   admin-content: '<gray>Sayfa %page% · Toplam %total%'
+  admin-btn-claim: 'Sahiplen'
+  admin-btn-release: 'Bırak'
+  admin-btn-reopen: 'Yeniden aç'
+  admin-btn-close: 'Kapat…'
+  admin-verdict-title: 'Sonuç seç'

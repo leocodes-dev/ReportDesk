@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>通報をタップして詳細を表示'
   admin-title: '<dark_aqua>通報キュー'
   admin-content: '<gray>第 %page% ページ・全 %total% 件'
+  admin-btn-claim: '受け持ち'
+  admin-btn-release: '解放'
+  admin-btn-reopen: '再開'
+  admin-btn-close: 'クローズ…'
+  admin-verdict-title: '結果を選択'

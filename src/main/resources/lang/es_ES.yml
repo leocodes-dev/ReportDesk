@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>Toca una denuncia para ver los detalles'
   admin-title: '<dark_aqua>Cola de Denuncias'
   admin-content: '<gray>Página %page% · %total% en total'
+  admin-btn-claim: 'Reclamar'
+  admin-btn-release: 'Liberar'
+  admin-btn-reopen: 'Reabrir'
+  admin-btn-close: 'Cerrar…'
+  admin-verdict-title: 'Elegir resultado'

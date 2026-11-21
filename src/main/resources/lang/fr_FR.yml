@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>Touchez une plainte pour voir les détails'
   admin-title: '<dark_aqua>File des plaintes'
   admin-content: '<gray>Page %page% · %total% au total'
+  admin-btn-claim: 'Prendre'
+  admin-btn-release: 'Libérer'
+  admin-btn-reopen: 'Rouvrir'
+  admin-btn-close: 'Fermer…'
+  admin-verdict-title: 'Choisir le résultat'

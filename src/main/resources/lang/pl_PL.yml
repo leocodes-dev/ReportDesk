@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>Dotknij zgłoszenie, aby zobaczyć szczegóły'
   admin-title: '<dark_aqua>Kolejka zgłoszeń'
   admin-content: '<gray>Strona %page% · łącznie %total%'
+  admin-btn-claim: 'Przypisz'
+  admin-btn-release: 'Zwolnij'
+  admin-btn-reopen: 'Ponownie otwórz'
+  admin-btn-close: 'Zamknij…'
+  admin-verdict-title: 'Wybierz wynik'

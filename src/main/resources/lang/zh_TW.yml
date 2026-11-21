@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>點選一筆舉報查看詳情'
   admin-title: '<dark_aqua>舉報隊列'
   admin-content: '<gray>第 %page% 頁 · 共 %total% 條'
+  admin-btn-claim: '受理'
+  admin-btn-release: '釋放'
+  admin-btn-reopen: '重開'
+  admin-btn-close: '關閉…'
+  admin-verdict-title: '選擇處理結果'

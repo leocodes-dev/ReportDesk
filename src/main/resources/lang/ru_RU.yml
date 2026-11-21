@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>Нажмите на жалобу, чтобы просмотреть детали'
   admin-title: '<dark_aqua>Очередь жалоб'
   admin-content: '<gray>Стр. %page% · всего %total%'
+  admin-btn-claim: 'Взять'
+  admin-btn-release: 'Отпустить'
+  admin-btn-reopen: 'Открыть снова'
+  admin-btn-close: 'Закрыть…'
+  admin-verdict-title: 'Выбрать исход'

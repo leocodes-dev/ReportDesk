@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>Tippe auf eine Meldung für Details'
   admin-title: '<dark_aqua>Meldungsübersicht'
   admin-content: '<gray>Seite %page% · %total% gesamt'
+  admin-btn-claim: 'Übernehmen'
+  admin-btn-release: 'Freigeben'
+  admin-btn-reopen: 'Wieder öffnen'
+  admin-btn-close: 'Schließen…'
+  admin-verdict-title: 'Ergebnis wählen'

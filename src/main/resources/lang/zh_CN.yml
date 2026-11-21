@@ -1411,6 +1411,11 @@ bedrock:
   history-content: '<gray>点击一条举报查看详情'
   admin-title: '<dark_aqua>举报队列'
   admin-content: '<gray>第 %page% 页 · 共 %total% 条'
+  admin-btn-claim: '受理'
+  admin-btn-release: '释放'
+  admin-btn-reopen: '重开'
+  admin-btn-close: '关闭…'
+  admin-verdict-title: '选择处理结果'
 
 categories:
   # 内置分类的本地化名称。config.yml 里的 display 只是兜底，这里优先。

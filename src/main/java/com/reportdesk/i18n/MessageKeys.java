@@ -1413,4 +1413,14 @@ public final class MessageKeys {
   public static final String BEDROCK_FORM_ADMIN_TITLE = "bedrock.admin-title";
 
   public static final String BEDROCK_FORM_ADMIN_CONTENT = "bedrock.admin-content";
+
+  public static final String BEDROCK_ADMIN_BTN_CLAIM = "bedrock.admin-btn-claim";
+
+  public static final String BEDROCK_ADMIN_BTN_RELEASE = "bedrock.admin-btn-release";
+
+  public static final String BEDROCK_ADMIN_BTN_REOPEN = "bedrock.admin-btn-reopen";
+
+  public static final String BEDROCK_ADMIN_BTN_CLOSE = "bedrock.admin-btn-close";
+
+  public static final String BEDROCK_ADMIN_VERDICT_TITLE = "bedrock.admin-verdict-title";
 }

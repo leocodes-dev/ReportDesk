@@ -1435,3 +1435,8 @@ bedrock:
   history-content: '<gray>제보를 탭하여 상세보기'
   admin-title: '<dark_aqua>제보 대기열'
   admin-content: '<gray>%page% 페이지 · 총 %total% 건'
+  admin-btn-claim: '접수'
+  admin-btn-release: '해제'
+  admin-btn-reopen: '재개'
+  admin-btn-close: '닫기…'
+  admin-verdict-title: '결과 선택'
