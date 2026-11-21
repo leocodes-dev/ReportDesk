@@ -633,6 +633,8 @@ public final class BedrockFormService {
 
     UUID uuid = player.getUniqueId();
 
+    Messages m = plugin.messagesFor(player);
+
     Verdict[] choices = {
       Verdict.RESOLVED,
       Verdict.REJECTED,
@@ -640,29 +642,32 @@ public final class BedrockFormService {
       Verdict.INSUFFICIENT
     };
 
-    List<String> buttons = new ArrayList<>();
+    List<String> options = new ArrayList<>();
 
     for (Verdict verdict : choices) {
 
-      buttons.add(
-          plugin
-              .messagesFor(player)
-              .plain(NotificationService.verdictKey(verdict.name()), Map.of()));
+      options.add(m.plain(NotificationService.verdictKey(verdict.name()), Map.of()));
     }
 
-    String title =
-        plugin.messagesFor(player).plain(MessageKeys.BEDROCK_ADMIN_VERDICT_TITLE, Map.of());
+    String title = m.plain(MessageKeys.BEDROCK_ADMIN_VERDICT_TITLE, Map.of());
 
     String content = String.format(Locale.ROOT, "#%d", report.id());
 
+    String noteLabel = m.plain(MessageKeys.GENERAL_CLOSE_NOTE, Map.of());
+
+    String notePlaceholder = m.plain(MessageKeys.BEDROCK_FORM_DETAIL_PLACEHOLDER, Map.of());
+
     final Verdict[] verdicts = choices;
 
-    bridge.sendSimpleForm(
+    bridge.sendCustomForm2(
         uuid,
         title,
         content,
-        buttons,
-        index ->
+        m.plain(MessageKeys.GENERAL_VERDICT, Map.of()),
+        options,
+        noteLabel,
+        notePlaceholder,
+        (verdictIdx, note) ->
             Bukkit.getScheduler()
                 .runTask(
                     plugin,
@@ -674,7 +679,7 @@ public final class BedrockFormService {
                         return;
                       }
 
-                      if (index < 0 || index >= verdicts.length) {
+                      if (verdictIdx < 0 || verdictIdx >= verdicts.length) {
 
                         return;
                       }
@@ -683,7 +688,8 @@ public final class BedrockFormService {
                           plugin.repository().get(report.id()).orElse(report);
 
                       var result =
-                          plugin.reportService().close(latest, verdicts[index], current, "");
+                          plugin.reportService()
+                              .close(latest, verdicts[verdictIdx], current, note.trim());
 
                       current.sendMessage(
                           plugin.messagesFor(current)
@@ -694,10 +700,10 @@ public final class BedrockFormService {
                                   Map.of(
                                       "id", String.valueOf(latest.id()),
                                       "verdict",
-                                      plugin.messages()
+                                      plugin.messagesFor(current)
                                           .plain(
                                               NotificationService.verdictKey(
-                                                  verdicts[index].name()),
+                                                  verdicts[verdictIdx].name()),
                                               Map.of()))));
                     }));
   }

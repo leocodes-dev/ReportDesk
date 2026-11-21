@@ -224,6 +224,18 @@ public final class BedrockFormBridge {
     void onButtonClicked(int buttonIndex);
   }
 
+  /**
+   * Callback for a two-field CustomForm (dropdown + text input), delivered on the Cumulus
+   * worker thread.
+   *
+   * @param dropdownIndex 0-based dropdown index, or {@code -1} when none was selected
+   * @param text          the text entered in the input field; empty when blank
+   */
+  public interface FormValid2Callback {
+
+    void onValid(int dropdownIndex, String text);
+  }
+
   // -------------------------------------------------------------------
   // Form building + sending
   // -------------------------------------------------------------------
@@ -385,6 +397,75 @@ public final class BedrockFormBridge {
                       }
                     }
                   })});
+    }
+
+    return sendForm(targetUuid, builder);
+  }
+
+  /**
+   * Builds and sends a two-field Cumulus {@code CustomForm} (one dropdown + one text input)
+   * to the given Bedrock player.
+   *
+   * <p>Component order: dropdown, then text input. The valid handler reads the response
+   * through the shared JDK {@link Iterable} and invokes {@code onValid} with the dropdown
+   * index and the input text on the Cumulus worker thread; the caller schedules Bukkit work
+   * back to the main thread.
+   *
+   * @return true when the form was sent; false when the bridge is unavailable or send failed
+   */
+  public boolean sendCustomForm2(
+      UUID targetUuid,
+      String title,
+      String contentLabel,
+      String dropdownLabel,
+      List<String> options,
+      String inputLabel,
+      String inputPlaceholder,
+      FormValid2Callback onValid) {
+
+    if (!available() || targetUuid == null || customFormBuilderMethod == null) {
+
+      return false;
+    }
+
+    Object builder = invokeStatic(customFormBuilderMethod);
+
+    if (builder == null) {
+
+      return false;
+    }
+
+    invokeOn(builder, "title", new Class<?>[] {String.class}, new Object[] {title});
+
+    if (contentLabel != null && !contentLabel.isBlank()) {
+
+      invokeOn(builder, "label", new Class<?>[] {String.class}, new Object[] {contentLabel});
+    }
+
+    if (options != null && !options.isEmpty()) {
+
+      invokeOn(
+          builder,
+          "dropdown",
+          new Class<?>[] {String.class, List.class, int.class},
+          new Object[] {dropdownLabel == null ? "" : dropdownLabel, options, 0});
+    }
+
+    invokeOn(
+        builder,
+        "input",
+        new Class<?>[] {String.class, String.class},
+        new Object[] {
+            inputLabel == null ? "" : inputLabel,
+            inputPlaceholder == null ? "" : inputPlaceholder});
+
+    if (onValid != null) {
+
+      invokeOn(
+          builder,
+          "validResultHandler",
+          new Class<?>[] {Consumer.class},
+          new Object[] {createConsumerProxy(response -> readDropdownAndInput(response, onValid))});
     }
 
     return sendForm(targetUuid, builder);
@@ -640,6 +721,42 @@ public final class BedrockFormBridge {
    * {@code Consumer<Response>}) can be satisfied without a compile-time reference to the Cumulus
    * response type. The proxy implements the shared JDK {@code Consumer} interface.
    */
+  /**
+   * Reads a two-field (dropdown + text) CustomForm response through the shared JDK
+   * {@link Iterable} interface. Values arrive in component order: dropdown value, input text.
+   */
+  private void readDropdownAndInput(Object response, FormValid2Callback onValid) {
+
+    if (!(response instanceof Iterable<?> iterable)) {
+
+      onValid.onValid(-1, "");
+
+      return;
+    }
+
+    int dropdownIndex = -1;
+
+    String text = "";
+
+    int index = 0;
+
+    for (Object value : iterable) {
+
+      if (index == 0 && value instanceof Number n) {
+
+        dropdownIndex = n.intValue();
+
+      } else if (value instanceof String s) {
+
+        text = s;
+      }
+
+      index++;
+    }
+
+    onValid.onValid(dropdownIndex, text);
+  }
+
   private Object createConsumerProxy(Consumer<Object> delegate) {
 
     try {
