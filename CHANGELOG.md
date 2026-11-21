@@ -5,6 +5,33 @@
 
 ---
 
+## Unreleased（下一版本：1.3.0）
+
+> 以下为未发布变更，发版时定版为 `v1.3.0`。
+
+### 1.3.0 更新一览（2026-11-21，持续更新中）
+
+**新增**
+- 多人协作：指派与转派（ROADMAP P1#4）。`/reports assign <id> <admin>` 把未认领（OPEN）举报指派给指定在线管理员，举报随之进入 CLAIMED；对已认领举报重复指派同一管理员为幂等无副作用。`/reports transfer <id> <admin>` 在管理员之间移交认领，保留原认领时间（`claimedAt` 不变），处理时限（SLA）时间线不重置。
+- 指派/转派被指派者定向提醒：staff 广播（`notifications.staff.enabled`）开启时随广播发送 `notify.staff-assigned` / `notify.staff-transferred`；广播关闭时按 `notifications.assign-notify-enabled`（默认 true）单独提醒被指派管理员，且被指派者未持有 staff 权限（`notifications.staff.permission`）时保持静音。
+- 统计面板「人均处理量」：`/reports stats` 与管理员 GUI 统计页新增每名处理员的平均结案数（`ReportStats#perStaffClosed`，纯内存聚合，主线程零 IO）。
+
+**配置**
+- 新增 `notifications.assign-notify-enabled`（默认 true），进 `ConfigKeys` 注册，12 语言配置编辑器 label/desc 同步补齐。
+
+**安全**
+- 新权限节点 `reportdesk.admin.assign`（OP 默认）；指派/转派目标必须在线且持有 `reportdesk.admin`；非认领人转派需 `reportdesk.admin.close` 覆盖（控制台可覆盖）；沿用管理操作限流（`security.admin-cooldown-millis`）与审计日志（异步写入）。
+
+**i18n**
+- 新增 13 个文案键（admin ×9、notify ×2、gui.admin ×2 组）并同步进入全部 12 个 `lang/*.yml`（`MessagesTest` 1:1 结构校验通过）。
+
+**测试**
+- 新增 `ReportAssignmentServiceTest`（10 项：指派/幂等/冲突/终态拒绝/转派时间线保留/非属主需覆盖/控制台覆盖）；`ReportTest` 补 `withTransfer` 保留 `claimedAt` 用例；`ReportStatsTest` 补人均结案口径；`ConfigLoaderTest` 补新键默认值断言。
+
+ReportDesk (unreleased 1.3.0) adds multi-admin collaboration from ROADMAP P1#4: `/reports assign <id> <admin>` hands an unclaimed report to a specific online admin (idempotent when the target already holds the claim) and `/reports transfer <id> <admin>` moves a claim between admins while preserving the original claim timestamp so the SLA timeline is not reset. The assigned admin gets a dedicated ping (muted for admins without the staff permission, off via `notifications.assign-notify-enabled`), and the statistics panel gains a per-capita handling metric in both the `/reports stats` command and the admin GUI. A new `reportdesk.admin.assign` permission node, async audit entries and the existing admin cooldown gate the new actions. All 13 new message keys ship in all 12 bundled languages, with full unit-test coverage of the pure assignment rules.
+
+---
+
 ## Release 1.2.0
 
 **发布日期** 2026-11-14 · **标签** `v1.2.0` · **产物** `ReportDesk-1.2.0.jar` · **许可证** GNU General Public License v3.0 only

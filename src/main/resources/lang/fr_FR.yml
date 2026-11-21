@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>Durée moyenne'
     stats-avg-lore:
       - '<gray>Moyenne : <white>%average%'
+    stats-per-staff-name: '<aqua>Chiffre par agent'
+    stats-per-staff-lore:
+      - '<gray>Rapports clôturés par agent : <white>%per-staff%</white>'
     stats-line: '<gray>%key% : <white>%value%'
     stats-none: '<gray>Aucune donnée pour l''instant'
     watchlist-title: '<dark_aqua>Liste de surveillance <dark_gray>» <gray>Page %page% / %pages%'
@@ -825,6 +828,7 @@ Détecter la langue du client Java
           enabled: 'GUI de l''équipe activé'
           confirm-destructive: 'Confirmer les actions destructives'
       notifications:
+        assign-notify-enabled: "Notifier l’administrateur assigné"
         staff:
           enabled: 'Notifications de l''équipe'
           permission: 'Permission de l''équipe'
@@ -1002,6 +1006,7 @@ Détecte la langue du client de chaque joueur et affiche cette langue.
           enabled: 'Permet à l''équipe d''ouvrir l''interface de gestion complète.'
           confirm-destructive: 'Demande confirmation avant les actions destructives comme les suppressions.'
       notifications:
+        assign-notify-enabled: "Envoie une alerte ciblée à l’administrateur qui reçoit un rapport assigné ou transféré (uniquement lorsque le broadcast staff est désactivé ; les admins sans la permission staff restent muets)."
         staff:
           enabled: 'Notifie l''équipe en ligne quand un nouveau signalement arrive.'
           permission: 'Seul l''équipe ayant cette permission reçoit les notifications de signalement.'
@@ -1242,6 +1247,8 @@ notify:
   staff-overdue: '<red>Le signalement <white>#%id%</white> (%target%) est en retard de <white>%overdue%</white><red>. Veuillez le traiter.'
   staff-watched: '<red>[Surveillance] <white>%target%</white> a reçu le signalement <white>#%id%</white> <gray>| %category% <gray>| par <white>%reporter%</white>'
   broadcast-new: '<gray>[Signalement] <white>%target%</white> <gray>a été signalé (%category%), id <white>#%id%</white>.'
+  staff-assigned: '<gold>Le rapport <white>#%id%</white> a été assigné à <white>%staff%</white>.'
+  staff-transferred: '<gold>Le rapport <white>#%id%</white> a été transféré à <white>%staff%</white>.'
 
 admin:
   help-header: '<gold>===== Aide de gestion de ReportDesk ====='
@@ -1328,6 +1335,15 @@ admin:
   sla-report-header: '<gold>===== Rapport SLA ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray> : <white>%count% <dark_gray>(délai moyen %avg%)'
   sla-report-empty: '<gray>Aucun rapport en retard sur la période sélectionnée.'
+  assigned: '<green>Rapport <white>#%id%</white> assigné à <white>%staff%</white>.'
+  already-assigned: '<yellow>Le rapport <white>#%id%</white> est déjà géré par <white>%staff%</white> ; aucune modification.'
+  assign-target-offline: "<red>L’administrateur <white>%admin%</white> est hors ligne ; la cible doit être en ligne."
+  assign-target-not-admin: "<red><white>%admin%</white> n’a pas la permission d’administrateur (reportdesk.admin)."
+  transferred: '<green>Rapport <white>#%id%</white> transféré de <white>%from%</white> à <white>%staff%</white>.'
+  transfer-not-owner: '<red>Seul le gestionnaire actuel <white>%staff%</white> peut transférer ce rapport (ou forcer avec reportdesk.admin.close).'
+  stats-per-staff: '<gray>Par agent : <white>%count%</white> rapports clôturés par personne (<white>%staff%</white> agents actifs)'
+  help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Assigner un rapport à un administrateur en ligne'
+  help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Transférer un rapport pris en charge à un autre administrateur'
 config:
   list-header: '<gold>===== Configurations éditables (%count% clés, page %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

@@ -84,6 +84,9 @@ class ConfigLoaderTest {
 
     assertTrue(config.notifications().watchlistNotifyOnReport());
 
+    // Assign/transfer dedicated ping (roadmap P1#4) is on by default.
+    assertTrue(config.notifications().assignNotifyEnabled());
+
     assertTrue(config.configEditor().enabled());
 
     assertTrue(config.configEditor().backupOnSave());
@@ -200,6 +203,9 @@ class ConfigLoaderTest {
     assertEquals("", config.notifications().webhook().secondaryUrl());
 
     assertTrue(config.notifications().webhook().slaEventsEnabled());
+
+    // Assign/transfer dedicated ping defaults on (roadmap P1#4).
+    assertTrue(config.notifications().assignNotifyEnabled());
 
     assertFalse(config.notifications().sla().weeklyEnabled());
 

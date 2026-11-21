@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>Ø Bearbeitungszeit'
     stats-avg-lore:
       - '<gray>Durchschnitt: <white>%average%'
+    stats-per-staff-name: '<aqua>Pro-Kopf-Bearbeitung'
+    stats-per-staff-lore:
+      - '<gray>Ø erledigte Meldungen pro Bearbeiter: <white>%per-staff%</white>'
     stats-line: '<gray>%key%: <white>%value%'
     stats-none: '<gray>Noch keine Daten'
     watchlist-title: '<dark_aqua>Beobachtungsliste <dark_gray>» <gray>Seite %page% / %pages%'
@@ -825,6 +828,7 @@ Java-Client-Sprache erkennen
           enabled: 'Team-GUI aktiv'
           confirm-destructive: 'Destruktive Aktionen bestätigen'
       notifications:
+        assign-notify-enabled: 'Zugewiesenen Admin Benachrichtigen'
         staff:
           enabled: 'Team-Benachrichtigungen'
           permission: 'Team-Berechtigung'
@@ -1002,6 +1006,7 @@ Schätzt die Systemregionssprache von Java-Clients ab (Best-Effort).
           enabled: 'Team darf das vollständige Verwaltungsinterface öffnen.'
           confirm-destructive: 'Bestätigung vor destruktiven Aktionen wie Löschungen verlangen.'
       notifications:
+        assign-notify-enabled: 'Sendet dem zugewiesenen Admin eine gezielte Benachrichtigung (nur wenn der Staff-Broadcast aus ist; Admins ohne Staff-Berechtigung bleiben stumm).'
         staff:
           enabled: 'Online-Team bei neuen Meldungen benachrichtigen.'
           permission: 'Nur Team mit dieser Berechtigung erhält Meldungs-Benachrichtigungen.'
@@ -1242,6 +1247,8 @@ notify:
   staff-overdue: '<red>Meldung <white>#%id%</white> (%target%) ist seit <white>%overdue%</white><red> überfällig. Bitte bearbeiten.'
   staff-watched: '<red>[Beobachtung] <white>%target%</white> wurde gemeldet <white>#%id%</white> <gray>| %category% <gray>| von <white>%reporter%</white>'
   broadcast-new: '<gray>[Meldung] <white>%target%</white> wurde gemeldet (%category%), ID <white>#%id%</white>.'
+  staff-assigned: '<gold>Meldung <white>#%id%</white> wurde an <white>%staff%</white> zugewiesen.'
+  staff-transferred: '<gold>Meldung <white>#%id%</white> wurde an <white>%staff%</white> übergeben.'
 
 admin:
   help-header: '<gold>===== ReportDesk Verwaltung ====='
@@ -1328,6 +1335,15 @@ admin:
   sla-report-header: '<gold>===== SLA-Bericht ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(Ø Verspätung %avg%)'
   sla-report-empty: '<gray>Keine überfälligen Berichte im gewählten Zeitraum.'
+  assigned: '<green>Meldung <white>#%id%</white> an <white>%staff%</white> zugewiesen.'
+  already-assigned: '<yellow>Meldung <white>#%id%</white> wird bereits von <white>%staff%</white> bearbeitet; nichts geändert.'
+  assign-target-offline: '<red>Admin <white>%admin%</white> ist offline. Der Ziel-Admin muss online sein.'
+  assign-target-not-admin: '<red><white>%admin%</white> hat keine Admin-Berechtigung (reportdesk.admin).'
+  transferred: '<green>Meldung <white>#%id%</white> von <white>%from%</white> an <white>%staff%</white> übergeben.'
+  transfer-not-owner: '<red>Nur der aktuelle Bearbeiter <white>%staff%</white> kann diese Meldung übergeben (oder mit reportdesk.admin.close übersteuern).'
+  stats-per-staff: '<gray>Pro Kopf: <white>%count%</white> erledigte Meldungen pro Bearbeiter (<white>%staff%</white> aktiv)'
+  help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Meldung an einen online-Admin zuweisen'
+  help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Übertragene Meldung an einen anderen Admin übergeben'
 config:
   list-header: '<gold>===== Konfigurations-Schalter (%count% Schlüssel, Seite %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>Tempo Médio de Tratamento'
     stats-avg-lore:
       - '<gray>Média: <white>%average%'
+    stats-per-staff-name: '<aqua>Trabalho por pessoa'
+    stats-per-staff-lore:
+      - '<gray>Denúncias encerradas por responsável: <white>%per-staff%</white>'
     stats-line: '<gray>%key%: <white>%value%'
     stats-none: '<gray>Ainda não há dados'
     watchlist-title: '<dark_aqua>Lista de Acompanhamento <dark_gray>» <gray>Página %page% / %pages%'
@@ -825,6 +828,7 @@ Detectar idioma do cliente Java
           enabled: 'Ativar GUI da Equipe'
           confirm-destructive: 'Confirmar Ações Destrutivas'
       notifications:
+        assign-notify-enabled: 'Avisar o Administrador Atribuído'
         staff:
           enabled: 'Notificações da Equipe'
           permission: 'Permissão da Equipe'
@@ -1002,6 +1006,7 @@ Estima o idioma regional do sistema dos clientes Java (melhor esforço).
           enabled: 'Permite que a equipe abra a interface completa de gestão.'
           confirm-destructive: 'Pede confirmação antes de ações destrutivas como exclusões.'
       notifications:
+        assign-notify-enabled: 'Envia um aviso ao admin que recebe uma denúncia atribuída ou transferida (apenas quando o broadcast de staff está desligado; admins sem a permissão de staff ficam silenciosos).'
         staff:
           enabled: 'Notifica a equipe online quando uma nova denúncia chega.'
           permission: 'Somente equipe com esta permissão recebe notificações de denúncia.'
@@ -1242,6 +1247,8 @@ notify:
   staff-overdue: '<red>A denúncia <white>#%id%</white> (%target%) está <white>%overdue%</white><red> atrasada. Por favor, trate-a.'
   staff-watched: '<red>[Acompanhando] <white>%target%</white> recebeu a denúncia <white>#%id%</white> <gray>| %category% <gray>| por <white>%reporter%</white>'
   broadcast-new: '<gray>[Denúncia] <white>%target%</white> <gray>foi denunciado (%category%), id <white>#%id%</white>.'
+  staff-assigned: '<gold>A denúncia <white>#%id%</white> foi atribuída a <white>%staff%</white>.'
+  staff-transferred: '<gold>A denúncia <white>#%id%</white> foi transferida para <white>%staff%</white>.'
 
 admin:
   help-header: '<gold>===== Ajuda de Gestão do ReportDesk ====='
@@ -1328,6 +1335,15 @@ admin:
   sla-report-header: '<gold>===== Relatório de SLA ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(média de atraso %avg%)'
   sla-report-empty: '<gray>Nenhum relatório vencido no período selecionado.'
+  assigned: '<green>Denúncia <white>#%id%</white> atribuída a <white>%staff%</white>.'
+  already-assigned: '<yellow>A denúncia <white>#%id%</white> já está com <white>%staff%</white>; nada mudou.'
+  assign-target-offline: '<red>O administrador <white>%admin%</white> está offline. O alvo da atribuição precisa estar online.'
+  assign-target-not-admin: '<red><white>%admin%</white> não tem permissão de administrador (reportdesk.admin).'
+  transferred: '<green>Denúncia <white>#%id%</white> transferida de <white>%from%</white> para <white>%staff%</white>.'
+  transfer-not-owner: '<red>Somente o responsável atual <white>%staff%</white> pode transferir esta denúncia (ou force com reportdesk.admin.close).'
+  stats-per-staff: '<gray>Por pessoa: <white>%count%</white> denúncias encerradas por responsável (<white>%staff%</white> ativos)'
+  help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Atribuir uma denúncia a um admin online'
+  help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Transferir uma denúncia assumida para outro admin'
 config:
   list-header: '<gold>===== Configurações editáveis (%count% chaves, página %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

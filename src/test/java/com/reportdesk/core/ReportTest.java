@@ -86,6 +86,30 @@ class ReportTest {
   }
 
   @Test
+  void transferKeepsTheOriginalClaimTime() {
+
+    Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);
+
+    Report claimed = report.withClaim(TestFixtures.STAFF, "Staff", 200L);
+
+    UUID other = UUID.fromString("44444444-4444-4444-4444-444444444444");
+
+    Report transferred = claimed.withTransfer(other, "OtherStaff", 900L);
+
+    assertEquals(ReportStatus.CLAIMED, transferred.status());
+
+    assertEquals(other, transferred.claimedBy());
+
+    assertEquals("OtherStaff", transferred.claimedByName());
+
+    // The hand-off must not reset the original claim timeline.
+
+    assertEquals(200L, transferred.claimedAt());
+
+    assertEquals(900L, transferred.updatedAt());
+  }
+
+  @Test
   void closingStoresVerdictAndClosingStaff() {
 
     Report report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 100L);

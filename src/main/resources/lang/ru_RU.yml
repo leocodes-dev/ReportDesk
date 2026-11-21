@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>Среднее время'
     stats-avg-lore:
       - '<gray>Среднее: <white>%average%'
+    stats-per-staff-name: '<aqua>Нагрузка на одного'
+    stats-per-staff-lore:
+      - '<gray>Закрытых жалоб на исполнителя: <white>%per-staff%</white>'
     stats-line: '<gray>%key%: <white>%value%'
     stats-none: '<gray>Данных пока нет'
     watchlist-title: '<dark_aqua>Список наблюдения <dark_gray>» <gray>Стр. %page% / %pages%'
@@ -825,6 +828,7 @@ gui:
           enabled: 'GUI команды включён'
           confirm-destructive: 'Подтверждать опасные действия'
       notifications:
+        assign-notify-enabled: 'Уведомлять Назначенного Администратора'
         staff:
           enabled: 'Оповещения команде'
           permission: 'Право команды'
@@ -1002,6 +1006,7 @@ gui:
           enabled: 'Позволяет команде открыть полный пульт.'
           confirm-destructive: 'Просить подтверждение перед опасными действиями.'
       notifications:
+        assign-notify-enabled: 'Отправить целевое уведомление администратору, получившему назначенную или переданную жалобу (только если групповые уведомления выключены; администраторы без права staff остаются без уведомлений).'
         staff:
           enabled: 'Сигналить команде в сети о новых жалобах.'
           permission: 'Только команда с этим правом получает оповещения.'
@@ -1242,6 +1247,8 @@ notify:
   staff-overdue: '<red>Жалоба <white>#%id%</white> (%target%) просрочена уже <white>%overdue%</white><red>. Разберитесь.'
   staff-watched: '<red>[Наблюдение] На <white>%target%</white> поступила жалоба <white>#%id%</white> <gray>| %category% <gray>| от <white>%reporter%</white>'
   broadcast-new: '<gray>[Жалоба] На <white>%target%</white> <gray>поступила жалоба (%category%), id <white>#%id%</white>.'
+  staff-assigned: '<gold>Жалоба <white>#%id%</white> назначена <white>%staff%</white>.'
+  staff-transferred: '<gold>Жалоба <white>#%id%</white> передана <white>%staff%</white>.'
 
 admin:
   help-header: '<gold>===== Справка по управлению ReportDesk ====='
@@ -1328,6 +1335,15 @@ admin:
   sla-report-header: '<gold>===== Отчёт по SLA ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(среднее просрочено %avg%)'
   sla-report-empty: '<gray>Нет просроченных отчётов за выбранный период.'
+  assigned: '<green>Жалоба <white>#%id%</white> назначена <white>%staff%</white>.'
+  already-assigned: '<yellow>Жалобу <white>#%id%</white> уже разбирает <white>%staff%</white>; изменений нет.'
+  assign-target-offline: '<red>Администратор <white>%admin%</white> не в сети. Целевой администратор должен быть онлайн.'
+  assign-target-not-admin: '<red>У <white>%admin%</white> нет прав администратора (reportdesk.admin).'
+  transferred: '<green>Жалоба <white>#%id%</white> передана от <white>%from%</white> к <white>%staff%</white>.'
+  transfer-not-owner: '<red>Передать жалобу может только текущий исполнитель <white>%staff%</white> (или принудительно с правом reportdesk.admin.close).'
+  stats-per-staff: '<gray>На человека: <white>%count%</white> закрытых жалоб на исполнителя (<white>%staff%</white> исполнителей)'
+  help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Назначить жалобу онлайн-администратору'
+  help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Передать взятую в работу жалобу другому администратору'
 config:
   list-header: '<gold>===== Доступные настройки (%count% ключей, стр. %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

@@ -232,5 +232,13 @@ class ReportStatsTest {
     assertEquals(1, stats.topStaff(1).size());
 
     assertEquals(0, stats.topStaff(0).size());
+
+    // 3 closed across 2 staff members -> per-capita handling is the integer quotient.
+
+    assertEquals(3, stats.closed());
+
+    assertEquals(1, stats.perStaffClosed());
+
+    assertEquals(0, ReportStats.empty().perStaffClosed());
   }
 }

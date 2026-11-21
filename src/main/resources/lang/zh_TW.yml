@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>平均處理時間'
     stats-avg-lore:
       - '<gray>平均: <white>%average%'
+    stats-per-staff-name: '<aqua>人均處理量'
+    stats-per-staff-lore:
+      - '<gray>每名處理員平均結案: <white>%per-staff%</white>'
     stats-line: '<gray>%key%: <white>%value%'
     stats-none: '<gray>尚無數據'
     watchlist-title: '<dark_aqua>監控清單 <dark_gray>» <gray>第 %page% / %pages% 頁'
@@ -825,6 +828,7 @@ gui:
           enabled: '啟用管理組 GUI'
           confirm-destructive: '破壞性操作需確認'
       notifications:
+        assign-notify-enabled: '提醒被指派的管理員'
         staff:
           enabled: '管理組通知'
           permission: '管理組權限'
@@ -1002,6 +1006,7 @@ gui:
           enabled: '管理組可開啟完整管理介面。'
           confirm-destructive: '刪除等破壞性操作前要求確認。'
       notifications:
+        assign-notify-enabled: '指派或轉派投訴時單獨提醒被指派的管理員（僅在關閉 staff 廣播時補發；未擁有 staff 權限的管理員保持靜音）。'
         staff:
           enabled: '有新檢舉時通知線上的管理組。'
           permission: '僅持有此權限的管理組成員可收到檢舉通知。'
@@ -1242,6 +1247,8 @@ notify:
   staff-overdue: '<red>檢舉 <white>#%id%</white>（%target%）已逾期 <white>%overdue%</white><red>，請盡快處理。'
   staff-watched: '<red>【監控】<white>%target%</white> 被檢舉 <white>#%id%</white> <gray>| %category% <gray>| 檢舉者 <white>%reporter%</white>'
   broadcast-new: '<gray>【檢舉】<white>%target%</white> <gray>被檢舉（%category%），編號 <white>#%id%</white>。'
+  staff-assigned: '<gold>投訴 <white>#%id%</white> <gray>已指派給 <white>%staff%</white>。'
+  staff-transferred: '<gold>投訴 <white>#%id%</white> <gray>已轉派給 <white>%staff%</white>。'
 
 admin:
   help-header: '<gold>===== ReportDesk 管理說明 ====='
@@ -1328,6 +1335,15 @@ admin:
   sla-report-header: '<gold>===== 處理時限（SLA）報表 ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>：<white>%count% <dark_gray>（平均超時 %avg%）'
   sla-report-empty: '<gray>所選時間範圍內沒有超期檢舉。'
+  assigned: '<green>已將投訴 <white>#%id%</white> 指派給 <white>%staff%</white>。'
+  already-assigned: '<yellow>投訴 <white>#%id%</white> 已由 <white>%staff%</white> 處理中，無需重複指派。'
+  assign-target-offline: '<red>管理員 <white>%admin%</white> 不線上，無法指派。'
+  assign-target-not-admin: '<red><white>%admin%</white> 沒有管理權限（reportdesk.admin）。'
+  transferred: '<green>已將投訴 <white>#%id%</white> 從 <white>%from%</white> 轉派給 <white>%staff%</white>。'
+  transfer-not-owner: '<red>只有目前處理人 <white>%staff%</white> 可轉派此投訴，或需 reportdesk.admin.close 權限覆蓋。'
+  stats-per-staff: '<gray>人均處理量: <white>%count%</white> 件/人（共 <white>%staff%</white> 名處理員）'
+  help-assign: '<gray>/reports assign <id> <管理員> <dark_gray>- <gray>將投訴指派給線上管理員'
+  help-transfer: '<gray>/reports transfer <id> <管理員> <dark_gray>- <gray>將已認領的投訴轉派給其他管理員'
 config:
   list-header: '<gold>===== 可編輯設定（%count% 項，第 %page%/%pages% 頁）====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

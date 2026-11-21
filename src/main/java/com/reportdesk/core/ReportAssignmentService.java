@@ -73,7 +73,13 @@ public final class ReportAssignmentService {
 
     public boolean isChange() {
 
-      return outcome == ASSIGNED || outcome == TRANSFERRED;
+      return outcome == Outcome.ASSIGNED || outcome == Outcome.TRANSFERRED;
+    }
+
+    /** Convenience factory for results that carry no placeholders. */
+    public static Result of(Outcome outcome, Report report) {
+
+      return new Result(outcome, report, Map.of());
     }
   }
 

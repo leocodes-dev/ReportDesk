@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>Ortalama Süre</aqua>'
     stats-avg-lore:
       - '<gray>Ortalama: <white>%average%</white>'
+    stats-per-staff-name: '<aqua>Kişi Başı İşlem'
+    stats-per-staff-lore:
+      - '<gray>Kapanan şikayet/yönetici: <white>%per-staff%</white>'
     stats-line: '<gray>%key%: <white>%value%</white>'
     stats-none: '<gray>Henüz veri yok'
     watchlist-title: '<dark_aqua>İzleme Listesi <dark_gray>» <gray>Sayfa %page% / %pages%'
@@ -825,6 +828,7 @@ Java İstemci Dilini Algıla
           enabled: 'Ekip GUI Etkin'
           confirm-destructive: 'Yıkıcı İşlemleri Onayla'
       notifications:
+        assign-notify-enabled: 'Atanan Yöneticiye Bildirim'
         staff:
           enabled: 'Ekip Bildirimleri'
           permission: 'Ekip İzni'
@@ -1002,6 +1006,7 @@ Java istemcilerinin sistem bölge dilini tahmin eder (olası olduğunca).
           enabled: 'Ekip tam yönetim arayüzünü açabilir.'
           confirm-destructive: 'Silme gibi yıkıcı işlemlerden önce onay ister.'
       notifications:
+        assign-notify-enabled: 'Şikayet atanırken/devredilirken hedef yöneticiye özel uyarı gönderir (yalnızca ekip yayını kapalıyken eklenir; staff yetkisi olmayan yöneticiler sessiz kalır).'
         staff:
           enabled: 'Yeni bir şikayet geldiğinde çevrimiçi ekip bildirilir.'
           permission: 'Yalnızca bu izni olan ekip üyeleri şikayet bildirimleri alır.'
@@ -1242,6 +1247,8 @@ notify:
   staff-overdue: '<red>Şikayet <white>#%id%</white> (%target%) <white>%overdue%</white><red> gecikti. Lütfen işle.'
   staff-watched: '<red>[İzleme] <white>%target%</white> şikayet edildi <white>#%id%</white> <gray>| %category% <gray>| tarafından <white>%reporter%</white>'
   broadcast-new: '<gray>[Şikayet] <white>%target%</white> <gray>şikayet edildi (%category%), id <white>#%id%</white>.'
+  staff-assigned: '<gold><white>#%id%</white> şikayeti <white>%staff%</white> kişisine atandı.'
+  staff-transferred: '<gold><white>#%id%</white> şikayeti <white>%staff%</white> kişisine devredildi.'
 
 admin:
   help-header: '<gold>===== ReportDesk Yönetim Yardımı ====='
@@ -1328,6 +1335,15 @@ admin:
   sla-report-header: '<gold>===== SLA Raporu ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(ortalama gecikme %avg%)'
   sla-report-empty: '<gray>Seçilen dönem içinde gecikmeli rapor yok.'
+  assigned: '<white>#%id%</white> şikayeti <white>%staff%</white> kişisine atandı.'
+  already-assigned: '<yellow><white>#%id%</white> şikayeti zaten <white>%staff%</white> tarafından işleniyor; değişiklik yok.'
+  assign-target-offline: '<red>Yönetici <white>%admin%</white> çevrimdışı. Atama hedefi çevrimiçi olmalıdır.'
+  assign-target-not-admin: '<red><white>%admin%</white> yetkisi yok (reportdesk.admin).'
+  transferred: '<white>#%id%</white> şikayeti <white>%from%</white> üzerinden <white>%staff%</white> kişisine devredildi.'
+  transfer-not-owner: '<red>Bu şikayeti yalnızca mevcut sorumlu <white>%staff%</white> devredebilir (veya reportdesk.admin.close ile zorlayabilir).'
+  stats-per-staff: '<gray>Kişi başı: <white>%count%</white> kapanan şikayet/yönetici (<white>%staff%</white> sorumlu)'
+  help-assign: '<gray>/reports assign <id> <yönetici> <dark_gray>- <gray>Şikayeti çevrimiçi bir yöneticiye atar'
+  help-transfer: '<gray>/reports transfer <id> <yönetici> <dark_gray>- <gray>Devralınan şikayeti başka bir yöneticiye devreder'
 config:
   list-header: '<gold>===== Düzenlenebilir Yapılandırmalar (%count% anahtar, sayfa %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

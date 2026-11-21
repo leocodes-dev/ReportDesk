@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>Average Handling Time'
     stats-avg-lore:
       - '<gray>Average: <white>%average%'
+    stats-per-staff-name: '<aqua>Per-Capita Handling'
+    stats-per-staff-lore:
+      - '<gray>Closed per active handler: <white>%per-staff%</white>'
     stats-line: '<gray>%key%: <white>%value%'
     stats-none: '<gray>No data yet'
     watchlist-title: '<dark_aqua>Watchlist <dark_gray>» <gray>Page %page% / %pages%'
@@ -825,6 +828,7 @@ Detect Java Client Language
           enabled: 'Enable Admin GUI'
           confirm-destructive: 'Confirm Destructive Actions'
       notifications:
+        assign-notify-enabled: 'Notify Assigned Admin'
         staff:
           enabled: 'Staff Notifications'
           permission: 'Staff Permission'
@@ -1003,6 +1007,7 @@ Probe Java clients for their system region language (best-effort).
           enabled: 'Allow staff to open the full admin interface.'
           confirm-destructive: 'Ask for confirmation before destructive actions such as deletes.'
       notifications:
+        assign-notify-enabled: 'Pings the admin who receives an assigned or transferred report (only when the staff broadcast is off; admins without the staff permission stay muted).'
         staff:
           enabled: 'Notify online staff when a new report arrives.'
           permission: 'Only staff with this permission receive report notifications.'
@@ -1244,6 +1249,8 @@ notify:
   staff-overdue: '<red>Report <white>#%id%</white> (%target%) is <white>%overdue%</white><red> overdue. Please handle it.'
   staff-watched: '<red>[Watch] <white>%target%</white> received report <white>#%id%</white> <gray>| %category% <gray>| by <white>%reporter%</white>'
   broadcast-new: '<gray>[Report] <white>%target%</white> <gray>was reported (%category%), id <white>#%id%</white>.'
+  staff-assigned: '<gold>Report <white>#%id%</white> <gray>was assigned to <white>%staff%</white>.'
+  staff-transferred: '<gold>Report <white>#%id%</white> <gray>was transferred to <white>%staff%</white>.'
 
 admin:
   help-header: '<gold>===== ReportDesk Admin Help ====='
@@ -1330,6 +1337,15 @@ admin:
   sla-report-header: '<gold>===== SLA Report ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(avg overdue %avg%)'
   sla-report-empty: '<gray>No reports over SLA in the selected period.'
+  assigned: '<green>Assigned report <white>#%id%</white> to <white>%staff%</white>.'
+  already-assigned: '<yellow>Report <white>#%id%</white> is already handled by <white>%staff%</white>; nothing changed.'
+  assign-target-offline: '<red>Admin <white>%admin%</white> is not online. The assignment target must be online.'
+  assign-target-not-admin: '<red><white>%admin%</white> does not have the admin permission (reportdesk.admin).'
+  transferred: '<green>Transferred report <white>#%id%</white> from <white>%from%</white> to <white>%staff%</white>.'
+  transfer-not-owner: '<red>Only the current handler <white>%staff%</white> can transfer this report, or use reportdesk.admin.close to override.'
+  stats-per-staff: '<gray>Per staff: <white>%count%</white> closed reports per handler (<white>%staff%</white> active handlers)'
+  help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Assign a report to an online admin'
+  help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Transfer a claimed report to another admin'
 config:
   list-header: '<gold>===== Editable settings (%count% keys, page %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

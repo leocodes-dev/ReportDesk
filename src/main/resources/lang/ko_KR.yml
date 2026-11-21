@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>평균 처리 시간'
     stats-avg-lore:
       - '<gray>평균: <white>%average%'
+    stats-per-staff-name: '<aqua>1인당 처리량'
+    stats-per-staff-lore:
+      - '<gray>담당자 1인당 평균 종료 건수: <white>%per-staff%</white>'
     stats-line: '<gray>%key%: <white>%value%'
     stats-none: '<gray>아직 데이터가 없습니다'
     watchlist-title: '<dark_aqua>감시 목록 <dark_gray>» <gray>페이지 %page% / %pages%'
@@ -825,6 +828,7 @@ Java 클라이언트 언어 감지
           enabled: '운영진 GUI 사용'
           confirm-destructive: '파괴적 작업 확인'
       notifications:
+        assign-notify-enabled: '배정받은 관리자 알림'
         staff:
           enabled: '운영진 알림'
           permission: '운영진 권한'
@@ -1002,6 +1006,7 @@ Java 클라이언트의 시스템 지역 언어를 추정합니다(최선 처리
           enabled: '운영진이 전체 관리 인터페이스를 열 수 있습니다.'
           confirm-destructive: '삭제 등 파괴적 작업 전에 확인을 요구합니다.'
       notifications:
+        assign-notify-enabled: '제보 배정/이관 시 담당 관리자에게 개별 알림을 보냅니다(스태프 브로드캐스트가 꺼져 있을 때만 추가 발송. 스태프 권한이 없는 관리자는 알림을 받지 않습니다).'
         staff:
           enabled: '새 신고가 도착하면 온라인 운영진에게 알림합니다.'
           permission: '이 권한이 있는 운영진만 신고 알림을 받습니다.'
@@ -1242,6 +1247,8 @@ notify:
   staff-overdue: '<red>신고 <white>#%id%</white> (%target%)이(가) <white>%overdue%</white><red> 기한 초과되었습니다. 처리해 주세요.'
   staff-watched: '<red>[감시] <white>%target%</white>가 신고되었습니다 <white>#%id%</white> <gray>| %category% <gray>| 신고자 <white>%reporter%</white>'
   broadcast-new: '<gray>[신고] <white>%target%</white>가 신고되었습니다 (%category%), ID <white>#%id%</white>.'
+  staff-assigned: '<gold>제보 <white>#%id%</white>이(가) <white>%staff%</white>에게 배정되었습니다.'
+  staff-transferred: '<gold>제보 <white>#%id%</white>이(가) <white>%staff%</white>에게 이관되었습니다.'
 
 admin:
   help-header: '<gold>===== ReportDesk 관리 도움말 ====='
@@ -1328,6 +1335,15 @@ admin:
   sla-report-header: '<gold>===== SLA 보고서 ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(평균 초과 %avg%)'
   sla-report-empty: '<gray>선택된 기간에 기한 초과 보고가 없습니다.'
+  assigned: '<green>제보 <white>#%id%</white>을(를) <white>%staff%</white>에게 배정했습니다.'
+  already-assigned: '<yellow>제보 <white>#%id%</white>은(는) 이미 <white>%staff%</white>가 처리 중이라 변경된 것이 없습니다.'
+  assign-target-offline: '<red>관리자 <white>%admin%</white>가 오프라인이라 배정할 수 없습니다.'
+  assign-target-not-admin: '<red><white>%admin%</white>에게 관리자 권한(reportdesk.admin)이 없습니다.'
+  transferred: '<green>제보 <white>#%id%</white>을(를) <white>%from%</white>에서 <white>%staff%</white>(으)로 이관했습니다.'
+  transfer-not-owner: '<red>현재 담당자 <white>%staff%</white>만이 이관을 할 수 있습니다(reportdesk.admin.close 권한으로 우회 가능).'
+  stats-per-staff: '<gray>1인당 처리량: <white>%count%</white>건/명 (담당 <white>%staff%</white>명)'
+  help-assign: '<gray>/reports assign <id> <관리자> <dark_gray>- <gray>온라인 관리자에게 제보를 배정합니다'
+  help-transfer: '<gray>/reports transfer <id> <관리자> <dark_gray>- <gray>담당 중인 제보를 다른 관리자에게 이관합니다'
 config:
   list-header: '<gold>===== 편집 가능한 설정 (%count%개 키, 페이지 %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

@@ -48,7 +48,7 @@
 
 ## P1 · 协作与可观测性
 
-### 4. 多人协作：指派与转派（P1 首位）⬜
+### 4. 多人协作：指派与转派（P1 首位）✅
 - 目标：大型服务器里"认领"之外，还需要"指派给某管理员"。
 - 内容：
   - `/reports assign <id> <管理员>`：把未处理举报指派给指定在线管理员；
@@ -56,6 +56,7 @@
   - 转派：已认领者可 `/reports transfer <id> <管理员>`；
   - 统计面板新增"人均处理量"；审计记录指派/转派动作。
 - 验收：指派不重复通知（幂等）；转派保留原认领时间线。
+- **完成（2026-11）**：纯核心规则 `ReportAssignmentService`（assign 幂等/冲突/终态拒绝；transfer 保留 `claimedAt`、非属主需覆盖、控制台需 `reportdesk.admin.close`），Bukkit 层 `ReportService#assign/transfer`（审计 ASSIGN/TRANSFER 异步 + `NotificationService#onAssigned` 定向提醒，`notifications.assign-notify-enabled` 默认开、无 staff 权限即静音）；统计面板 `/reports stats` 与 GUI 统计页新增 `ReportStats#perStaffClosed` 人均处理量；新权限 `reportdesk.admin.assign`；13 个文案键进 12 语言；单测 `ReportAssignmentServiceTest`（10 项）+ `ReportTest#transferKeepsTheOriginalClaimTime` + `ReportStatsTest` + `ConfigLoaderTest`。
 
 ### 5. 处理时限（SLA）报表（剩余部分）✅
 - 目标：管理侧看到"谁在拖、哪类超得最多"。

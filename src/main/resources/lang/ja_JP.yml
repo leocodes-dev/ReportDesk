@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>平均処理時間'
     stats-avg-lore:
       - '<gray>平均: <white>%average%'
+    stats-per-staff-name: '<aqua>担当あたり処理件数'
+    stats-per-staff-lore:
+      - '<gray>担当1人あたり平均閉鎖件数: <white>%per-staff%</white>'
     stats-line: '<gray>%key%: <white>%value%'
     stats-none: '<gray>データがまだありません'
     watchlist-title: '<dark_aqua>ウォッチリスト <dark_gray>» <gray>ページ %page% / %pages%'
@@ -825,6 +828,7 @@ Javaクライアント言語の検出
           enabled: '運営 GUI を有効'
           confirm-destructive: '破壊的操作を確認'
       notifications:
+        assign-notify-enabled: '割り当て先管理者に通知'
         staff:
           enabled: '運営への通知'
           permission: '運営の権限'
@@ -1002,6 +1006,7 @@ Javaクライアントのシステム地域言語を推定します（ベスト�
           enabled: '運営が完全な管理インターフェースを開けます。'
           confirm-destructive: '削除などの破壊的操作前に確認を求めます。'
       notifications:
+        assign-notify-enabled: '割り当て/移管時に担当管理者へ個別通知を送ります（スタッフブロードキャストOFF時のみ追加で送信。スタッフ権限のない管理者は通知を受けません）。'
         staff:
           enabled: '新通報が来たらオンラインの運営に通知します。'
           permission: 'この権限を持つ運営のみに通報通知が届きます。'
@@ -1242,6 +1247,8 @@ notify:
   staff-overdue: '<red>通報 <white>#%id%</white> (%target%) は <white>%overdue%</white><red> 期限超過です。対応してください。'
   staff-watched: '<red>[ウォッチ] <white>%target%</white> が通報されました <white>#%id%</white> <gray>| %category% <gray>| 通報者 <white>%reporter%</white>'
   broadcast-new: '<gray>[通報] <white>%target%</white> が通報されました (%category%)、ID <white>#%id%</white>。'
+  staff-assigned: '<gold>通報 <white>#%id%</white> が <white>%staff%</white> に割り当てられました。'
+  staff-transferred: '<gold>通報 <white>#%id%</white> が <white>%staff%</white> に移管されました。'
 
 admin:
   help-header: '<gold>===== ReportDesk 管理ヘルプ ====='
@@ -1328,6 +1335,15 @@ admin:
   sla-report-header: '<gold>===== SLA レポート ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>：<white>%count% <dark_gray>（平均遅延 %avg%）'
   sla-report-empty: '<gray>選択期間内に期限超過の報告はありません。'
+  assigned: '<green>通報 <white>#%id%</white> を <white>%staff%</white> に割り当てました。'
+  already-assigned: '<yellow>通報 <white>#%id%</white> はすでに <white>%staff%</white> が対応中なので変更はありません。'
+  assign-target-offline: '<red>管理者 <white>%admin%</white> がオフラインのため割り当てられません。'
+  assign-target-not-admin: '<red><white>%admin%</white> には管理者権限（reportdesk.admin）がありません。'
+  transferred: '<green>通報 <white>#%id%</white> を <white>%from%</white> から <white>%staff%</white> に移管しました。'
+  transfer-not-owner: '<red>現在対応中の <white>%staff%</white> だけが移管できます（reportdesk.admin.close 権限で上書き可）。'
+  stats-per-staff: '<gray>担当あたり処理件数: <white>%count%</white> 件/人（担当者 <white>%staff%</white> 名）'
+  help-assign: '<gray>/reports assign <id> <管理者> <dark_gray>- <gray>オンラインの管理者に通報を割り当てる'
+  help-transfer: '<gray>/reports transfer <id> <管理者> <dark_gray>- <gray>引き受けた通報を他の管理者に移管する'
 config:
   list-header: '<gold>===== 編集可能な設定 (%count% 項目、ページ %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

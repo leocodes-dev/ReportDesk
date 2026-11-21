@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>平均处理时长'
     stats-avg-lore:
       - '<gray>平均：<white>%average%'
+    stats-per-staff-name: '<aqua>人均处理量'
+    stats-per-staff-lore:
+      - '<gray>每名处理员平均结案: <white>%per-staff%</white>'
     stats-line: '<gray>%key%：<white>%value%'
     stats-none: '<gray>暂无数据'
     watchlist-title: '<dark_aqua>关注列表 <dark_gray>» <gray>第 %page% / %pages% 页'
@@ -825,6 +828,7 @@ gui:
           enabled: '启用管理 GUI'
           confirm-destructive: '危险操作二次确认'
       notifications:
+        assign-notify-enabled: '提醒被指派的管理员'
         staff:
           enabled: '管理员通知'
           permission: '接收通知的权限'
@@ -1003,6 +1007,7 @@ gui:
           enabled: '允许管理员打开完整的管理界面。'
           confirm-destructive: '删除等危险操作前要求再次确认。'
       notifications:
+        assign-notify-enabled: '指派或转派举报时单独提醒被指派的管理员（仅在关闭 staff 广播时补发；未拥有 staff 权限的管理员保持静音）。'
         staff:
           enabled: '有新举报时通知在线管理员。'
           permission: '只有拥有该权限的管理员才会收到举报通知。'
@@ -1244,6 +1249,8 @@ notify:
   staff-overdue: '<red>举报 <white>#%id%</white>（%target%）已超时 <white>%overdue%</white><red>，请尽快处理。'
   staff-watched: '<red>[关注] <white>%target%</white> 收到新举报 <white>#%id%</white> <gray>| %category% <gray>| 举报人 <white>%reporter%</white>'
   broadcast-new: '<gray>[举报] <white>%target%</white> <gray>被举报（%category%），编号 <white>#%id%</white>。'
+  staff-assigned: '<gold>举报 <white>#%id%</white> <gray>已指派给 <white>%staff%</white>。'
+  staff-transferred: '<gold>举报 <white>#%id%</white> <gray>已转派给 <white>%staff%</white>。'
 
 admin:
   help-header: '<gold>===== ReportDesk 管理帮助 ====='
@@ -1330,6 +1337,15 @@ admin:
   sla-report-header: '<gold>===== 处理时限（SLA）报表 ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>：<white>%count% <dark_gray>（平均超时 %avg%）'
   sla-report-empty: '<gray>所选时间范围内没有超期举报。'
+  assigned: '<green>已将举报 <white>#%id%</white> 指派给 <white>%staff%</white>。'
+  already-assigned: '<yellow>举报 <white>#%id%</white> 已由 <white>%staff%</white> 处理中，无需重复指派。'
+  assign-target-offline: '<red>管理员 <white>%admin%</white> 不在线，无法指派。'
+  assign-target-not-admin: '<red><white>%admin%</white> 没有管理权限（reportdesk.admin）。'
+  transferred: '<green>已将举报 <white>#%id%</white> 从 <white>%from%</white> 转派给 <white>%staff%</white>。'
+  transfer-not-owner: '<red>只有当前处理人 <white>%staff%</white> 可转派此举报，或需 reportdesk.admin.close 权限覆盖。'
+  stats-per-staff: '<gray>人均处理量: <white>%count%</white> 条/人（共 <white>%staff%</white> 名处理员）'
+  help-assign: '<gray>/reports assign <id> <管理员> <dark_gray>- <gray>将举报指派给在线管理员'
+  help-transfer: '<gray>/reports transfer <id> <管理员> <dark_gray>- <gray>将已认领的举报转派给其他管理员'
 config:
   list-header: '<gold>===== 可在线修改的配置（%count% 项，第 %page%/%pages% 页）====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

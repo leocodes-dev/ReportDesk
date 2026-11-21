@@ -563,6 +563,9 @@ gui:
     stats-avg-name: '<aqua>Średni czas'
     stats-avg-lore:
       - '<gray>Średnio: <white>%average%'
+    stats-per-staff-name: '<aqua>Praca na osobę'
+    stats-per-staff-lore:
+      - '<gray>Zamkniętych zgłoszeń na administratora: <white>%per-staff%</white>'
     stats-line: '<gray>%key%: <white>%value%'
     stats-none: '<gray>Brak danych</gray>'
     watchlist-title: '<dark_aqua>Lista obserwacji <dark_gray>» <gray>Strona %page% / %pages%'
@@ -825,6 +828,7 @@ Wykrywanie języka klienta Java
           enabled: 'Włącz GUI zespołu'
           confirm-destructive: 'Potwierdzaj akcje destrukcyjne'
       notifications:
+        assign-notify-enabled: 'Powiadamiaj Przydzielonego Administratora'
         staff:
           enabled: 'Powiadomienia zespołu'
           permission: 'Uprawnienie zespołu'
@@ -1002,6 +1006,7 @@ Szacuje systemowy język regionalny klientów Java (dołożenie starań).
           enabled: 'Zespół może otworzyć pełny interfejs zarządzania.'
           confirm-destructive: 'Żąda potwierdzenia przed akcjami destrukcyjnymi, takimi jak usuwanie.'
       notifications:
+        assign-notify-enabled: 'Wyślij powiadomienie do administratora, któremu przydzielono lub przekazano zgłoszenie (tylko gdy broadcast staff jest wyłączony; administratorzy bez uprawnień staff pozostają wyciszeni).'
         staff:
           enabled: 'Powiadamia online zespół o nowych zgłoszeniach.'
           permission: 'Tylko zespół z tym uprawnieniem otrzymuje powiadomienia o zgłoszeniach.'
@@ -1242,6 +1247,8 @@ notify:
   staff-overdue: '<red>Zgłoszenie <white>#%id%</white> (%target%) jest opóźnione o <white>%overdue%</white><red>. Proszę o obsługę.'
   staff-watched: '<red>[Obserwacja] <white>%target%</white> zgłoszony <white>#%id%</white> <gray>| %category% <gray>| przez <white>%reporter%</white>'
   broadcast-new: '<gray>[Zgłoszenie] <white>%target%</white> został(a) zgłoszony(a) (%category%), id <white>#%id%</white>.'
+  staff-assigned: '<gold>Zgłoszenie <white>#%id%</white> przydzielone do <white>%staff%</white>.'
+  staff-transferred: '<gold>Zgłoszenie <white>#%id%</white> przekazane do <white>%staff%</white>.'
 
 admin:
   help-header: '<gold>===== Pomoc administracyjna ReportDesk ====='
@@ -1328,6 +1335,15 @@ admin:
   sla-report-header: '<gold>===== Raport SLA ====='
   sla-report-line: '<gray>%dimension% <white>%value%<gray>: <white>%count% <dark_gray>(średnie opóźnienie %avg%)'
   sla-report-empty: '<gray>Brak opóźnionych zgłoszeń w wybranym okresie.'
+  assigned: '<green>Zgłoszenie <white>#%id%</white> przydzielone do <white>%staff%</white>.'
+  already-assigned: '<yellow>Zgłoszenie <white>#%id%</white> jest już obsługiwane przez <white>%staff%</white>; bez zmian.'
+  assign-target-offline: '<red>Administrator <white>%admin%</white> jest offline. Cel przydziału musi być online.'
+  assign-target-not-admin: '<red><white>%admin%</white> nie ma uprawnień administratora (reportdesk.admin).'
+  transferred: '<green>Zgłoszenie <white>#%id%</white> przekazane od <white>%from%</white> do <white>%staff%</white>.'
+  transfer-not-owner: '<red>Tylko aktualny opiekun <white>%staff%</white> może przekazać to zgłoszenie (lub wymusić przez reportdesk.admin.close).'
+  stats-per-staff: '<gray>Na osobę: <white>%count%</white> zamkniętych zgłoszeń na administratora (<white>%staff%</white> aktywnych)'
+  help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Przydziel zgłoszenie administratorowi online'
+  help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Przekazane zgłoszenie do innego administratora'
 config:
   list-header: '<gold>===== Edytowalne konfiguracje (%count% kluczy, strona %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'
