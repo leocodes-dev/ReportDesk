@@ -20,6 +20,7 @@ package com.reportdesk.service;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Locale;
@@ -36,17 +37,21 @@ import org.bukkit.plugin.Plugin;
  * to the Bedrock form stack happens through reflection.
  *
  * <p><b>Classloader isolation</b>: Bukkit loads each plugin with its own isolated classloader, so
- * Cumulus classes are only visible through the Geyser/Floodgate plugin's own loader. This bridge
- * therefore discovers the backend plugin via {@link org.bukkit.plugin.PluginManager} and resolves
+ * Cumulus and Geyser types are only visible through the Geyser/Floodgate plugin's loader. This
+ * bridge discovers that backend plugin via {@link org.bukkit.plugin.PluginManager} and resolves
  * every Cumulus/Geyser type through that plugin's classloader rather than ReportDesk's own.
  *
  * <p><b>Backend detection order</b> (first match wins):
  * <ol>
- *   <li>Geyser-Spigot — the plugin instance itself implements {@code GeyserApi}</li>
- *   <li>Floodgate — accessed via {@code FloodgateApi.getInstance()}</li>
+ *   <li>Geyser-Spigot — the live {@code GeyserApi} is obtained from
+ *       {@code GeyserApi.api()} / {@code GeyserImpl.getInstance()}}</li>
+ *   <li>Floodgate — {@code FloodgateApi.getInstance()}</li>
  * </ol>
  *
- * <p>When neither backend is present the bridge reports unavailable and all calls are no-ops.
+ * <p><b>Enable-ordering</b>: ReportDesk may enable before Geyser. The reflectable method handles
+ * (Cumulus builders, {@code GeyserApiBase.sendForm}/{@code isBedrockPlayer}, the API factory)
+ * are resolved once at construction, while the live API singleton is fetched lazily on every
+ * form call via the factory method, so a not-yet-enabled Geyser simply yields null no-ops.
  *
  * <p><b>Threading note</b>: Cumulus form callbacks are delivered on the Geyser/Floodgate worker
  * thread, not the Bukkit main thread. Callers schedule Bukkit work back via
@@ -54,74 +59,87 @@ import org.bukkit.plugin.Plugin;
  */
 public final class BedrockFormBridge {
 
-  /** Backend API instance: the Geyser plugin, or a {@code FloodgateApi} instance. */
-  private final Object api;
-
-  /** Classloader of the backend plugin; used to resolve Cumulus types. */
+  /** Classloader of the detected backend plugin; used to resolve Cumulus/Geyser types. */
   private final ClassLoader apiLoader;
 
-  private final Method sendFormMethod;
-
-  private final Method isBedrockMethod;
-
+  /** Static {@code CustomForm.builder()} handle; null when Cumulus is absent. */
   private final Method customFormBuilderMethod;
 
+  /** Static {@code SimpleForm.builder()} handle; null when Cumulus is absent. */
   private final Method simpleFormBuilderMethod;
+
+  /** Static factory yielding the live API: {@code GeyserApi.api()} or {@code FloodgateApi.getInstance()}. */
+  private final Method apiFactoryMethod;
+
+  /** {@code sendForm(UUID, FormBuilder)} resolved on the API base interface. */
+  private final Method sendFormMethod;
+
+  /** {@code isBedrockPlayer(UUID)}/{@code isFloodgatePlayer(UUID)} resolved on the API base interface. */
+  private final Method isBedrockMethod;
 
   private final String backendName;
 
   public BedrockFormBridge() {
 
-    Object apiInstance = null;
+    String backend = "none";
     ClassLoader loader = null;
-    Method customForm = null;
-    Method simpleForm = null;
+    Method customBuilder = null;
+    Method simpleBuilder = null;
+    Method factory = null;
     Method sendForm = null;
     Method isBedrock = null;
-    String backend = "none";
 
-    // --- Geyser backend: the Spigot plugin instance is itself a GeyserApi ---
+    // --- Geyser backend ---
     Plugin geyser = findPlugin("geyser");
     if (geyser != null) {
 
-      try {
-        loader = geyser.getClass().getClassLoader();
-        apiInstance = geyser;
-        customForm = resolveBuilder(loader, "org.geysermc.cumulus.form.CustomForm");
-        simpleForm = resolveBuilder(loader, "org.geysermc.cumulus.form.SimpleForm");
-        sendForm = findSendForm(apiInstance);
-        isBedrock = findBooleanMethod(apiInstance, "isBedrockPlayer");
-        backend = "geyser";
-      } catch (Throwable exception) {
-        // Geyser present but its API surface could not be fully loaded
-        // (e.g. ViaVersion not installed). Degrade gracefully.
-        backend = "geyser-incomplete";
+      loader = geyser.getClass().getClassLoader();
+      customBuilder = resolveStaticBuilder(loader, "org.geysermc.cumulus.form.CustomForm");
+      simpleBuilder = resolveStaticBuilder(loader, "org.geysermc.cumulus.form.SimpleForm");
+      factory = resolveGeyserFactory(loader);
+      Class<?> apiBase = loadClass(loader, "org.geysermc.api.GeyserApiBase");
+      if (apiBase != null) {
+
+        sendForm = findMethod(apiBase, "sendForm", 2, "UUID", "FormBuilder");
+        isBedrock = findMethod(apiBase, "isBedrockPlayer", 1, "UUID");
       }
-    } else {
-      // --- Floodgate backend: accessed through FloodgateApi.getInstance() ---
+      backend = "geyser";
+    }
+
+    // --- Floodgate backend (only if Geyser was not found) ---
+    if (geyser == null) {
+
       Plugin floodgate = findPlugin("floodgate");
       if (floodgate != null) {
 
-        ClassLoader fl = floodgate.getClass().getClassLoader();
-        Object floodgateApi = loadFloodgateApi(fl);
-        if (floodgateApi != null) {
-          loader = fl;
-          apiInstance = floodgateApi;
-          customForm = resolveBuilder(fl, "org.geysermc.cumulus.form.CustomForm");
-          simpleForm = resolveBuilder(fl, "org.geysermc.cumulus.form.SimpleForm");
-          sendForm = findSendForm(apiInstance);
-          isBedrock = findBooleanMethod(apiInstance, "isFloodgatePlayer");
-          backend = "floodgate";
+        loader = floodgate.getClass().getClassLoader();
+        customBuilder = resolveStaticBuilder(loader, "org.geysermc.cumulus.form.CustomForm");
+        simpleBuilder = resolveStaticBuilder(loader, "org.geysermc.cumulus.form.SimpleForm");
+
+        try {
+          factory =
+              loadClass(loader, "org.geysermc.floodgate.api.FloodgateApi").getMethod("getInstance");
+        } catch (Throwable ignored) {
+
+          factory = null;
         }
+
+        Class<?> fgClass = loadClass(loader, "org.geysermc.floodgate.api.FloodgateApi");
+        if (fgClass != null) {
+
+          sendForm = findMethod(fgClass, "sendForm", 2, "UUID", "FormBuilder");
+          isBedrock = findMethod(fgClass, "isFloodgatePlayer", 1, "UUID");
+        }
+        backend = "floodgate";
       }
     }
 
-    this.api = apiInstance;
     this.apiLoader = loader;
+    this.customFormBuilderMethod = customBuilder;
+    this.simpleFormBuilderMethod = simpleBuilder;
+    this.apiFactoryMethod = factory;
     this.sendFormMethod = sendForm;
     this.isBedrockMethod = isBedrock;
-    this.customFormBuilderMethod = customForm;
-    this.simpleFormBuilderMethod = simpleForm;
     this.backendName = backend;
   }
 
@@ -129,20 +147,24 @@ public final class BedrockFormBridge {
   // Public queries
   // -------------------------------------------------------------------
 
-  /** Whether the Bedrock form stack is available at runtime (cached at construction). */
+  /**
+   * Whether the backend is present and every reflectable handle resolved.
+   *
+   * <p>This can be true even before Geyser finishes enabling, because it only reflects on stable
+   * types; the live singleton is fetched lazily on each call and a null singleton degrades to
+   * no-ops.
+   */
   public boolean available() {
 
-    return api != null
-        && apiLoader != null
+    return apiLoader != null
+        && apiFactoryMethod != null
         && sendFormMethod != null
         && isBedrockMethod != null
         && (customFormBuilderMethod != null || simpleFormBuilderMethod != null);
   }
 
   /**
-   * Human-readable backend name: "floodgate", "geyser", "geyser-incomplete", or "none".
-   * "geyser-incomplete" means the Geyser plugin is present but its API surface could not
-   * be fully loaded (e.g. an optional dependency such as ViaVersion is missing).
+   * Human-readable backend name: "floodgate", "geyser", or "none".
    */
   public String backend() {
 
@@ -152,11 +174,18 @@ public final class BedrockFormBridge {
   /**
    * Whether the given player UUID is a Bedrock client.
    *
-   * @return true when the bridge is available and the player is Bedrock; false otherwise
+   * @return true when a live backend reports the player as Bedrock; false otherwise
    */
   public boolean isBedrockPlayer(UUID uuid) {
 
     if (!available() || uuid == null) {
+
+      return false;
+    }
+
+    Object api = resolveApi();
+
+    if (api == null) {
 
       return false;
     }
@@ -203,8 +232,8 @@ public final class BedrockFormBridge {
    * Builds and sends a Cumulus {@code CustomForm} with a target input, an optional category
    * dropdown and a detail input to the given Bedrock player.
    *
-   * <p>Field order: target input, category dropdown, detail input. The valid-result handler
-   * reads the response through the shared JDK {@link Iterable} interface and invokes
+   * <p>Field order: target input, category dropdown, detail input. The valid-result handler reads
+   * the response through the shared JDK {@link Iterable} interface and invokes
    * {@code onValid} on the Cumulus worker thread; the caller schedules Bukkit work back to the
    * main thread.
    *
@@ -282,8 +311,7 @@ public final class BedrockFormBridge {
           builder,
           "validResultHandler",
           new Class<?>[] {Consumer.class},
-          new Object[] {
-              createConsumerProxy(response -> readCustomResponse(response, onValid))});
+          new Object[] {createConsumerProxy(response -> readCustomResponse(response, onValid))});
     }
 
     if (onClosedOrInvalid != null) {
@@ -342,162 +370,56 @@ public final class BedrockFormBridge {
           "validResultHandler",
           new Class<?>[] {Consumer.class},
           new Object[] {
-              createConsumerProxy(response -> {
-                if (response instanceof Iterable<?> iterable) {
-                  for (Object value : iterable) {
-                    if (value instanceof Number n) {
-                      onValid.onButtonClicked(n.intValue());
-                      break;
+              createConsumerProxy(
+                  response -> {
+                    if (response instanceof Iterable<?> iterable) {
+
+                      for (Object value : iterable) {
+
+                        if (value instanceof Number n) {
+
+                          onValid.onButtonClicked(n.intValue());
+
+                          break;
+                        }
+                      }
                     }
-                  }
-                }
-              })});
+                  })});
     }
 
     return sendForm(targetUuid, builder);
   }
 
   // -------------------------------------------------------------------
-  // Backend discovery helpers
+  // Runtime API + reflection plumbing
   // -------------------------------------------------------------------
-
-  /** Returns the first installed Bukkit plugin whose name contains the hint. */
-  private static Plugin findPlugin(String nameHint) {
-
-    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-
-      if (plugin.getName().toLowerCase(Locale.ROOT).contains(nameHint)) {
-
-        return plugin;
-      }
-    }
-
-    return null;
-  }
-
-  /** Resolves {@code CustomForm.builder()} / {@code SimpleForm.builder()} through the backend loader. */
-  private static Method resolveBuilder(ClassLoader loader, String fqcn) {
-
-    if (loader == null) {
-
-      return null;
-    }
-
-    try {
-
-      return Class.forName(fqcn, true, loader).getMethod("builder");
-
-    } catch (Throwable exception) {
-
-      return null;
-    }
-  }
-
-  /** Calls {@code FloodgateApi.getInstance()} reflectively through the Floodgate loader. */
-  private static Object loadFloodgateApi(ClassLoader loader) {
-
-    if (loader == null) {
-
-      return null;
-    }
-
-    try {
-
-      Method getInstance =
-          Class.forName("org.geysermc.floodgate.api.FloodgateApi", true, loader)
-              .getMethod("getInstance");
-
-      return getInstance.invoke(null);
-
-    } catch (Throwable exception) {
-
-      return null;
-    }
-  }
 
   /**
-   * Finds the {@code sendForm(UUID, ...)} overload, preferring the {@code FormBuilder} variant
-   * because the built builder is passed directly (Cumulus builds it internally).
+   * Fetches the live backend singleton through the factory method. Returns null when the backend
+   * has not finished enabling yet, which the caller treats as a no-op.
    */
-  private static Method findSendForm(Object apiInstance) {
-
-    if (apiInstance == null) {
-
-      return null;
-    }
+  private Object resolveApi() {
 
     try {
 
-      Method fallback = null;
-
-      for (Method method : apiInstance.getClass().getMethods()) {
-
-        if (!method.getName().equals("sendForm") || method.getParameterCount() != 2) {
-
-          continue;
-        }
-
-        if (method.getParameterTypes()[0] != UUID.class) {
-
-          continue;
-        }
-
-        if (method.getParameterTypes()[1].getSimpleName().contains("FormBuilder")) {
-
-          return method;
-        }
-
-        if (fallback == null) {
-
-          fallback = method;
-        }
-      }
-
-      return fallback;
+      return apiFactoryMethod.invoke(null);
 
     } catch (Throwable exception) {
-      // getMethods() can throw NoClassDefFoundError when an optional
-      // dependency (e.g. ViaVersion) is not on the classpath; degrade
-      // to no-ops rather than crash the plugin.
+
       return null;
     }
   }
-
-  /** Finds a {@code <name>(UUID): boolean} method on the backend API. */
-  private static Method findBooleanMethod(Object apiInstance, String name) {
-
-    if (apiInstance == null) {
-
-      return null;
-    }
-
-    try {
-
-      for (Method method : apiInstance.getClass().getMethods()) {
-
-        if (method.getName().equals(name)
-            && method.getParameterCount() == 1
-            && method.getParameterTypes()[0] == UUID.class
-            && method.getReturnType() == boolean.class) {
-
-          return method;
-        }
-      }
-
-    } catch (Throwable exception) {
-      // Same NoClassDefFoundError guard as findSendForm.
-    }
-
-    return null;
-  }
-
-  // -------------------------------------------------------------------
-  // Reflection plumbing
-  // -------------------------------------------------------------------
 
   private boolean sendForm(UUID uuid, Object builder) {
 
-    if (api == null || sendFormMethod == null) {
+    if (apiFactoryMethod == null || sendFormMethod == null) {
+
+      return false;
+    }
+
+    Object api = resolveApi();
+
+    if (api == null) {
 
       return false;
     }
@@ -516,8 +438,8 @@ public final class BedrockFormBridge {
 
   /**
    * Reads a CustomFormResponse through the shared JDK {@link Iterable} interface (its concrete
-   * Cumulus type is not visible to ReportDesk). The response yields values in the order the
-   * components were added: target input, optional dropdown, detail input.
+   * Cumulus type is not visible to ReportDesk). Values arrive in component order: target input,
+   * optional dropdown, detail input.
    */
   private void readCustomResponse(Object response, FormSubmitCallback onValid) {
 
@@ -560,10 +482,163 @@ public final class BedrockFormBridge {
     onValid.onValidSubmit(target, categoryIndex, detail);
   }
 
+  // -------------------------------------------------------------------
+  // Backend discovery helpers
+  // -------------------------------------------------------------------
+
+  /** Returns the first installed Bukkit plugin whose name contains the hint. */
+  private static Plugin findPlugin(String nameHint) {
+
+    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+
+      if (plugin.getName().toLowerCase(Locale.ROOT).contains(nameHint)) {
+
+        return plugin;
+      }
+    }
+
+    return null;
+  }
+
+  /** Resolves a static no-arg {@code builder()} factory on a Cumulus form class. */
+  private static Method resolveStaticBuilder(ClassLoader loader, String fqcn) {
+
+    Class<?> clazz = loadClass(loader, fqcn);
+
+    if (clazz == null) {
+
+      return null;
+    }
+
+    try {
+
+      return clazz.getMethod("builder");
+
+    } catch (Throwable ignored) {
+
+      return null;
+    }
+  }
+
+  /**
+   * Resolves the static factory that yields the live Geyser API:
+   *
+   * <p>{@code GeyserApi.api()} preferred, falling back to {@code GeyserImpl.getInstance()}.
+   */
+  private static Method resolveGeyserFactory(ClassLoader loader) {
+
+    Class<?> geyserApi = loadClass(loader, "org.geysermc.geyser.api.GeyserApi");
+
+    if (geyserApi != null) {
+
+      try {
+        Method api = geyserApi.getMethod("api");
+        if (Modifier.isStatic(api.getModifiers())) {
+
+          return api;
+        }
+      } catch (Throwable ignored) {
+
+        // fall through to GeyserImpl
+      }
+    }
+
+    Class<?> geyserImpl = loadClass(loader, "org.geysermc.geyser.GeyserImpl");
+
+    if (geyserImpl != null) {
+
+      try {
+        Method getInstance = geyserImpl.getMethod("getInstance");
+        if (Modifier.isStatic(getInstance.getModifiers())) {
+
+          return getInstance;
+        }
+      } catch (Throwable ignored) {
+
+        // no usable factory
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Finds a method by name, parameter count and parameter simple-name substring match. Used so the
+   * exact generic Cumulus types do not need to be referenced at compile time.
+   */
+  private static Method findMethod(
+      Class<?> clazz, String name, int paramCount, String... paramSimpleNameContains) {
+
+    if (clazz == null) {
+
+      return null;
+    }
+
+    try {
+
+      for (Method method : clazz.getMethods()) {
+
+        if (!method.getName().equals(name) || method.getParameterCount() != paramCount) {
+
+          continue;
+        }
+
+        Class<?>[] types = method.getParameterTypes();
+
+        if (types.length != paramSimpleNameContains.length) {
+
+          continue;
+        }
+
+        boolean allMatch = true;
+
+        for (int i = 0; i < types.length; i++) {
+
+          String simple = types[i].getSimpleName();
+
+          if (!simple.contains(paramSimpleNameContains[i])) {
+
+            allMatch = false;
+
+            break;
+          }
+        }
+
+        if (allMatch) {
+
+          return method;
+        }
+      }
+
+    } catch (Throwable ignored) {
+      // getMethods() may throw when an optional dependency class is missing; degrade.
+    }
+
+    return null;
+  }
+
+  /** Loads a class through the backend loader, returning null when absent. */
+  private static Class<?> loadClass(ClassLoader loader, String fqcn) {
+
+    if (loader == null) {
+
+      return null;
+    }
+
+    try {
+
+      return Class.forName(fqcn, true, loader);
+
+    } catch (Throwable ignored) {
+
+      return null;
+    }
+  }
+
   /**
    * Builds a {@link Consumer} proxy so the Cumulus handler (a generic
-   * {@code Consumer<Response>}) can be satisfied without a compile-time reference to the
-   * Cumulus response type. The proxy implements the shared JDK {@code Consumer} interface.
+   * {@code Consumer<Response>}) can be satisfied without a compile-time reference to the Cumulus
+   * response type. The proxy implements the shared JDK {@code Consumer} interface.
    */
   private Object createConsumerProxy(Consumer<Object> delegate) {
 
@@ -628,15 +703,19 @@ public final class BedrockFormBridge {
 
     if (method == null) {
 
-      for (Method candidate : target.getClass().getMethods()) {
+      try {
+        for (Method candidate : target.getClass().getMethods()) {
 
-        if (candidate.getName().equals(methodName)
-            && candidate.getParameterCount() == paramTypes.length) {
+          if (candidate.getName().equals(methodName)
+              && candidate.getParameterCount() == paramTypes.length) {
 
-          method = candidate;
+            method = candidate;
 
-          break;
+            break;
+          }
         }
+      } catch (Throwable ignored) {
+        // getMethods() may throw for optional-dependency classes; skip the fuzzy match.
       }
     }
 
