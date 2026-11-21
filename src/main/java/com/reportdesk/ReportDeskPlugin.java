@@ -106,6 +106,8 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
   private com.reportdesk.service.NotificationChannelRegistry notificationChannelRegistry;
 
+  private com.reportdesk.service.PunishmentChannelRegistry punishmentChannelRegistry;
+
   private PendingNoticeService offlineNotices;
 
   private WatchlistService watchlist;
@@ -194,6 +196,10 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
     notificationChannelRegistry =
         new com.reportdesk.service.NotificationChannelRegistry(
+            java.util.logging.Logger.getLogger("ReportDesk"));
+
+    punishmentChannelRegistry =
+        new com.reportdesk.service.PunishmentChannelRegistry(
             java.util.logging.Logger.getLogger("ReportDesk"));
 
     punishment = new PunishmentService(this);
@@ -949,6 +955,12 @@ public final class ReportDeskPlugin extends JavaPlugin {
   public com.reportdesk.service.NotificationChannelRegistry notificationChannelRegistry() {
 
     return notificationChannelRegistry;
+  }
+
+  /** SPI registry for third-party punishment channels; register channels here. */
+  public com.reportdesk.service.PunishmentChannelRegistry punishmentChannelRegistry() {
+
+    return punishmentChannelRegistry;
   }
 
   /** Region-aware scheduler adapter; on Folia routes entity-bound tasks to the owning thread. */

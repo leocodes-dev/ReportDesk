@@ -100,13 +100,26 @@ public final class PunishmentService {
           }
         };
 
+    Runnable channelDispatch =
+        () ->
+            plugin
+                .punishmentChannelRegistry()
+                .dispatch(report, verdict, staffName == null ? "" : staffName);
+
     if (Bukkit.isPrimaryThread()) {
 
       dispatch.run();
 
+      channelDispatch.run();
+
     } else {
 
-      Bukkit.getScheduler().runTask(plugin, dispatch);
+      Bukkit.getScheduler()
+          .runTask(plugin, () -> {
+            dispatch.run();
+
+            channelDispatch.run();
+          });
     }
   }
 
