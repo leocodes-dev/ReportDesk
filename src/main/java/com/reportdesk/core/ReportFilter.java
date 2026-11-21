@@ -87,6 +87,17 @@ public record ReportFilter(
     return new ReportFilter(java.util.Set.of(), "", "", null, SortOrder.NEWEST);
   }
 
+  /**
+   * Reports that are still actionable by staff: {@link ReportStatus#OPEN} or
+   * {@link ReportStatus#CLAIMED}. Mirrors the two tabs of the Java admin hub queue, and is what
+   * the Bedrock admin queue form should list (not terminal reports, which belong to history).
+   */
+  public static ReportFilter unclosed() {
+
+    return new ReportFilter(
+        java.util.Set.of(ReportStatus.OPEN, ReportStatus.CLAIMED), "", "", null, SortOrder.NEWEST);
+  }
+
   public static ReportFilter ofStatus(ReportStatus status) {
 
     return all().withStatus(status);

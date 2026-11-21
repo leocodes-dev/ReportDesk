@@ -360,7 +360,7 @@ public final class BedrockFormService {
 
     int pageSize = plugin.config().reports().guiPageSize();
 
-    var page = plugin.repository().page(filter == null ? ReportFilter.all() : filter, 1, pageSize);
+    var page = plugin.repository().page(filter == null ? ReportFilter.unclosed() : filter, 1, pageSize);
 
     List<String> buttons = new ArrayList<>();
 
@@ -654,7 +654,7 @@ public final class BedrockFormService {
 
                       if (index == 0) {
 
-                        openAdminQueueForm(current, ReportFilter.all());
+                        openAdminQueueForm(current, ReportFilter.unclosed());
 
                       } else if (index == 1) {
 

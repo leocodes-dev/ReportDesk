@@ -217,7 +217,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
     }
 
     // Bedrock admin clients get the native queue form; Java admins keep the Inventory hub.
-    if (plugin.bedrockForm().openAdminQueueForm(player, ReportFilter.all())) {
+    if (plugin.bedrockForm().openAdminQueueForm(player, ReportFilter.unclosed())) {
 
       return;
     }
