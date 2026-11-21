@@ -22,120 +22,135 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.function.Consumer;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
 
 /**
- * Reflective bridge to the GeyserMC Cumulus form library.
+ * Reflective bridge to the GeyserMC Cumulus form stack.
  *
- * <p>ReportDesk is a pure Java Paper plugin targeting {@code api-version 1.20}. It cannot declare a
- * compile-time dependency on Geyser, Floodgate, or Cumulus, because servers without Geyser would
- * fail to load the plugin. All interactions with the Bedrock form stack happen through reflection.
+ * <p>ReportDesk is a pure Java Paper plugin that cannot declare a compile-time dependency on
+ * Geyser, Floodgate, or Cumulus (servers without Geyser must still load it cleanly). All access
+ * to the Bedrock form stack happens through reflection.
+ *
+ * <p><b>Classloader isolation</b>: Bukkit loads each plugin with its own isolated classloader, so
+ * Cumulus classes are only visible through the Geyser/Floodgate plugin's own loader. This bridge
+ * therefore discovers the backend plugin via {@link org.bukkit.plugin.PluginManager} and resolves
+ * every Cumulus/Geyser type through that plugin's classloader rather than ReportDesk's own.
  *
  * <p><b>Backend detection order</b> (first match wins):
  * <ol>
- *   <li>Floodgate API — {@code org.geysermc.floodgate.api.FloodgateApi} — the most common
- *       cross-play setup on Paper (Floodgate provides Bedrock login without a Java account)</li>
- *   <li>Geyser API — {@code org.geysermc.geyser.api.GeyserApi} — standalone Geyser without
- *       Floodgate</li>
+ *   <li>Geyser-Spigot — the plugin instance itself implements {@code GeyserApi}</li>
+ *   <li>Floodgate — accessed via {@code FloodgateApi.getInstance()}</li>
  * </ol>
  *
- * <p>When neither backend is found the bridge reports unavailable and all form calls are no-ops.
+ * <p>When neither backend is present the bridge reports unavailable and all calls are no-ops.
  *
  * <p><b>Threading note</b>: Cumulus form callbacks are delivered on the Geyser/Floodgate worker
- * thread, not the Bukkit main thread. Callers must schedule Bukkit work back via
+ * thread, not the Bukkit main thread. Callers schedule Bukkit work back via
  * {@code Bukkit.getScheduler()}.
  */
 public final class BedrockFormBridge {
 
-  // Cached API instance and method handles (resolved once at construction)
+  /** Backend API instance: the Geyser plugin, or a {@code FloodgateApi} instance. */
   private final Object api;
+
+  /** Classloader of the backend plugin; used to resolve Cumulus types. */
+  private final ClassLoader apiLoader;
+
   private final Method sendFormMethod;
+
   private final Method isBedrockMethod;
+
   private final Method customFormBuilderMethod;
-  private final Class<?> consumerClass;
+
+  private final Method simpleFormBuilderMethod;
+
   private final String backendName;
 
-  /**
-   * Probes the runtime classpath for Floodgate / Geyser / Cumulus.
-   *
-   * <p>Results are cached; calling this on an already-constructed instance is unnecessary.
-   */
   public BedrockFormBridge() {
 
-    this.consumerClass = tryLoad("java.util.function.Consumer");
+    Object apiInstance = null;
+    ClassLoader loader = null;
+    Method customForm = null;
+    Method simpleForm = null;
+    Method sendForm = null;
+    Method isBedrock = null;
+    String backend = "none";
 
-    // Resolve Cumulus CustomForm static builder
-    Class<?> customFormClass = tryLoad("org.geysermc.cumulus.form.CustomForm");
-    this.customFormBuilderMethod =
-        customFormClass != null ? safeGetMethod(customFormClass, "builder") : null;
+    // --- Geyser backend: the Spigot plugin instance is itself a GeyserApi ---
+    Plugin geyser = findPlugin("geyser");
+    if (geyser != null) {
 
-    Object resolvedApi = null;
-    Method resolvedSendForm = null;
-    Method resolvedIsBedrock = null;
-    String resolvedBackend = "none";
-
-    // --- Try Floodgate ---
-    Object fg = loadFloodgateApi();
-    if (fg != null && this.customFormBuilderMethod != null) {
-
-      Method sf = findSendForm(fg);
-      Method ib = findIsBedrock(fg, "isFloodgatePlayer");
-      if (sf != null && ib != null) {
-
-        resolvedApi = fg;
-        resolvedSendForm = sf;
-        resolvedIsBedrock = ib;
-        resolvedBackend = "floodgate";
+      try {
+        loader = geyser.getClass().getClassLoader();
+        apiInstance = geyser;
+        customForm = resolveBuilder(loader, "org.geysermc.cumulus.form.CustomForm");
+        simpleForm = resolveBuilder(loader, "org.geysermc.cumulus.form.SimpleForm");
+        sendForm = findSendForm(apiInstance);
+        isBedrock = findBooleanMethod(apiInstance, "isBedrockPlayer");
+        backend = "geyser";
+      } catch (Throwable exception) {
+        // Geyser present but its API surface could not be fully loaded
+        // (e.g. ViaVersion not installed). Degrade gracefully.
+        backend = "geyser-incomplete";
       }
-    }
+    } else {
+      // --- Floodgate backend: accessed through FloodgateApi.getInstance() ---
+      Plugin floodgate = findPlugin("floodgate");
+      if (floodgate != null) {
 
-    // --- Try standalone Geyser ---
-    if (resolvedApi == null) {
-
-      Object gs = loadGeyserApi();
-      if (gs != null && this.customFormBuilderMethod != null) {
-
-        Method sf = findSendForm(gs);
-        Method ib = findIsBedrock(gs, "isBedrockPlayer");
-        if (sf != null && ib != null) {
-
-          resolvedApi = gs;
-          resolvedSendForm = sf;
-          resolvedIsBedrock = ib;
-          resolvedBackend = "geyser";
+        ClassLoader fl = floodgate.getClass().getClassLoader();
+        Object floodgateApi = loadFloodgateApi(fl);
+        if (floodgateApi != null) {
+          loader = fl;
+          apiInstance = floodgateApi;
+          customForm = resolveBuilder(fl, "org.geysermc.cumulus.form.CustomForm");
+          simpleForm = resolveBuilder(fl, "org.geysermc.cumulus.form.SimpleForm");
+          sendForm = findSendForm(apiInstance);
+          isBedrock = findBooleanMethod(apiInstance, "isFloodgatePlayer");
+          backend = "floodgate";
         }
       }
     }
 
-    this.api = resolvedApi;
-    this.sendFormMethod = resolvedSendForm;
-    this.isBedrockMethod = resolvedIsBedrock;
-    this.backendName = resolvedBackend;
+    this.api = apiInstance;
+    this.apiLoader = loader;
+    this.sendFormMethod = sendForm;
+    this.isBedrockMethod = isBedrock;
+    this.customFormBuilderMethod = customForm;
+    this.simpleFormBuilderMethod = simpleForm;
+    this.backendName = backend;
   }
 
   // -------------------------------------------------------------------
   // Public queries
   // -------------------------------------------------------------------
 
-  /**
-   * Whether the Bedrock form stack (Cumulus + Geyser/Floodgate) is available at runtime.
-   *
-   * <p>Cached result; does not re-probe the classpath on every call.
-   */
+  /** Whether the Bedrock form stack is available at runtime (cached at construction). */
   public boolean available() {
 
-    return api != null && sendFormMethod != null && isBedrockMethod != null;
+    return api != null
+        && apiLoader != null
+        && sendFormMethod != null
+        && isBedrockMethod != null
+        && (customFormBuilderMethod != null || simpleFormBuilderMethod != null);
   }
 
-  /** Human-readable backend name: "floodgate", "geyser", or "none". */
+  /**
+   * Human-readable backend name: "floodgate", "geyser", "geyser-incomplete", or "none".
+   * "geyser-incomplete" means the Geyser plugin is present but its API surface could not
+   * be fully loaded (e.g. an optional dependency such as ViaVersion is missing).
+   */
   public String backend() {
 
     return backendName;
   }
 
   /**
-   * Checks whether the given player UUID is a Bedrock client.
+   * Whether the given player UUID is a Bedrock client.
    *
    * @return true when the bridge is available and the player is Bedrock; false otherwise
    */
@@ -148,35 +163,30 @@ public final class BedrockFormBridge {
 
     try {
 
-      Object result = isBedrockMethod.invoke(api, uuid);
+      return Boolean.TRUE.equals(isBedrockMethod.invoke(api, uuid));
 
-      return Boolean.TRUE.equals(result);
-
-    } catch (Exception exception) {
-
-      // Player may have disconnected or the API may have thrown for a transient reason.
+    } catch (Throwable exception) {
 
       return false;
     }
   }
 
   // -------------------------------------------------------------------
-  // Form building + sending
+  // Callbacks
   // -------------------------------------------------------------------
 
-  /** Callback for a custom-form submission delivered on the Cumulus/Geyser worker thread. */
+  /** Callback for a custom-form submission, delivered on the Cumulus worker thread. */
   public interface FormSubmitCallback {
 
     /**
-     * @param target        text the player entered for the target input; empty when absent
-     * @param categoryIndex 0-based index into the category dropdown; {@code -1} when no dropdown
-     *                      was included in the form or the response could not be parsed
-     * @param detail        text the player entered in the detail input; empty string when absent
+     * @param target        text entered for the target input; empty when absent
+     * @param categoryIndex 0-based dropdown index; {@code -1} when no dropdown was included
+     * @param detail        text entered for the detail input; empty when absent
      */
     void onValidSubmit(String target, int categoryIndex, String detail);
   }
 
-  /** Callback for a simple-form button click delivered on the Cumulus/Geyser worker thread. */
+  /** Callback for a simple-form button click, delivered on the Cumulus worker thread. */
   public interface SimpleFormCallback {
 
     /**
@@ -185,27 +195,19 @@ public final class BedrockFormBridge {
     void onButtonClicked(int buttonIndex);
   }
 
+  // -------------------------------------------------------------------
+  // Form building + sending
+  // -------------------------------------------------------------------
+
   /**
-   * Builds and sends a Cumulus {@code CustomForm} with a target-player input, an optional
-   * category dropdown and a detail input to the given Bedrock player.
+   * Builds and sends a Cumulus {@code CustomForm} with a target input, an optional category
+   * dropdown and a detail input to the given Bedrock player.
    *
-   * <p>Field order in the built form is: target input, category dropdown, detail input. The
-   * valid-result handler reads them sequentially after {@code reset()} and invokes
-   * {@code onValid} on the Cumulus worker thread. The caller is responsible for scheduling any
-   * Bukkit work back to the main thread.
+   * <p>Field order: target input, category dropdown, detail input. The valid-result handler
+   * reads the response through the shared JDK {@link Iterable} interface and invokes
+   * {@code onValid} on the Cumulus worker thread; the caller schedules Bukkit work back to the
+   * main thread.
    *
-   * @param targetUuid        Bedrock player UUID
-   * @param title             form title
-   * @param contentLabel      optional label displayed under the title (empty to omit)
-   * @param targetLabel       label for the target input
-   * @param targetPlaceholder text input placeholder for the target field
-   * @param targetDefault     default text in the target input (empty to omit)
-   * @param categoryLabel     dropdown label (empty when categoryOptions is empty)
-   * @param categoryOptions   category option strings; empty to omit the dropdown
-   * @param detailLabel       text input label
-   * @param detailPlaceholder text input placeholder
-   * @param onValid           callback for successful submission (may be null)
-   * @param onClosedOrInvalid callback for cancelled/invalid forms (may be null)
    * @return true when the form was sent; false when the bridge is unavailable or send failed
    */
   public boolean sendCustomForm(
@@ -222,7 +224,7 @@ public final class BedrockFormBridge {
       FormSubmitCallback onValid,
       Runnable onClosedOrInvalid) {
 
-    if (!available() || targetUuid == null) {
+    if (!available() || targetUuid == null || customFormBuilderMethod == null) {
 
       return false;
     }
@@ -234,17 +236,13 @@ public final class BedrockFormBridge {
       return false;
     }
 
-    // title(String)
     invokeOn(builder, "title", new Class<?>[] {String.class}, new Object[] {title});
 
-    // label(String) on CustomForm.Builder — displayed as content/label under the title
     if (contentLabel != null && !contentLabel.isBlank()) {
 
       invokeOn(builder, "label", new Class<?>[] {String.class}, new Object[] {contentLabel});
     }
 
-    // Target player input: input(String, String, String) when a default is supplied,
-    // otherwise input(String, String).
     if (targetDefault != null && !targetDefault.isBlank()) {
 
       invokeOn(
@@ -252,9 +250,7 @@ public final class BedrockFormBridge {
           "input",
           new Class<?>[] {String.class, String.class, String.class},
           new Object[] {
-              targetLabel,
-              targetPlaceholder == null ? "" : targetPlaceholder,
-              targetDefault});
+              targetLabel, targetPlaceholder == null ? "" : targetPlaceholder, targetDefault});
     } else {
 
       invokeOn(
@@ -265,7 +261,6 @@ public final class BedrockFormBridge {
               targetLabel, targetPlaceholder == null ? "" : targetPlaceholder});
     }
 
-    // dropdown(String, List, int) when options are present
     if (categoryOptions != null && !categoryOptions.isEmpty()) {
 
       invokeOn(
@@ -275,128 +270,50 @@ public final class BedrockFormBridge {
           new Object[] {categoryLabel, categoryOptions, 0});
     }
 
-    // Detail input: input(String, String)
     invokeOn(
         builder,
         "input",
         new Class<?>[] {String.class, String.class},
-        new Object[] {
-            detailLabel, detailPlaceholder == null ? "" : detailPlaceholder});
+        new Object[] {detailLabel, detailPlaceholder == null ? "" : detailPlaceholder});
 
-    // validResultHandler(Consumer<R>) — create a Proxy that implements Consumer
     if (onValid != null) {
-
-      final List<String> options = categoryOptions;
-
-      Object consumerProxy =
-          createConsumerProxy(
-              response -> {
-                if (response == null) {
-
-                  return;
-                }
-
-                // Reset the CustomFormResponse iterator to the beginning
-                invokeNoArg(response, "reset");
-
-                String target = "";
-
-                // First field is always the target input
-                Object targetResult = invokeNoArg(response, "asInput");
-
-                if (targetResult instanceof String s) {
-
-                  target = s;
-                }
-
-                int catIndex = -1;
-
-                if (options != null && !options.isEmpty()) {
-
-                  // asDropdown() returns the selected option index and advances the iterator
-                  Object dropdownResult = invokeNoArg(response, "asDropdown");
-
-                  if (dropdownResult instanceof Number n) {
-
-                    catIndex = n.intValue();
-                  }
-                }
-
-                String detail = "";
-
-                Object inputResult = invokeNoArg(response, "asInput");
-
-                if (inputResult instanceof String s) {
-
-                  detail = s;
-                }
-
-                onValid.onValidSubmit(target, catIndex, detail);
-              });
 
       invokeOn(
           builder,
           "validResultHandler",
           new Class<?>[] {Consumer.class},
-          new Object[] {consumerProxy});
+          new Object[] {
+              createConsumerProxy(response -> readCustomResponse(response, onValid))});
     }
 
-    // closedOrInvalidResultHandler(Consumer<F>) — fire-and-forget
     if (onClosedOrInvalid != null) {
-
-      Object closedProxy = createConsumerProxy(ignored -> onClosedOrInvalid.run());
 
       invokeOn(
           builder,
           "closedOrInvalidResultHandler",
           new Class<?>[] {Consumer.class},
-          new Object[] {closedProxy});
+          new Object[] {createConsumerProxy(ignored -> onClosedOrInvalid.run())});
     }
 
-    // build() → CustomForm
-    Object form = invokeNoArg(builder, "build");
-
-    if (form == null) {
-
-      return false;
-    }
-
-    return sendForm(targetUuid, form);
+    return sendForm(targetUuid, builder);
   }
 
   /**
    * Builds and sends a Cumulus {@code SimpleForm} with a list of buttons to the given Bedrock
    * player.
    *
-   * @param targetUuid Bedrock player UUID
-   * @param title      form title
-   * @param content    form description (empty to omit)
-   * @param buttons    button labels
-   * @param onValid    callback receiving the 0-based button index; may be null
    * @return true when the form was sent; false when unavailable or send failed
    */
   public boolean sendSimpleForm(
       UUID targetUuid, String title, String content, List<String> buttons,
       SimpleFormCallback onValid) {
 
-    if (!available() || targetUuid == null) {
+    if (!available() || targetUuid == null || simpleFormBuilderMethod == null) {
 
       return false;
     }
 
-    // Try to build a SimpleForm; fall back to a CustomForm with no dropdowns when SimpleForm
-    // is not available (e.g. very old Cumulus).
-    Class<?> simpleFormClass = tryLoad("org.geysermc.cumulus.form.SimpleForm");
-
-    if (simpleFormClass == null) {
-
-      // Fall back: send a custom form with no components, which effectively does nothing useful.
-      // This path is only reached when SimpleForm is not in the Cumulus version; log and skip.
-
-      return false;
-    }
-
-    Object builder = invokeStatic(safeGetMethod(simpleFormClass, "builder"));
+    Object builder = invokeStatic(simpleFormBuilderMethod);
 
     if (builder == null) {
 
@@ -420,109 +337,87 @@ public final class BedrockFormBridge {
 
     if (onValid != null) {
 
-      Object consumerProxy =
-          createConsumerProxy(
-              response -> {
-                if (response != null) {
-
-                  // SimpleFormResponse.selection() → int (0-based button index)
-                  Object selection = invokeNoArg(response, "selection");
-
-                  if (selection instanceof Number n) {
-
-                    onValid.onButtonClicked(n.intValue());
-                  }
-                }
-              });
-
       invokeOn(
           builder,
           "validResultHandler",
           new Class<?>[] {Consumer.class},
-          new Object[] {consumerProxy});
+          new Object[] {
+              createConsumerProxy(response -> {
+                if (response instanceof Iterable<?> iterable) {
+                  for (Object value : iterable) {
+                    if (value instanceof Number n) {
+                      onValid.onButtonClicked(n.intValue());
+                      break;
+                    }
+                  }
+                }
+              })});
     }
 
-    Object form = invokeNoArg(builder, "build");
-
-    if (form == null) {
-
-      return false;
-    }
-
-    return sendForm(targetUuid, form);
+    return sendForm(targetUuid, builder);
   }
 
   // -------------------------------------------------------------------
-  // Internal helpers
+  // Backend discovery helpers
   // -------------------------------------------------------------------
 
-  private boolean sendForm(UUID uuid, Object form) {
+  /** Returns the first installed Bukkit plugin whose name contains the hint. */
+  private static Plugin findPlugin(String nameHint) {
 
-    if (sendFormMethod == null || api == null) {
+    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
 
-      return false;
+      if (plugin.getName().toLowerCase(Locale.ROOT).contains(nameHint)) {
+
+        return plugin;
+      }
+    }
+
+    return null;
+  }
+
+  /** Resolves {@code CustomForm.builder()} / {@code SimpleForm.builder()} through the backend loader. */
+  private static Method resolveBuilder(ClassLoader loader, String fqcn) {
+
+    if (loader == null) {
+
+      return null;
     }
 
     try {
 
-      Object result = sendFormMethod.invoke(api, uuid, form);
+      return Class.forName(fqcn, true, loader).getMethod("builder");
 
-      // sendForm returns boolean; some implementations may return null (void cast).
+    } catch (Throwable exception) {
 
-      return !(result instanceof Boolean b) || b;
-
-    } catch (Exception exception) {
-
-      return false;
+      return null;
     }
   }
 
-  private static Object loadFloodgateApi() {
+  /** Calls {@code FloodgateApi.getInstance()} reflectively through the Floodgate loader. */
+  private static Object loadFloodgateApi(ClassLoader loader) {
 
-    Class<?> floodgateClass = tryLoad("org.geysermc.floodgate.api.FloodgateApi");
-
-    if (floodgateClass == null) {
+    if (loader == null) {
 
       return null;
     }
 
-    Method getInstance = safeGetMethod(floodgateClass, "getInstance");
+    try {
 
-    return getInstance == null ? null : invokeStatic(getInstance);
-  }
+      Method getInstance =
+          Class.forName("org.geysermc.floodgate.api.FloodgateApi", true, loader)
+              .getMethod("getInstance");
 
-  private static Object loadGeyserApi() {
+      return getInstance.invoke(null);
 
-    Class<?> geyserClass = tryLoad("org.geysermc.geyser.api.GeyserApi");
-
-    if (geyserClass == null) {
+    } catch (Throwable exception) {
 
       return null;
     }
-
-    // GeyserApi uses a static factory method "api()"
-    Method getApi = safeGetMethod(geyserClass, "api");
-
-    if (getApi != null) {
-
-      return invokeStatic(getApi);
-    }
-
-    // Some older Geyser versions use "getInstance()"
-    Method getInstance = safeGetMethod(geyserClass, "getInstance");
-
-    return getInstance == null ? null : invokeStatic(getInstance);
   }
 
   /**
-   * Finds the {@code sendForm(UUID, Form)} overload.
-   *
-   * <p>Both FloodgateApi and GeyserApi declare two overloads:
-   * <ul>
-   *   <li>{@code sendForm(UUID, Form)}</li>
-   *   <li>{@code sendForm(UUID, FormBuilder)}</li>
-   * </ul>
-   * We prefer the {@code Form} variant because we always pass a built form instance.
+   * Finds the {@code sendForm(UUID, ...)} overload, preferring the {@code FormBuilder} variant
+   * because the built builder is passed directly (Cumulus builds it internally).
    */
   private static Method findSendForm(Object apiInstance) {
 
@@ -531,109 +426,166 @@ public final class BedrockFormBridge {
       return null;
     }
 
-    // Preferred: second param is assignable from Cumulus Form
-    Class<?> formClass = tryLoad("org.geysermc.cumulus.form.Form");
+    try {
 
-    for (Method m : apiInstance.getClass().getMethods()) {
+      Method fallback = null;
 
-      if (!m.getName().equals("sendForm") || m.getParameterCount() != 2) {
+      for (Method method : apiInstance.getClass().getMethods()) {
 
-        continue;
+        if (!method.getName().equals("sendForm") || method.getParameterCount() != 2) {
+
+          continue;
+        }
+
+        if (method.getParameterTypes()[0] != UUID.class) {
+
+          continue;
+        }
+
+        if (method.getParameterTypes()[1].getSimpleName().contains("FormBuilder")) {
+
+          return method;
+        }
+
+        if (fallback == null) {
+
+          fallback = method;
+        }
       }
 
-      if (m.getParameterTypes()[0] != UUID.class) {
+      return fallback;
 
-        continue;
-      }
-
-      if (formClass != null && formClass.isAssignableFrom(m.getParameterTypes()[1])) {
-
-        return m;
-      }
+    } catch (Throwable exception) {
+      // getMethods() can throw NoClassDefFoundError when an optional
+      // dependency (e.g. ViaVersion) is not on the classpath; degrade
+      // to no-ops rather than crash the plugin.
+      return null;
     }
-
-    // Fallback: any sendForm(UUID, *)
-    for (Method m : apiInstance.getClass().getMethods()) {
-
-      if (m.getName().equals("sendForm")
-          && m.getParameterCount() == 2
-          && m.getParameterTypes()[0] == UUID.class) {
-
-        return m;
-      }
-    }
-
-    return null;
   }
 
-  /**
-   * Finds the Bedrock-player detection method on the given API instance.
-   *
-   * @param apiInstance    the API object (FloodgateApi or GeyserApi)
-   * @param preferredName  method name to look for first (e.g. "isFloodgatePlayer" or "isBedrockPlayer")
-   */
-  private static Method findIsBedrock(Object apiInstance, String preferredName) {
+  /** Finds a {@code <name>(UUID): boolean} method on the backend API. */
+  private static Method findBooleanMethod(Object apiInstance, String name) {
 
     if (apiInstance == null) {
 
       return null;
     }
 
-    // Preferred name match
-    for (Method m : apiInstance.getClass().getMethods()) {
+    try {
 
-      if (m.getName().equals(preferredName)
-          && m.getParameterCount() == 1
-          && m.getParameterTypes()[0] == UUID.class
-          && m.getReturnType() == boolean.class) {
+      for (Method method : apiInstance.getClass().getMethods()) {
 
-        return m;
+        if (method.getName().equals(name)
+            && method.getParameterCount() == 1
+            && method.getParameterTypes()[0] == UUID.class
+            && method.getReturnType() == boolean.class) {
+
+          return method;
+        }
       }
-    }
 
-    // Fallback: any single-UUID boolean method containing "Floodgate" or "Bedrock"
-    for (Method m : apiInstance.getClass().getMethods()) {
-
-      if (m.getParameterCount() == 1
-          && m.getParameterTypes()[0] == UUID.class
-          && m.getReturnType() == boolean.class
-          && (m.getName().contains("Floodgate") || m.getName().contains("Bedrock"))) {
-
-        return m;
-      }
+    } catch (Throwable exception) {
+      // Same NoClassDefFoundError guard as findSendForm.
     }
 
     return null;
   }
 
+  // -------------------------------------------------------------------
+  // Reflection plumbing
+  // -------------------------------------------------------------------
+
+  private boolean sendForm(UUID uuid, Object builder) {
+
+    if (api == null || sendFormMethod == null) {
+
+      return false;
+    }
+
+    try {
+
+      Object result = sendFormMethod.invoke(api, uuid, builder);
+
+      return !(result instanceof Boolean b) || b;
+
+    } catch (Throwable exception) {
+
+      return false;
+    }
+  }
+
   /**
-   * Creates a {@link Consumer} proxy that delegates to the given functional callback.
-   *
-   * <p>Using {@link Proxy} avoids a compile-time dependency on the Cumulus
-   * {@code CustomFormResponse} / {@code SimpleFormResponse} types. The proxy implements
-   * {@code java.util.function.Consumer}; at runtime the Cumulus library calls {@code accept(obj)}
-   * where obj is the actual response type.
+   * Reads a CustomFormResponse through the shared JDK {@link Iterable} interface (its concrete
+   * Cumulus type is not visible to ReportDesk). The response yields values in the order the
+   * components were added: target input, optional dropdown, detail input.
+   */
+  private void readCustomResponse(Object response, FormSubmitCallback onValid) {
+
+    if (!(response instanceof Iterable<?> iterable)) {
+
+      onValid.onValidSubmit("", -1, "");
+
+      return;
+    }
+
+    String target = "";
+
+    String detail = "";
+
+    int categoryIndex = -1;
+
+    int stringsSeen = 0;
+
+    for (Object value : iterable) {
+
+      if (value instanceof String s) {
+
+        if (stringsSeen == 0) {
+
+          target = s;
+
+        } else {
+
+          detail = s;
+        }
+
+        stringsSeen++;
+
+      } else if (value instanceof Number n) {
+
+        categoryIndex = n.intValue();
+      }
+    }
+
+    onValid.onValidSubmit(target, categoryIndex, detail);
+  }
+
+  /**
+   * Builds a {@link Consumer} proxy so the Cumulus handler (a generic
+   * {@code Consumer<Response>}) can be satisfied without a compile-time reference to the
+   * Cumulus response type. The proxy implements the shared JDK {@code Consumer} interface.
    */
   private Object createConsumerProxy(Consumer<Object> delegate) {
 
-    if (consumerClass == null) {
+    try {
 
-      // Consumer class should always be loadable (it's in the JDK).
+      InvocationHandler handler =
+          (proxy, method, args) -> {
+            if ("accept".equals(method.getName()) && args != null && args.length == 1) {
+
+              delegate.accept(args[0]);
+            }
+
+            return null;
+          };
+
+      return Proxy.newProxyInstance(
+          BedrockFormBridge.class.getClassLoader(), new Class<?>[] {Consumer.class}, handler);
+
+    } catch (Throwable exception) {
+
       return null;
     }
-
-    InvocationHandler handler =
-        (proxy, method, args) -> {
-          if ("accept".equals(method.getName()) && args != null && args.length == 1) {
-
-            delegate.accept(args[0]);
-          }
-
-          return null;
-        };
-
-    return Proxy.newProxyInstance(
-        BedrockFormBridge.class.getClassLoader(), new Class<?>[] {consumerClass}, handler);
   }
 
   /** Invokes a static no-arg method (e.g. {@code CustomForm.builder()}). */
@@ -648,13 +600,13 @@ public final class BedrockFormBridge {
 
       return method.invoke(null);
 
-    } catch (Exception ignored) {
+    } catch (Throwable ignored) {
 
       return null;
     }
   }
 
-  /** Invokes a parameterized method on an instance, silently returning null on failure. */
+  /** Invokes a parameterized method on an instance, returning null silently on failure. */
   private static Object invokeOn(
       Object target, String methodName, Class<?>[] paramTypes, Object[] args) {
 
@@ -663,12 +615,19 @@ public final class BedrockFormBridge {
       return null;
     }
 
-    // Try exact match first
-    Method method = findMethod(target.getClass(), methodName, paramTypes);
+    Method method = null;
+
+    try {
+
+      method = target.getClass().getMethod(methodName, paramTypes);
+
+    } catch (Throwable ignored) {
+
+      method = null;
+    }
 
     if (method == null) {
 
-      // Fuzzy match: same method name with the same arg count
       for (Method candidate : target.getClass().getMethods()) {
 
         if (candidate.getName().equals(methodName)
@@ -690,49 +649,7 @@ public final class BedrockFormBridge {
 
       return method.invoke(target, args);
 
-    } catch (Exception ignored) {
-
-      return null;
-    }
-  }
-
-  /** Invokes a no-arg method on an instance, silently returning null on failure. */
-  private static Object invokeNoArg(Object target, String methodName) {
-
-    return invokeOn(target, methodName, new Class<?>[0], new Object[0]);
-  }
-
-  private static Method findMethod(Class<?> clazz, String name, Class<?>[] types) {
-
-    try {
-
-      return clazz.getMethod(name, types);
-
-    } catch (Exception ignored) {
-
-      return null;
-    }
-  }
-
-  private static Method safeGetMethod(Class<?> clazz, String name) {
-
-    try {
-
-      return clazz.getMethod(name);
-
-    } catch (Exception ignored) {
-
-      return null;
-    }
-  }
-
-  private static Class<?> tryLoad(String className) {
-
-    try {
-
-      return Class.forName(className);
-
-    } catch (ClassNotFoundException ignored) {
+    } catch (Throwable ignored) {
 
       return null;
     }
