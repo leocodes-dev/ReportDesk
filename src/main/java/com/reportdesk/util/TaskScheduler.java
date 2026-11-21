@@ -109,37 +109,63 @@ public final class TaskScheduler {
     }
   }
 
-  /** Resolves the region scheduler method that schedules a task on an entity's region. */
+  /**
+   * Resolves the region-scheduler method that schedules a task on an entity's region. Matches
+   * Folia's 3-argument {@code runTaskForEntity} (first arg is the owning {@code Plugin} or the
+   * {@code World}/{@code Region} the entity lives in; last arg is a {@link Runnable}). Falls back
+   * to a 2-argument form if a build exposes one.
+   */
   private static Method findEntityTaskMethod(Object regionScheduler) {
 
     Class<?> clazz = regionScheduler.getClass();
 
-    String[] names = {"runTaskForEntity", "scheduleTaskForEntity", "runTask"};
+    // Preferred: Folia RegionScheduler.runTaskForEntity(Plugin|World, Entity, Runnable)
+    for (Method method : clazz.getMethods()) {
 
-    for (String name : names) {
+      if (!method.getName().equals("runTaskForEntity") || method.getParameterCount() != 3) {
 
-      for (Method method : clazz.getMethods()) {
+        continue;
+      }
 
-        if (!method.getName().equals(name) || method.getParameterCount() != 2) {
+      Class<?> entityParam = method.getParameterTypes()[1];
 
-          continue;
-        }
+      Class<?> taskParam = method.getParameterTypes()[2];
 
-        Class<?> first = method.getParameterTypes()[0];
+      boolean entityOk =
+          org.bukkit.entity.Entity.class.isAssignableFrom(entityParam) || entityParam == Object.class;
 
-        Class<?> second = method.getParameterTypes()[1];
+      boolean taskOk =
+          Runnable.class.isAssignableFrom(taskParam)
+              || java.util.concurrent.Callable.class.isAssignableFrom(taskParam);
 
-        boolean firstAcceptsEntity =
-            org.bukkit.entity.Entity.class.isAssignableFrom(first) || first == Object.class;
+      if (entityOk && taskOk) {
 
-        boolean secondIsTask =
-            Runnable.class.isAssignableFrom(second)
-                || java.util.concurrent.Callable.class.isAssignableFrom(second);
+        return method;
+      }
+    }
 
-        if (firstAcceptsEntity && secondIsTask) {
+    // Fallback: a 2-argument form taking an entity directly.
+    for (Method method : clazz.getMethods()) {
 
-          return method;
-        }
+      if (!method.getName().equals("runTaskForEntity") || method.getParameterCount() != 2) {
+
+        continue;
+      }
+
+      Class<?> first = method.getParameterTypes()[0];
+
+      Class<?> second = method.getParameterTypes()[1];
+
+      boolean firstOk =
+          org.bukkit.entity.Entity.class.isAssignableFrom(first) || first == Object.class;
+
+      boolean secondOk =
+          Runnable.class.isAssignableFrom(second)
+              || java.util.concurrent.Callable.class.isAssignableFrom(second);
+
+      if (firstOk && secondOk) {
+
+        return method;
       }
     }
 
@@ -175,9 +201,14 @@ public final class TaskScheduler {
 
       try {
 
-        entityTaskMethod.invoke(regionScheduler, entity, task);
+        Object[] args = buildRegionArgs(entityTaskMethod, entity, task);
 
-        return;
+        if (args != null) {
+
+          entityTaskMethod.invoke(regionScheduler, args);
+
+          return;
+        }
       } catch (Throwable ignored) {
 
         // Fall through to the legacy scheduler.
@@ -185,6 +216,49 @@ public final class TaskScheduler {
     }
 
     mainTask(task);
+  }
+
+  /**
+   * Builds the argument array for a resolved region task method. For a 3-arg
+   * {@code runTaskForEntity(Plugin|World, Entity, Runnable)} the first arg is the owning plugin
+   * (or the entity's world when the parameter is a {@code World}/{@code Region}); for a 2-arg
+   * form it is just {@code (entity, task)}. Returns null when the signature is unrecognized so the
+   * caller degrades to the legacy scheduler.
+   */
+  private Object[] buildRegionArgs(Method method, org.bukkit.entity.Entity entity, Runnable task) {
+
+    int count = method.getParameterCount();
+
+    if (count == 3) {
+
+      Class<?> first = method.getParameterTypes()[0];
+
+      String simple = first.getSimpleName();
+
+      Object leading;
+
+      if ("Plugin".equals(simple) || org.bukkit.plugin.Plugin.class.isAssignableFrom(first)) {
+
+        leading = plugin;
+
+      } else if (simple.startsWith("World") || simple.contains("Region")) {
+
+        leading = entity.getWorld();
+
+      } else {
+
+        leading = plugin;
+      }
+
+      return new Object[] {leading, entity, task};
+    }
+
+    if (count == 2) {
+
+      return new Object[] {entity, task};
+    }
+
+    return null;
   }
 
   /** Schedules a task on the main thread (region-agnostic). */
