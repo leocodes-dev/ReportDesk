@@ -27,6 +27,7 @@ import com.reportdesk.core.ReportStatus;
 import com.reportdesk.core.Verdict;
 import com.reportdesk.i18n.MessageKeys;
 import com.reportdesk.i18n.Messages;
+import com.reportdesk.util.TaskScheduler;
 import com.reportdesk.util.TimeText;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -147,11 +148,7 @@ public final class BedrockFormService {
                       ? reportTarget.trim()
                       : (target == null ? "" : target);
               String categoryId = resolveCategory(idsForMapping, categoryIndex);
-              String detailText = detail == null ? "" : detail;
-
-              Bukkit.getScheduler()
-                  .runTask(
-                      plugin,
+              String detailText = detail == null ? "" : detail;plugin.taskScheduler().forPlayer(uuid,
                       () -> {
                         Player current = Bukkit.getPlayer(uuid);
 
@@ -163,10 +160,7 @@ public final class BedrockFormService {
                         handleReportSubmit(current, effectiveTarget, categoryId, detailText);
                       });
             },
-            () ->
-                Bukkit.getScheduler()
-                    .runTask(
-                        plugin,
+            () ->plugin.taskScheduler().forPlayer(uuid,
                         () -> {
                           Player current = Bukkit.getPlayer(uuid);
 
@@ -311,10 +305,7 @@ public final class BedrockFormService {
         buttons,
         index -> {
           // Schedule main-thread handling
-          int idx = index;
-          Bukkit.getScheduler()
-              .runTask(
-                  plugin,
+          int idx = index;plugin.taskScheduler().forPlayer(uuid,
                   () -> {
                     Player current = Bukkit.getPlayer(uuid);
 
@@ -414,10 +405,7 @@ public final class BedrockFormService {
         title,
         content,
         buttons,
-        index ->
-            Bukkit.getScheduler()
-                .runTask(
-                    plugin,
+        index ->plugin.taskScheduler().forPlayer(uuid,
                     () -> {
                       Player current = Bukkit.getPlayer(uuid);
 
@@ -545,11 +533,7 @@ public final class BedrockFormService {
     return bridge.sendSimpleForm(
         uuid, title, content, buttons,
         index -> {
-          int idx = index;
-
-          Bukkit.getScheduler()
-              .runTask(
-                  plugin,
+          int idx = index;plugin.taskScheduler().forPlayer(uuid,
                   () -> {
                     Player current = Bukkit.getPlayer(uuid);
 
@@ -659,10 +643,7 @@ public final class BedrockFormService {
         title,
         content,
         List.of(btnQueue, btnView),
-        index ->
-            Bukkit.getScheduler()
-                .runTask(
-                    plugin,
+        index ->plugin.taskScheduler().forPlayer(uuid,
                     () -> {
                       Player current = Bukkit.getPlayer(uuid);
 
@@ -728,10 +709,7 @@ public final class BedrockFormService {
         options,
         noteLabel,
         notePlaceholder,
-        (verdictIdx, note) ->
-            Bukkit.getScheduler()
-                .runTask(
-                    plugin,
+        (verdictIdx, note) ->plugin.taskScheduler().forPlayer(uuid,
                     () -> {
                       Player current = Bukkit.getPlayer(uuid);
 

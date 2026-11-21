@@ -116,6 +116,8 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
   private PunishmentService punishment;
 
+  private com.reportdesk.util.TaskScheduler taskScheduler;
+
   private ChatInputService chatInput;
 
   private ReportService reportService;
@@ -185,6 +187,8 @@ public final class ReportDeskPlugin extends JavaPlugin {
     watchlist = new WatchlistService(this);
 
     configEditor = new ConfigEditService(this);
+
+    taskScheduler = new com.reportdesk.util.TaskScheduler(this);
 
     notification = new NotificationService(this);
 
@@ -945,6 +949,12 @@ public final class ReportDeskPlugin extends JavaPlugin {
   public com.reportdesk.service.NotificationChannelRegistry notificationChannelRegistry() {
 
     return notificationChannelRegistry;
+  }
+
+  /** Region-aware scheduler adapter; on Folia routes entity-bound tasks to the owning thread. */
+  public com.reportdesk.util.TaskScheduler taskScheduler() {
+
+    return taskScheduler;
   }
 
   public NotificationService notification() {
