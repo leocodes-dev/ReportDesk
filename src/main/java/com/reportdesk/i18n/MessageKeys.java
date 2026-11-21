@@ -390,6 +390,8 @@ public final class MessageKeys {
 
   public static final String GUI_FILTER_SORT_PRIORITY = "gui.filter-sort-priority";
 
+  public static final String GUI_FILTER_SORT_SMART = "gui.filter-sort-smart";
+
   public static final String GUI_FILTER_PRIORITY_NAME = "gui.filter-priority-name";
 
   public static final String GUI_FILTER_PRIORITY_LORE = "gui.filter-priority-lore";
@@ -1318,6 +1320,27 @@ public final class MessageKeys {
   public static final String ADMIN_GUI_STATS_PER_STAFF_NAME = "gui.admin.stats-per-staff-name";
 
   public static final String ADMIN_GUI_STATS_PER_STAFF_LORE = "gui.admin.stats-per-staff-lore";
+
+  // Smart-priority retrospective (roadmap P1#6).
+  public static final String ADMIN_SMART_DISABLED = "admin.smart-disabled";
+
+  public static final String ADMIN_SMART_REVIEW_HEADER = "admin.smart-review-header";
+
+  public static final String ADMIN_SMART_REVIEW_INVALID_DAYS = "admin.smart-review-invalid-days";
+
+  public static final String ADMIN_SMART_REVIEW_EMPTY = "admin.smart-review-empty";
+
+  public static final String ADMIN_SMART_REVIEW_SCORES = "admin.smart-review-scores";
+
+  public static final String ADMIN_SMART_REVIEW_PRECISION = "admin.smart-review-precision";
+
+  public static final String ADMIN_SMART_REVIEW_RECALL = "admin.smart-review-recall";
+
+  public static final String ADMIN_SMART_REVIEW_FLAG_RATE = "admin.smart-review-flag-rate";
+
+  public static final String ADMIN_SMART_REVIEW_BUCKET = "admin.smart-review-bucket";
+
+  public static final String ADMIN_HELP_SMART = "admin.help-smart";
 
   public static final String EVIDENCE_HEADER = "evidence.header";
 

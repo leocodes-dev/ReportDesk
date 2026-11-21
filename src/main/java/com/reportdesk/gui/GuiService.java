@@ -1279,6 +1279,8 @@ public final class GuiService {
 
           case PRIORITY -> plugin.messages().plain(MessageKeys.GUI_FILTER_SORT_PRIORITY);
 
+          case SMART -> plugin.messages().plain(MessageKeys.GUI_FILTER_SORT_SMART);
+
           default -> plugin.messages().plain(MessageKeys.GUI_FILTER_SORT_NEWEST);
         };
 
@@ -2737,6 +2739,8 @@ public final class GuiService {
 
           case PRIORITY -> plugin.messages().plain(MessageKeys.GUI_FILTER_SORT_PRIORITY);
 
+          case SMART -> plugin.messages().plain(MessageKeys.GUI_FILTER_SORT_SMART);
+
           default -> plugin.messages().plain(MessageKeys.GUI_FILTER_SORT_NEWEST);
         };
 
@@ -3698,7 +3702,9 @@ public final class GuiService {
               switch (state.filter.sort()) {
                 case NEWEST -> ReportFilter.SortOrder.PRIORITY;
 
-                case PRIORITY -> ReportFilter.SortOrder.OLDEST;
+                case PRIORITY -> ReportFilter.SortOrder.SMART;
+
+                case SMART -> ReportFilter.SortOrder.OLDEST;
 
                 default -> ReportFilter.SortOrder.NEWEST;
               });
@@ -4403,7 +4409,9 @@ public final class GuiService {
               switch (current.sort()) {
                 case NEWEST -> ReportFilter.SortOrder.PRIORITY;
 
-                case PRIORITY -> ReportFilter.SortOrder.OLDEST;
+                case PRIORITY -> ReportFilter.SortOrder.SMART;
+
+                case SMART -> ReportFilter.SortOrder.OLDEST;
 
                 default -> ReportFilter.SortOrder.NEWEST;
               });

@@ -42,7 +42,10 @@ public record ReportFilter(
 
     OLDEST,
 
-    PRIORITY
+    PRIORITY,
+
+    /** Highest smart-priority score first; unscored reports sink to the bottom. */
+    SMART
   }
 
   public ReportFilter {
@@ -281,6 +284,11 @@ public record ReportFilter(
 
       case PRIORITY ->
           java.util.Comparator.comparingInt((Report report) -> report.priority().weight())
+              .reversed()
+              .thenComparing(byTime.reversed());
+
+      case SMART ->
+          java.util.Comparator.comparingInt(Report::smartScore)
               .reversed()
               .thenComparing(byTime.reversed());
 

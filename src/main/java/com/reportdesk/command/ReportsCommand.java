@@ -28,6 +28,7 @@ import com.reportdesk.core.ReportFilter;
 import com.reportdesk.core.ReportReply;
 import com.reportdesk.core.SlaStats;
 import com.reportdesk.core.SlaStats.SlaReport;
+import com.reportdesk.core.SmartReviewStats;
 import com.reportdesk.core.ReportStatus;
 import com.reportdesk.core.Verdict;
 import com.reportdesk.core.WatchEntry;
@@ -81,6 +82,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
           "purge",
           "overdue",
           "sla",
+          "smart",
           "stats",
           "export",
           "audit",
@@ -172,6 +174,8 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
       case "overdue" -> overdue(sender, args);
 
       case "sla" -> sla(sender, args);
+
+      case "smart" -> smart(sender, args);
 
       case "watch" -> watch(sender, args);
 
@@ -296,6 +300,13 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
       if ("priority".equals(lower)) {
 
         filter = filter.withSort(ReportFilter.SortOrder.PRIORITY);
+
+        continue;
+      }
+
+      if ("smart".equals(lower)) {
+
+        filter = filter.withSort(ReportFilter.SortOrder.SMART);
 
         continue;
       }
@@ -1057,6 +1068,141 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
 
       default -> MessageKeys.PRIORITY_NORMAL;
     };
+  }
+
+  /**
+   * /reports smart review [days] - smart-priority retrospective (ROADMAP P1#6).
+   *
+   * <p>Purely read-only, in-memory aggregation over the repository snapshot; the smart layer
+   * being off short-circuits with a hint and no computation.
+   */
+  private void smart(CommandSender sender, String[] args) {
+
+    if (args.length < 2) {
+
+      usage(sender, "/reports smart review [days]");
+
+      return;
+    }
+
+    String action = args[1].toLowerCase(Locale.ROOT);
+
+    switch (action) {
+      case "review":
+
+        smartReview(sender, args);
+
+        break;
+
+      default:
+
+        usage(sender, "/reports smart review [days]");
+    }
+  }
+
+  private void smartReview(CommandSender sender, String[] args) {
+
+    Messages messages = plugin.messages();
+
+    if (!plugin.config().smartPriority().enabled()) {
+
+      // Single switch check: the smart layer is off, so there is nothing to review and no
+      // computation is done.
+
+      sender.sendMessage(messages.prefixed(MessageKeys.ADMIN_SMART_DISABLED, Map.of()));
+
+      return;
+    }
+
+    long days = 0L;
+
+    if (args.length >= 3) {
+
+      Long parsed = parseLong(args[2]);
+
+      if (parsed == null || parsed < 0 || parsed > 36_500L) {
+
+        sender.sendMessage(
+            messages.prefixed(
+                MessageKeys.ADMIN_SMART_REVIEW_INVALID_DAYS,
+                Map.of("days", args[2])));
+
+        return;
+      }
+
+      days = parsed;
+    }
+
+    long now = System.currentTimeMillis();
+
+    long windowStart = days == 0L ? 0L : now - days * 86_400_000L;
+
+    SmartReviewStats.Review review =
+        SmartReviewStats.compute(
+            plugin.repository().snapshot(),
+            plugin.config().smartPriority().garbageScore(),
+            windowStart);
+
+    sender.sendMessage(
+        messages.prefixed(
+            MessageKeys.ADMIN_SMART_REVIEW_HEADER,
+            Map.of(
+                "days", String.valueOf(days),
+                "count", String.valueOf(review.scored()))));
+
+    if (review.isEmpty()) {
+
+      sender.sendMessage(messages.prefixed(MessageKeys.ADMIN_SMART_REVIEW_EMPTY, Map.of()));
+
+      return;
+    }
+
+    sender.sendMessage(
+        messages.prefixed(
+            MessageKeys.ADMIN_SMART_REVIEW_SCORES,
+            Map.of(
+                "scored", String.valueOf(review.scored()),
+                "flagged", String.valueOf(review.flagged()),
+                "garbage", String.valueOf(review.garbage()),
+                "flagged-garbage", String.valueOf(review.flaggedGarbage()))));
+
+    sender.sendMessage(
+        messages.prefixed(MessageKeys.ADMIN_SMART_REVIEW_PRECISION, Map.of("value", percent(review.precision()))));
+
+    sender.sendMessage(
+        messages.prefixed(MessageKeys.ADMIN_SMART_REVIEW_RECALL, Map.of("value", percent(review.recall()))));
+
+    sender.sendMessage(
+        messages.prefixed(MessageKeys.ADMIN_SMART_REVIEW_FLAG_RATE, Map.of("value", percent(review.flagRate()))));
+
+    int[] buckets = review.scoreBuckets();
+
+    for (int index = 0; index < buckets.length; index++) {
+
+      int count = buckets[index];
+
+      String range = index * 10 + "-" + (index * 10 + 9);
+
+      if (index == buckets.length - 1) {
+
+        range = "90-100";
+      }
+
+      String bar = "█".repeat(Math.min(count, 20));
+
+      sender.sendMessage(
+          messages.prefixed(
+              MessageKeys.ADMIN_SMART_REVIEW_BUCKET,
+              Map.of(
+                  "range", range,
+                  "count", String.valueOf(count),
+                  "bar", bar)));
+    }
+  }
+
+  private static String percent(double ratio) {
+
+    return String.format(Locale.ROOT, "%.0f%%", ratio * 100.0);
   }
 
   private void watch(CommandSender sender, String[] args) {
@@ -1907,6 +2053,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
             MessageKeys.ADMIN_HELP_PURGE,
             MessageKeys.ADMIN_HELP_OVERDUE,
             MessageKeys.ADMIN_HELP_SLA,
+            MessageKeys.ADMIN_HELP_SMART,
             MessageKeys.ADMIN_HELP_WATCH,
             MessageKeys.ADMIN_HELP_UNWATCH,
             MessageKeys.ADMIN_HELP_WATCHING,
@@ -2108,6 +2255,11 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
         return filter(onlinePlayerNames(), args[1]);
       }
 
+      if (sub.equals("smart")) {
+
+        return filter(List.of("review"), args[1]);
+      }
+
       if (List.of(
               "view",
               "info",
@@ -2194,6 +2346,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
                 "oldest",
                 "newest",
                 "priority",
+                "smart",
                 "overdue",
                 "priority:low",
                 "priority:normal",

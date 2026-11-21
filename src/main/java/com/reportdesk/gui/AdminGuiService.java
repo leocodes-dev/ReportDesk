@@ -1838,6 +1838,10 @@ public final class AdminGuiService {
 
     placeholders.put("overdue", String.valueOf(overdueCount(snapshot)));
 
+    placeholders.put(
+        "garbage-flag-rate",
+        garbageFlagRateText(snapshot));
+
     ReportDeskHolder holder = ReportDeskHolder.of(ReportDeskHolder.Type.ADMIN_MISC);
 
     Inventory inventory = gui.create(holder, MessageKeys.ADMIN_GUI_MISC_TITLE, placeholders);
@@ -3596,6 +3600,32 @@ public final class AdminGuiService {
     }
 
     return count;
+  }
+
+  /**
+   * The garbage flag rate shown on the data-status card: the share of scored closed reports
+   * that fell into the configured garbage band. Purely in-memory; when the smart layer is off
+   * there is nothing to report and the card shows the disabled marker.
+   */
+  private String garbageFlagRateText(List<Report> snapshot) {
+
+    Messages messages = messages();
+
+    if (!plugin.config().smartPriority().enabled()) {
+
+      return messages.plain(MessageKeys.GENERAL_DISABLED);
+    }
+
+    com.reportdesk.core.SmartReviewStats.Review review =
+        com.reportdesk.core.SmartReviewStats.compute(
+            snapshot, plugin.config().smartPriority().garbageScore(), 0L);
+
+    if (review.isEmpty()) {
+
+      return messages.plain(MessageKeys.GENERAL_NONE);
+    }
+
+    return String.format(java.util.Locale.ROOT, "%.0f%%", review.flagRate() * 100.0);
   }
 
   /**

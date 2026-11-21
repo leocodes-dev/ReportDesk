@@ -768,6 +768,10 @@ public final class ReportViewService {
     } else if (effective.sort() == ReportFilter.SortOrder.PRIORITY) {
 
       parts.add(messages.plain(MessageKeys.GUI_FILTER_SORT_PRIORITY));
+
+    } else if (effective.sort() == ReportFilter.SortOrder.SMART) {
+
+      parts.add(messages.plain(MessageKeys.GUI_FILTER_SORT_SMART));
     }
 
     if (!effective.priorities().isEmpty()) {
