@@ -416,9 +416,23 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
       return;
     }
 
-    if (sender instanceof Player player && plugin.config().gui().enabled()) {
+    if (sender instanceof Player player) {
 
-      plugin.gui().openDetail(player, report);
+      // Bedrock admin clients get the native detail + action form; Java players
+      // keep the Inventory detail GUI (or a text dump when the GUI is off).
+      if (plugin.bedrockForm().openAdminDetailForm(player, report.id())) {
+
+        return;
+      }
+
+      if (plugin.config().gui().enabled()) {
+
+        plugin.gui().openDetail(player, report);
+
+      } else {
+
+        plugin.view().sendInfo(sender, report);
+      }
 
     } else {
 

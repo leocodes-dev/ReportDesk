@@ -23,7 +23,10 @@ import com.reportdesk.config.PluginConfig;
 import com.reportdesk.core.Report;
 import com.reportdesk.core.ReportCategory;
 import com.reportdesk.core.ReportFilter;
+import com.reportdesk.core.ReportStatus;
+import com.reportdesk.core.Verdict;
 import com.reportdesk.i18n.MessageKeys;
+import com.reportdesk.i18n.Messages;
 import com.reportdesk.util.TimeText;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -430,6 +433,323 @@ public final class BedrockFormService {
                         plugin.view().sendInfo(current, selected);
                       }
                     }));
+  }
+
+  // -------------------------------------------------------------------
+  // Admin-facing: Bedrock detail + action form (the mobile admin workbench)
+  // -------------------------------------------------------------------
+
+  /**
+   * Opens a Bedrock simple form showing one report's detail plus context-aware admin actions,
+   * so a Bedrock admin can act on a report without typing commands. The action buttons depend
+   * on the report's current status:
+   * <ul>
+   *   <li>OPEN    - claim, close</li>
+   *   <li>CLAIMED - release, close</li>
+   *   <li>terminal- reopen</li>
+   * </ul>
+   *
+   * <p>"Close" opens a second simple form to pick the verdict. Java admins keep the Inventory
+   * detail GUI; this is a no-op for them and when the feature or the bridge is unavailable.
+   *
+   * @param player   the admin
+   * @param reportId the report to show and act on
+   * @return true when a form was sent or detail was shown; false when disabled / not Bedrock
+   */
+  public boolean openAdminDetailForm(Player player, long reportId) {
+
+    if (!enabled()) {
+
+      return false;
+    }
+
+    if (!player.hasPermission("reportdesk.admin")) {
+
+      return false;
+    }
+
+    UUID uuid = player.getUniqueId();
+
+    if (!bridge.isBedrockPlayer(uuid)) {
+
+      return false;
+    }
+
+    if (!plugin.repository().isReady()) {
+
+      player.sendMessage(plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_LOADING, Map.of()));
+
+      return false;
+    }
+
+    Report report = plugin.repository().get(reportId).orElse(null);
+
+    if (report == null) {
+
+      player.sendMessage(
+          plugin.messagesFor(player)
+              .prefixed(MessageKeys.GENERAL_REPORT_NOT_FOUND, Map.of("id", String.valueOf(reportId))));
+
+      return false;
+    }
+
+    Messages m = plugin.messagesFor(player);
+
+    String detailText = buildAdminDetailText(report, m);
+
+    List<String> buttons = new ArrayList<>();
+
+    List<String> actions = new ArrayList<>();
+
+    if (report.status() == ReportStatus.OPEN) {
+
+      actions.add("claim");
+
+      buttons.add(m.plain(MessageKeys.BEDROCK_ADMIN_BTN_CLAIM, Map.of()));
+    }
+
+    if (report.status() == ReportStatus.CLAIMED) {
+
+      actions.add("release");
+
+      buttons.add(m.plain(MessageKeys.BEDROCK_ADMIN_BTN_RELEASE, Map.of()));
+    }
+
+    if (!report.isTerminal()) {
+
+      actions.add("close");
+
+      buttons.add(m.plain(MessageKeys.BEDROCK_ADMIN_BTN_CLOSE, Map.of()));
+    }
+
+    if (report.isTerminal()) {
+
+      actions.add("reopen");
+
+      buttons.add(m.plain(MessageKeys.BEDROCK_ADMIN_BTN_REOPEN, Map.of()));
+    }
+
+    if (actions.isEmpty()) {
+
+      plugin.view().sendInfo(player, report);
+
+      return true;
+    }
+
+    String title = m.plain(MessageKeys.BEDROCK_FORM_ADMIN_TITLE, Map.of());
+
+    String content = String.format(Locale.ROOT, "#%d%n%s", reportId, detailText);
+
+    final List<String> acts = actions;
+
+    return bridge.sendSimpleForm(
+        uuid, title, content, buttons,
+        index -> {
+          int idx = index;
+
+          Bukkit.getScheduler()
+              .runTask(
+                  plugin,
+                  () -> {
+                    Player current = Bukkit.getPlayer(uuid);
+
+                    if (current == null) {
+
+                      return;
+                    }
+
+                    Report latest = plugin.repository().get(reportId).orElse(null);
+
+                    if (latest == null) {
+
+                      return;
+                    }
+
+                    if (idx < 0 || idx >= acts.size()) {
+
+                      return;
+                    }
+
+                    handleAdminAction(current, latest, acts.get(idx));
+                  });
+        });
+  }
+
+  private void handleAdminAction(Player staff, Report report, String action) {
+
+    switch (action) {
+
+      case "claim" -> {
+        var result = plugin.reportService().claim(report, staff);
+
+        staff.sendMessage(
+            plugin.messagesFor(staff)
+                .prefixed(
+                    result.success()
+                        ? MessageKeys.ADMIN_CLAIMED
+                        : MessageKeys.ADMIN_ALREADY_CLAIMED,
+                    Map.of("id", String.valueOf(report.id()))));
+      }
+
+      case "release" -> {
+        var result = plugin.reportService().release(report, staff);
+
+        staff.sendMessage(
+            plugin.messagesFor(staff)
+                .prefixed(
+                    result.success()
+                        ? MessageKeys.ADMIN_RELEASED
+                        : MessageKeys.ADMIN_NOT_CLAIMED,
+                    Map.of("id", String.valueOf(report.id()))));
+      }
+
+      case "reopen" -> {
+        var result = plugin.reportService().reopen(report, staff);
+
+        staff.sendMessage(
+            plugin.messagesFor(staff)
+                .prefixed(
+                    result.success()
+                        ? MessageKeys.ADMIN_REOPENED
+                        : MessageKeys.ADMIN_NOT_CLOSED,
+                    Map.of("id", String.valueOf(report.id()))));
+      }
+
+      case "close" -> openAdminVerdictForm(staff, report);
+
+      default -> {}
+    }
+  }
+
+  private void openAdminVerdictForm(Player player, Report report) {
+
+    if (!player.hasPermission("reportdesk.admin.close")) {
+
+      player.sendMessage(
+          plugin.messagesFor(player).prefixed(MessageKeys.GENERAL_NO_PERMISSION, Map.of()));
+
+      return;
+    }
+
+    UUID uuid = player.getUniqueId();
+
+    Verdict[] choices = {
+      Verdict.RESOLVED,
+      Verdict.REJECTED,
+      Verdict.DUPLICATE,
+      Verdict.INSUFFICIENT
+    };
+
+    List<String> buttons = new ArrayList<>();
+
+    for (Verdict verdict : choices) {
+
+      buttons.add(
+          plugin
+              .messagesFor(player)
+              .plain(NotificationService.verdictKey(verdict.name()), Map.of()));
+    }
+
+    String title =
+        plugin.messagesFor(player).plain(MessageKeys.BEDROCK_ADMIN_VERDICT_TITLE, Map.of());
+
+    String content = String.format(Locale.ROOT, "#%d", report.id());
+
+    final Verdict[] verdicts = choices;
+
+    bridge.sendSimpleForm(
+        uuid,
+        title,
+        content,
+        buttons,
+        index ->
+            Bukkit.getScheduler()
+                .runTask(
+                    plugin,
+                    () -> {
+                      Player current = Bukkit.getPlayer(uuid);
+
+                      if (current == null) {
+
+                        return;
+                      }
+
+                      if (index < 0 || index >= verdicts.length) {
+
+                        return;
+                      }
+
+                      Report latest =
+                          plugin.repository().get(report.id()).orElse(report);
+
+                      var result =
+                          plugin.reportService().close(latest, verdicts[index], current, "");
+
+                      current.sendMessage(
+                          plugin.messagesFor(current)
+                              .prefixed(
+                                  result.success()
+                                      ? MessageKeys.ADMIN_CLOSED
+                                      : MessageKeys.ADMIN_ALREADY_CLOSED,
+                                  Map.of(
+                                      "id", String.valueOf(latest.id()),
+                                      "verdict",
+                                      plugin.messages()
+                                          .plain(
+                                              NotificationService.verdictKey(
+                                                  verdicts[index].name()),
+                                              Map.of()))));
+                    }));
+  }
+
+  /** Compact detail block for the admin form content, reusing the existing general.* keys. */
+  private String buildAdminDetailText(Report report, Messages m) {
+
+    String statusLabel = m.plain(NotificationService.statusKey(report.status()), Map.of());
+
+    String priorityLabel =
+        m.plain(NotificationService.priorityKey(report.priority()), Map.of());
+
+    StringBuilder sb = new StringBuilder();
+
+    sb.append(String.format("%s: %s%n", m.plain(MessageKeys.GENERAL_TARGET, Map.of()), report.targetName()));
+
+    sb.append(
+        String.format(
+            "%s: %s%n", m.plain(MessageKeys.GENERAL_REPORTER, Map.of()), report.reporterName()));
+
+    sb.append(
+        String.format(
+            "%s: %s%n",
+            m.plain(MessageKeys.GENERAL_CATEGORY, Map.of()),
+            plugin.categoryDisplay(report.category())));
+
+    sb.append(
+        String.format("%s: %s%n", m.plain(MessageKeys.GENERAL_STATUS, Map.of()), statusLabel));
+
+    sb.append(String.format("%s: %s%n", m.plain(MessageKeys.GENERAL_PRIORITY, Map.of()), priorityLabel));
+
+    if (!report.verdict().isBlank()) {
+
+      sb.append(
+          String.format(
+              "%s: %s%n",
+              m.plain(MessageKeys.GENERAL_VERDICT, Map.of()),
+              m.plain(NotificationService.verdictKey(report.verdict()), Map.of())));
+    }
+
+    sb.append(
+        String.format(
+            "%s: %s%n",
+            m.plain(MessageKeys.GENERAL_CREATED, Map.of()),
+            TimeText.absolute(report.createdAt(), m)));
+
+    if (!report.detail().isBlank()) {
+
+      sb.append(String.format("%s: %s", m.plain(MessageKeys.GENERAL_DETAIL, Map.of()), report.detail()));
+    }
+
+    return sb.toString();
   }
 
   // -------------------------------------------------------------------
