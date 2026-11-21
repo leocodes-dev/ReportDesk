@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -803,7 +804,9 @@ public final class AdminGuiService {
         4,
         gui.item(
             Material.DIAMOND,
-            messages().component(MessageKeys.ADMIN_GUI_STATS_OVERVIEW_NAME, placeholders),
+            messages()
+                .component(MessageKeys.ADMIN_GUI_STATS_OVERVIEW_NAME, placeholders)
+                .decoration(TextDecoration.BOLD, true),
             messages().components(MessageKeys.ADMIN_GUI_STATS_OVERVIEW_LORE, placeholders)));
 
     List<Component> statusLore = new ArrayList<>();
@@ -824,29 +827,37 @@ public final class AdminGuiService {
         10,
         gui.item(
             Material.CHEST,
-            messages().component(MessageKeys.ADMIN_GUI_STATS_STATUS_NAME, placeholders),
+            messages()
+                .component(MessageKeys.ADMIN_GUI_STATS_STATUS_NAME, placeholders)
+                .decoration(TextDecoration.BOLD, true),
             statusLore));
 
     inventory.setItem(
         12,
         gui.item(
             Material.GOLD_INGOT,
-            messages().component(MessageKeys.ADMIN_GUI_STATS_CATEGORIES_NAME, placeholders),
+            messages()
+                .component(MessageKeys.ADMIN_GUI_STATS_CATEGORIES_NAME, placeholders)
+                .decoration(TextDecoration.BOLD, true),
             topLore(stats.byCategory(), plugin.config().reports().statsTopTargets())));
 
     inventory.setItem(
         14,
         gui.item(
             Material.IRON_SWORD,
-            messages().component(MessageKeys.ADMIN_GUI_STATS_TARGETS_NAME, placeholders),
-            topLore(stats.byTarget(), plugin.config().reports().statsTopTargets())));
+            messages()
+                .component(MessageKeys.ADMIN_GUI_STATS_TARGETS_NAME, placeholders)
+                .decoration(TextDecoration.BOLD, true),
+            allSortedLore(stats.byTarget())));
 
     inventory.setItem(
         16,
         gui.item(
             Material.NAME_TAG,
-            messages().component(MessageKeys.ADMIN_GUI_STATS_STAFF_NAME, placeholders),
-            topLore(stats.byStaff(), plugin.config().reports().staffStatsTop())));
+            messages()
+                .component(MessageKeys.ADMIN_GUI_STATS_STAFF_NAME, placeholders)
+                .decoration(TextDecoration.BOLD, true),
+            allSortedLore(stats.byStaff())));
 
     inventory.setItem(
         28,
@@ -912,6 +923,46 @@ public final class AdminGuiService {
     if (lore.isEmpty()) {
 
       lore.add(messages().component(MessageKeys.ADMIN_GUI_STATS_NONE));
+    }
+
+    return lore;
+  }
+
+  /**
+   * Lore listing every entry of a name-to-count map, sorted by count descending (ties broken
+   * alphabetically) with no top-N limit. Used for the "most reported" and "most handled" boards
+   * so an admin can see every player, not just the top few.
+   */
+  private List<Component> allSortedLore(Map<String, Integer> counts) {
+
+    List<Component> lore = new ArrayList<>();
+
+    if (counts == null || counts.isEmpty()) {
+
+      lore.add(messages().component(MessageKeys.ADMIN_GUI_STATS_NONE));
+
+      return lore;
+    }
+
+    List<Map.Entry<String, Integer>> ordered =
+        counts.entrySet().stream()
+            .sorted(
+                (a, b) -> {
+                  int cmp = b.getValue().compareTo(a.getValue());
+
+                  return cmp != 0 ? cmp : a.getKey().compareTo(b.getKey());
+                })
+            .toList();
+
+    for (Map.Entry<String, Integer> entry : ordered) {
+
+      lore.add(
+          messages()
+              .component(
+                  MessageKeys.ADMIN_GUI_STATS_LINE,
+                  Map.of(
+                      "key", categoryOrName(entry.getKey()),
+                      "value", String.valueOf(entry.getValue()))));
     }
 
     return lore;
