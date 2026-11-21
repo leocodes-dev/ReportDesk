@@ -276,7 +276,7 @@ public final class BedrockFormService {
 
       String statusLabel =
           plugin
-              .messages()
+              .messagesFor(player)
               .plain(
                   com.reportdesk.service.NotificationService.statusKey(report.status()), Map.of());
 
@@ -377,7 +377,7 @@ public final class BedrockFormService {
 
       String statusLabel =
           plugin
-              .messages()
+              .messagesFor(player)
               .plain(
                   com.reportdesk.service.NotificationService.statusKey(report.status()), Map.of());
 
@@ -402,7 +402,7 @@ public final class BedrockFormService {
 
     String content =
         plugin
-            .messages()
+            .messagesFor(player)
             .plain(
                 MessageKeys.BEDROCK_FORM_ADMIN_CONTENT,
                 Map.of(
@@ -743,6 +743,15 @@ public final class BedrockFormService {
             "%s: %s%n",
             m.plain(MessageKeys.GENERAL_CREATED, Map.of()),
             TimeText.absolute(report.createdAt(), m)));
+
+    if (report.evidence().present()) {
+
+      sb.append(
+          String.format(
+              "%s: %s%n",
+              m.plain(MessageKeys.GENERAL_EVIDENCE, Map.of()),
+              report.evidence().shortSummary()));
+    }
 
     if (!report.detail().isBlank()) {
 
