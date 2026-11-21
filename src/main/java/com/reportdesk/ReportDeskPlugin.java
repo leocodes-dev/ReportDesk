@@ -104,6 +104,8 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
   private NotificationService notification;
 
+  private com.reportdesk.service.NotificationChannelRegistry notificationChannelRegistry;
+
   private PendingNoticeService offlineNotices;
 
   private WatchlistService watchlist;
@@ -185,6 +187,10 @@ public final class ReportDeskPlugin extends JavaPlugin {
     configEditor = new ConfigEditService(this);
 
     notification = new NotificationService(this);
+
+    notificationChannelRegistry =
+        new com.reportdesk.service.NotificationChannelRegistry(
+            java.util.logging.Logger.getLogger("ReportDesk"));
 
     punishment = new PunishmentService(this);
 
@@ -933,6 +939,12 @@ public final class ReportDeskPlugin extends JavaPlugin {
   public EvidenceService evidence() {
 
     return evidence;
+  }
+
+  /** SPI registry for third-party notification channels; register channels here. */
+  public com.reportdesk.service.NotificationChannelRegistry notificationChannelRegistry() {
+
+    return notificationChannelRegistry;
   }
 
   public NotificationService notification() {

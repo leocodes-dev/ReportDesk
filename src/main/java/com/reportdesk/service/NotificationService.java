@@ -75,6 +75,8 @@ public final class NotificationService {
           plugin.webhook().created(report);
 
           plugin.watchlist().onReportCreated(report);
+
+          plugin.notificationChannelRegistry().dispatchCreated(report, placeholders);
         });
   }
 
@@ -96,6 +98,9 @@ public final class NotificationService {
           notifyReporter(report, MessageKeys.NOTIFY_REPORTER_CLAIMED, placeholders);
 
           plugin.webhook().claimed(report, staffName);
+
+          plugin.notificationChannelRegistry()
+              .dispatchClaimed(report, staffName, placeholders);
         });
   }
 
@@ -119,6 +124,9 @@ public final class NotificationService {
           notifyTarget(report, MessageKeys.NOTIFY_TARGET_CLOSED, placeholders);
 
           plugin.webhook().closed(report, staffName);
+
+          plugin.notificationChannelRegistry()
+              .dispatchClosed(report, staffName, placeholders);
         });
   }
 
@@ -138,6 +146,9 @@ public final class NotificationService {
           }
 
           notifyReporter(report, MessageKeys.NOTIFY_REPORTER_REOPENED, placeholders);
+
+          plugin.notificationChannelRegistry()
+              .dispatchReopened(report, staffName, placeholders);
         });
   }
 
