@@ -231,6 +231,7 @@ notifications:
     max-queued: 20
     # 暂存通知保留天数。0 表示永久保留。
     queue-retention-days: 30
+    notify-target-on-close: true
   watchlist:
     # 管理员可使用 /reports watch <玩家> 关注玩家。
     enabled: true

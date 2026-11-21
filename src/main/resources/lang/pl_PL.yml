@@ -1235,6 +1235,7 @@ notify:
   staff-reopened: '<green>%staff% <gray>wznówił(a) zgłoszenie <white>#%id%</white>.'
   reporter-claimed: '<aqua>Twoje zgłoszenie <white>#%id%</white> zostało przejęte przez <white>%staff%</white>.'
   reporter-closed: '<gray>Twoje zgłoszenie <white>#%id%</white> zostało zamknięte: %verdict%<gray>.'
+  target-closed: '<gray>Zgłoszenie (#%id%) dotyczące Ciebie zostało rozpatrzone przez %staff%: %verdict%.'
   reporter-reopened: '<yellow>Twoje zgłoszenie <white>#%id%</white> zostało wznowione.'
   reporter-reply: '<aqua>Zespół <white>%author%</white> odpowiedział na Twoje zgłoszenie <white>#%id%</white><gray>: <white>%text%'
   staff-reply: '<gold>%author% <gray>odpowiedział na zgłoszenie <white>#%id%</white><gray>: <white>%text%'

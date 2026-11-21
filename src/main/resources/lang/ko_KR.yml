@@ -1235,6 +1235,7 @@ notify:
   staff-reopened: '<green>%staff% 님이 신고 <white>#%id%</white>을(를) 다시 열었습니다.'
   reporter-claimed: '<aqua>내 신고 <white>#%id%</white>을(를) <white>%staff%</white> 님이 담당했습니다.'
   reporter-closed: '<gray>내 신고 <white>#%id%</white>이(가) 종료되었습니다: %verdict%<gray>.'
+  target-closed: '<gray>당신과 관련된 신고(#%id%)가 %staff%에 의해 처리되었습니다: %verdict%.'
   reporter-reopened: '<yellow>내 신고 <white>#%id%</white>이(가) 다시 열렸습니다.'
   reporter-reply: '<aqua>운영진 <white>%author%</white> 님이 내 신고 <white>#%id%</white>에 응답<gray>: <white>%text%'
   staff-reply: '<gold>%author% 님이 신고 <white>#%id%</white>에 응답<gray>: <white>%text%'

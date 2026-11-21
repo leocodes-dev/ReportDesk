@@ -835,6 +835,7 @@ Detect Java Client Language
           queue-offline: 'Queue While Offline'
           max-queued: 'Offline Queue Limit'
           queue-retention-days: 'Offline Queue Retention (days)'
+          notify-target-on-close: 'Notify Target on Close'
         watchlist:
           enabled: 'Enable Watchlist'
           max-targets: 'Watchlist Limit'
@@ -1012,6 +1013,7 @@ Probe Java clients for their system region language (best-effort).
           queue-offline: 'Store notifications while the reporter is offline and deliver them on join.'
           max-queued: 'Maximum queued notifications stored per player.'
           queue-retention-days: 'How many days queued notifications are kept.'
+          notify-target-on-close: 'Notify the reported player that a report about them was resolved (without revealing the reporter).'
         watchlist:
           enabled: 'Allow staff to follow specific players and receive their reports.'
           max-targets: 'Maximum players one staff member may follow.'
@@ -1235,6 +1237,7 @@ notify:
   staff-reopened: '<green>%staff% <gray>reopened report <white>#%id%</white>.'
   reporter-claimed: '<aqua>Your report <white>#%id%</white> was claimed by <white>%staff%</white>.'
   reporter-closed: '<gray>Your report <white>#%id%</white> was closed: %verdict%<gray>.'
+  target-closed: '<gray>A report (#%id%) concerning you was resolved by %staff%: %verdict%.'
   reporter-reopened: '<yellow>Your report <white>#%id%</white> was reopened.'
   reporter-reply: '<aqua>Staff <white>%author%</white> replied to your report <white>#%id%</white><gray>: <white>%text%'
   staff-reply: '<gold>%author% <gray>replied to report <white>#%id%</white><gray>: <white>%text%'

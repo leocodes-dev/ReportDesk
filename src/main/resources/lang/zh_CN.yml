@@ -835,6 +835,7 @@ gui:
           queue-offline: '离线时排队通知'
           max-queued: '离线通知队列上限'
           queue-retention-days: '离线通知保留天数'
+          notify-target-on-close: '通知被举报者结案'
         watchlist:
           enabled: '启用关注列表'
           max-targets: '关注数量上限'
@@ -1012,6 +1013,7 @@ gui:
           queue-offline: '举报人离线时暂存通知，上线后补发。'
           max-queued: '每名玩家最多暂存的离线通知数量。'
           queue-retention-days: '离线通知最多保留的天数。'
+          notify-target-on-close: '举报结案时通知被举报的玩家其举报已处理（不泄露举报人身份）。'
         watchlist:
           enabled: '允许管理员关注特定玩家并接收其举报。'
           max-targets: '每名管理员最多可以关注的玩家数量。'
@@ -1235,6 +1237,7 @@ notify:
   staff-reopened: '<green>%staff% <gray>重新打开了举报 <white>#%id%</white>。'
   reporter-claimed: '<aqua>你的举报 <white>#%id%</white> 已被 <white>%staff%</white> 受理。'
   reporter-closed: '<gray>你的举报 <white>#%id%</white> 已处理：%verdict%<gray>。'
+  target-closed: '<gray>与你相关的举报 #%id% 已由 %staff% 处理为 %verdict%。'
   reporter-reopened: '<yellow>你的举报 <white>#%id%</white> 已被重新打开。'
   reporter-reply: '<aqua>管理员 <white>%author%</white> 回复了你的举报 <white>#%id%</white><gray>：<white>%text%'
   staff-reply: '<gold>%author% <gray>回复了举报 <white>#%id%</white><gray>：<white>%text%'

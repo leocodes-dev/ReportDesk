@@ -116,6 +116,8 @@ public final class NotificationService {
 
           notifyReporter(report, MessageKeys.NOTIFY_REPORTER_CLOSED, placeholders);
 
+          notifyTarget(report, MessageKeys.NOTIFY_TARGET_CLOSED, placeholders);
+
           plugin.webhook().closed(report, staffName);
         });
   }
@@ -223,6 +225,38 @@ public final class NotificationService {
     // The reporter's own language (resolved on join); falls back to the default for console-safe
     // senders or when detection is off/unsupported.
     reporter.sendMessage(plugin.messagesFor(reporter).prefixed(key, placeholders));
+  }
+
+  /**
+   * Notifies the reported player (if online) that a report concerning them has been resolved;
+   * the reporter's identity is never revealed. When the target is offline the notice is queued
+   * and delivered on the next join, reusing the reporter offline-notice queue. Gated by
+   * {@code notifications.reporter.notify-target-on-close} (default true).
+   */
+  private void notifyTarget(Report report, String key, Map<String, String> placeholders) {
+
+    if (!plugin.config().notifications().notifyTargetOnClose()) {
+
+      return;
+    }
+
+    java.util.UUID targetId = report.targetId();
+
+    if (targetId == null || targetId.equals(new java.util.UUID(0L, 0L))) {
+
+      return;
+    }
+
+    Player target = Bukkit.getPlayer(targetId);
+
+    if (target == null) {
+
+      plugin.offlineNotices().enqueueFor(targetId, report, key, placeholders);
+
+      return;
+    }
+
+    target.sendMessage(plugin.messagesFor(target).prefixed(key, placeholders));
   }
 
   /** Extra alert for staff who explicitly follow the reported player. */

@@ -296,6 +296,7 @@ public record PluginConfig(
       boolean reporterQueueOffline,
       int reporterMaxQueued,
       int reporterQueueRetentionDays,
+      boolean notifyTargetOnClose,
       boolean watchlistEnabled,
       int watchlistMaxTargets,
       boolean watchlistNotifyOnReport,

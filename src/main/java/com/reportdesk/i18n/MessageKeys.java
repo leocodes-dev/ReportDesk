@@ -1090,6 +1090,8 @@ public final class MessageKeys {
 
   public static final String NOTIFY_REPORTER_CLOSED = "notify.reporter-closed";
 
+  public static final String NOTIFY_TARGET_CLOSED = "notify.target-closed";
+
   public static final String NOTIFY_REPORTER_REOPENED = "notify.reporter-reopened";
 
   public static final String NOTIFY_REPORTER_REPLY = "notify.reporter-reply";

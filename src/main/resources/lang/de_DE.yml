@@ -1235,6 +1235,7 @@ notify:
   staff-reopened: '<green>%staff% hat die Meldung <white>#%id%</white> wieder geöffnet.'
   reporter-claimed: '<aqua>Deine Meldung <white>#%id%</white> wurde von <white>%staff%</white> übernommen.'
   reporter-closed: '<gray>Deine Meldung <white>#%id%</white> wurde geschlossen: %verdict%<gray>.'
+  target-closed: '<gray>Ein gegen dich gerichteter Bericht (#%id%) wurde von %staff% bearbeitet: %verdict%.'
   reporter-reopened: '<yellow>Deine Meldung <white>#%id%</white> wurde wieder geöffnet.'
   reporter-reply: '<aqua>Teammitglied <white>%author%</white> hat auf deine Meldung <white>#%id%</white> geantwortet<gray>: <white>%text%'
   staff-reply: '<gold>%author% hat auf die Meldung <white>#%id%</white> geantwortet<gray>: <white>%text%'

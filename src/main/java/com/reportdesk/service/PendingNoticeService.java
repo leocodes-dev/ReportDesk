@@ -149,6 +149,37 @@ public final class PendingNoticeService {
   }
 
   /**
+   * Queues a notification for a specific player (e.g. the reported target) who is offline,
+   * delivered on their next join. Uses the same retention/trim rules as the reporter queue.
+   */
+  public void enqueueFor(UUID playerId, Report report, String messageKey, Map<String, String> placeholders) {
+
+    if (!enabled() || playerId == null || playerId.equals(new UUID(0L, 0L))) {
+
+      return;
+    }
+
+    if (report == null || messageKey == null || messageKey.isBlank()) {
+
+      return;
+    }
+
+    PluginConfig.Notifications settings = plugin.config().notifications();
+
+    PendingNotice notice =
+        new PendingNotice(playerId, messageKey, placeholders, System.currentTimeMillis());
+
+    CopyOnWriteArrayList<PendingNotice> queue =
+        pending.computeIfAbsent(notice.playerId(), ignored -> new CopyOnWriteArrayList<>());
+
+    queue.add(notice);
+
+    trim(queue, settings.reporterMaxQueued());
+
+    save();
+  }
+
+  /**
    * Delivers and removes queued notices for one player. Runs on the main
    *
    * <p>thread because it sends chat messages.

@@ -1235,6 +1235,7 @@ notify:
   staff-reopened: '<green>%staff% <gray>が通報 <white>#%id%</white> を再オープンしました。'
   reporter-claimed: '<aqua>あなたの通報 <white>#%id%</white> は <white>%staff%</white> が担当しました。'
   reporter-closed: '<gray>あなたの通報 <white>#%id%</white> がクローズされました: %verdict%<gray>。'
+  target-closed: '<gray>あなたに関する報告 (#%id%) が %staff% によって処理されました：%verdict%。'
   reporter-reopened: '<yellow>あなたの通報 <white>#%id%</white> が再オープンされました。'
   reporter-reply: '<aqua>運営 <white>%author%</white> があなたの通報 <white>#%id%</white> に返信<gray>: <white>%text%'
   staff-reply: '<gold>%author% <gray>が通報 <white>#%id%</white> に返信<gray>: <white>%text%'

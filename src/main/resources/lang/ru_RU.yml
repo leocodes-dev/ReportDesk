@@ -1235,6 +1235,7 @@ notify:
   staff-reopened: '<green>%staff% <gray>вернул(а) жалобу <white>#%id%</white>.'
   reporter-claimed: '<aqua>Вашу жалобу <white>#%id%</white> взял(а) <white>%staff%</white>.'
   reporter-closed: '<gray>Ваша жалоба <white>#%id%</white> закрыта: %verdict%<gray>.'
+  target-closed: '<gray>Жалоба (#%id%), касающаяся вас, была рассмотрена %staff%: %verdict%.'
   reporter-reopened: '<yellow>Вашу жалобу <white>#%id%</white> вернули в работу.'
   reporter-reply: '<aqua>Сотрудник <white>%author%</white> ответил на вашу жалобу <white>#%id%</white><gray>: <white>%text%'
   staff-reply: '<gold>%author% <gray>ответил(а) по жалобе <white>#%id%</white><gray>: <white>%text%'

@@ -1235,6 +1235,7 @@ notify:
   staff-reopened: '<green>%staff% <gray>reabriu a denúncia <white>#%id%</white>.'
   reporter-claimed: '<aqua>Sua denúncia <white>#%id%</white> foi assumida por <white>%staff%</white>.'
   reporter-closed: '<gray>Sua denúncia <white>#%id%</white> foi encerrada: %verdict%<gray>.'
+  target-closed: '<gray>Uma denúncia (#%id%) que envolve você foi resolvida por %staff%: %verdict%.'
   reporter-reopened: '<yellow>Sua denúncia <white>#%id%</white> foi reaberta.'
   reporter-reply: '<aqua>A equipe <white>%author%</white> respondeu à sua denúncia <white>#%id%</white><gray>: <white>%text%'
   staff-reply: '<gold>%author% <gray>respondeu à denúncia <white>#%id%</white><gray>: <white>%text%'

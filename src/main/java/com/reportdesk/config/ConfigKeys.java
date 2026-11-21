@@ -158,6 +158,9 @@ public final class ConfigKeys {
               "notifications.reporter.queue-retention-days",
               config -> config.notifications().reporterQueueRetentionDays()),
           bool(
+              "notifications.reporter.notify-target-on-close",
+              config -> config.notifications().notifyTargetOnClose()),
+          bool(
               "notifications.watchlist.enabled",
               config -> config.notifications().watchlistEnabled()),
           intKey(

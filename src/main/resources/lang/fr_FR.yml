@@ -1235,6 +1235,7 @@ notify:
   staff-reopened: '<green>%staff% <gray>a rouvert le signalement <white>#%id%</white>.'
   reporter-claimed: '<aqua>Votre signalement <white>#%id%</white> a été pris en charge par <white>%staff%</white>.'
   reporter-closed: '<gray>Votre signalement <white>#%id%</white> a été fermé : %verdict%<gray>.'
+  target-closed: '<gray>Un signalement (#%id%) vous concernant a été traité par %staff% : %verdict%.'
   reporter-reopened: '<yellow>Votre signalement <white>#%id%</white> a été rouvert.'
   reporter-reply: '<aqua>L''équipe <white>%author%</white> a répondu à votre signalement <white>#%id%</white><gray> : <white>%text%'
   staff-reply: '<gold>%author% <gray>a répondu au signalement <white>#%id%</white><gray> : <white>%text%'

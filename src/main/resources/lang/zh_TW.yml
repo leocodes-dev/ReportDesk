@@ -1235,6 +1235,7 @@ notify:
   staff-reopened: '<green>%staff% <gray>重新開啟了檢舉 <white>#%id%</white>。'
   reporter-claimed: '<aqua>你的檢舉 <white>#%id%</white> 已由 <white>%staff%</white> 接手。'
   reporter-closed: '<gray>你的檢舉 <white>#%id%</white> 已關閉：%verdict%<gray>。'
+  target-closed: '<gray>與你相關的檢舉 #%id% 已由 %staff% 處理為 %verdict%。'
   reporter-reopened: '<yellow>你的檢舉 <white>#%id%</white> 已重新開啟。'
   reporter-reply: '<aqua>管理組 <white>%author%</white> 回覆了你的檢舉 <white>#%id%</white><gray>：<white>%text%'
   staff-reply: '<gold>%author% <gray>回覆了檢舉 <white>#%id%</white><gray>：<white>%text%'

@@ -300,6 +300,7 @@ public final class ConfigLoader {
             bool(reporter, "queue-offline", true),
             integer(reporter, "max-queued", 20, 1, 500),
             integer(reporter, "queue-retention-days", 30, 0, 3_650),
+            bool(reporter, "notify-target-on-close", true),
             bool(watchlist, "enabled", true),
             integer(watchlist, "max-targets", 20, 1, 200),
             bool(watchlist, "notify-on-report", true),

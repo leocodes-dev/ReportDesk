@@ -1235,6 +1235,7 @@ notify:
   staff-reopened: '<green>%staff% <gray>şikayet <white>#%id%</white> yeniden açıldı.'
   reporter-claimed: '<aqua>Şikayetin <white>#%id%</white> <white>%staff%</white> tarafından devrildi.'
   reporter-closed: '<gray>Şikayetin <white>#%id%</white> kapatıldı: %verdict%<gray>.'
+  target-closed: '<gray>Sizi ilgilendiren bir rapor (#%id%) %staff% tarafından çözümlendi: %verdict%.'
   reporter-reopened: '<yellow>Şikayetin <white>#%id%</white> yeniden açıldı.'
   reporter-reply: '<aqua>Ekip <white>%author%</white> şikayetine yanıt verdi <white>#%id%</white><gray>: <white>%text%'
   staff-reply: '<gold>%author% <gray>şikayete yanıt verdi <white>#%id%</white><gray>: <white>%text%'
