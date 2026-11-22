@@ -60,6 +60,8 @@ ReportDesk 是一个面向 Minecraft 服务器的玩家举报工作台：完整�
 | `search <关键字>` | 搜索举报 |
 | `view <id>` | 查看某条举报 |
 | `claim <id>` / `release <id>` | 认领 / 释放 |
+| `assign <id> <管理员>` | 把未认领举报指派给指定在线管理员（目标须持有 `reportdesk.admin`） |
+| `transfer <id> <管理员>` | 将已认领举报转派给其他管理员（保留原认领时间；非属主需 `reportdesk.admin.close` 覆盖） |
 | `close <id> <裁决> [备注]` | 关闭举报 |
 | `reopen <id>` | 重开已结案举报 |
 | `tp <玩家名>` | 传送到目标 |
@@ -69,10 +71,12 @@ ReportDesk 是一个面向 Minecraft 服务器的玩家举报工作台：完整�
 | `delete <id>` | 删除举报（含证据） |
 | `purge <天数>` | 清除 N 天前已结案举报 |
 | `overdue` | 查看超时未处理举报 |
+| `sla [天数]` | 按优先级/分类/管理员维度的 SLA 超期报表 |
+| `smart review [天数]` | 智能优先级复盘：垃圾带精确率/召回率/标记率与分数分布（smart 层关闭时仅提示） |
 | `watch <玩家>` / `unwatch` / `watching` | 关注列表 |
-| `stats` | 统计面板 |
+| `stats` | 统计面板（含人均处理量） |
 | `export` | 导出 CSV |
-| `audit [页码]` | 查看审计日志 |
+| `audit [页码]` / `audit search <关键字>` / `audit export` | 查看审计日志 / 检索 / 导出 CSV |
 | `reload` | 重载配置 |
 | `config list/get/set/reset` | 在游戏内修改 `config.yml` |
 
@@ -83,6 +87,7 @@ ReportDesk 是一个面向 Minecraft 服务器的玩家举报工作台：完整�
 | `reportdesk.report` | 提交举报 | true |
 | `reportdesk.admin` | 管理工作台 | op |
 | `reportdesk.admin.close` | 关闭举报 | op |
+| `reportdesk.admin.assign` | 指派 / 转派举报 | op |
 | `reportdesk.admin.delete` | 删除/清除 | op |
 | `reportdesk.notify` | 接收新举报通知 | op |
 | `reportdesk.evidence` | 查看采集证据 | op |
@@ -91,6 +96,56 @@ ReportDesk 是一个面向 Minecraft 服务器的玩家举报工作台：完整�
 | `reportdesk.watch` | 关注列表 | op |
 | `reportdesk.bypass.limits` | 绕过冷却与上限 | false |
 | `reportdesk.bypass.evidence` | 不被增强层采集 | false |
+
+## API 事件与生态集成
+
+ReportDesk 把举报生命周期以 Bukkit 事件广播出来，供其它插件消费。所有事件都在**主线程同步**触发：监听器必须线程安全、不得阻塞；需要落盘或数据库 IO 时由监听器自己调度到异步线程。
+
+| 事件 | 时机 | 可取消 |
+|------|------|--------|
+| `ReportPreSubmitEvent` | 玩家提交前（系统/自动检测不触发） | 是（取消即拒绝本次提交） |
+| `ReportSubmittedEvent` | 创建并持久化之后 | 否 |
+| `ReportStatusChangedEvent` | 任意状态迁移（认领/结案/重开/释放）之后 | 否 |
+| `ReportClaimedEvent` | 管理员认领（或指派）之后 | 否 |
+| `ReportClosedEvent` | 管理员结案之后 | 否 |
+| `ReportEvidenceCapturedEvent` | 证据层为某条举报采集快照之后（仅当证据层开启） | 否 |
+
+### 结案联动处罚（LuckPerms 示例）
+
+监听 `ReportClosedEvent`，在判定成立（`Verdict.RESOLVED`）时对目标执行封禁命令，不成立（`Verdict.REJECTED`）时清除误报标记。示例插件骨架：
+
+```java
+public class ReportDeskHook implements Listener {
+
+  @EventHandler(priority = EventPriority.NORMAL)
+  public void onReportClosed(ReportClosedEvent event) {
+
+    Report report = event.getReport();
+
+    if (event.getVerdict() == Verdict.RESOLVED) {
+
+      // 判定成立：临时封禁目标 7 天（需 LuckPerms 等权限插件在场）
+      Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+          Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+              "lp user " + report.targetName() + " temp parent 7d punisher"));
+
+    } else if (event.getVerdict() == Verdict.REJECTED) {
+
+      // 判定不成立：解除之前挂的"疑似违规"标记
+      Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+          Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+              "lp user " + report.targetName() + " remove parent suspect"));
+    }
+  }
+}
+```
+
+要点：
+
+- 事件已携带**结案后**的 `Report`（含目标名、裁决、结案管理员），无需再查库。
+- 处罚命令走**异步**线程池，避免卡主线程（AGENTS 红线：主线程零 IO）。
+- 需要 `reportdesk` 与 LuckPerms（或等效权限插件）同时在线；没有权限插件时上述命令静默失败，不影响 ReportDesk 本身。
+- 更稳妥的做法：把 `ReportClosedEvent` 桥接到 ReportDesk 的**处罚通道 SPI**（`PunishmentChannel`），由统一开关 `punishments.enabled` 控制，避免处罚逻辑散落。
 
 ## 安装
 

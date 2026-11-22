@@ -21,9 +21,11 @@ package com.reportdesk.event;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.reportdesk.core.ReportStatus;
+import com.reportdesk.core.Verdict;
 import com.reportdesk.test.TestFixtures;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -123,5 +125,101 @@ class ReportEventsTest {
     assertEquals(ReportStatus.OPEN, event.getFrom());
 
     assertEquals(ReportStatus.OPEN, event.getTo());
+  }
+
+  @Test
+  void claimedExposesReportAndStaff() {
+
+    var claimed =
+        TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "cheat", 0L)
+            .withClaim(TestFixtures.STAFF, "Staff", 100L);
+
+    ReportClaimedEvent event = new ReportClaimedEvent(claimed, TestFixtures.STAFF, "Staff");
+
+    assertEquals(claimed, event.getReport());
+
+    assertEquals(TestFixtures.STAFF, event.getStaffId());
+
+    assertEquals("Staff", event.getStaffName());
+
+    // Non-cancellable lifecycle event: no isCancelled() to assert.
+
+    assertNotNull(event.getHandlers());
+  }
+
+  @Test
+  void claimedNormalisesNullStaff() {
+
+    var claimed = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "cheat", 0L);
+
+    ReportClaimedEvent event = new ReportClaimedEvent(claimed, null, null);
+
+    assertEquals(new UUID(0L, 0L), event.getStaffId());
+
+    assertEquals("", event.getStaffName());
+  }
+
+  @Test
+  void closedExposesReportVerdictAndStaff() {
+
+    var closed =
+        TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "cheat", 0L)
+            .withClosed(Verdict.RESOLVED, TestFixtures.STAFF, "Staff", "confirmed", 100L);
+
+    ReportClosedEvent event = new ReportClosedEvent(closed, Verdict.RESOLVED, TestFixtures.STAFF, "Staff");
+
+    assertEquals(closed, event.getReport());
+
+    assertEquals(Verdict.RESOLVED, event.getVerdict());
+
+    assertEquals(TestFixtures.STAFF, event.getStaffId());
+
+    assertEquals("Staff", event.getStaffName());
+  }
+
+  @Test
+  void closedNormalisesNullVerdictAndStaff() {
+
+    var closed = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "cheat", 0L);
+
+    ReportClosedEvent event = new ReportClosedEvent(closed, null, null, null);
+
+    assertEquals(Verdict.RESOLVED, event.getVerdict());
+
+    assertEquals(new UUID(0L, 0L), event.getStaffId());
+
+    assertEquals("", event.getStaffName());
+  }
+
+  @Test
+  void evidenceCapturedExposesReportAndEvidence() {
+
+    var report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "cheat", 0L);
+
+    com.reportdesk.core.Evidence evidence =
+        new com.google.gson.Gson()
+            .fromJson(
+                "{\"reportId\": 1, \"targetName\": \"Bob\", \"targetOnline\": true}",
+                com.reportdesk.core.Evidence.class);
+
+    ReportEvidenceCapturedEvent event = new ReportEvidenceCapturedEvent(report, evidence);
+
+    assertEquals(report, event.getReport());
+
+    assertEquals(evidence, event.getEvidence());
+
+    assertEquals("Bob", event.getEvidence().targetName());
+  }
+
+  @Test
+  void evidenceCapturedAllowsNullEvidence() {
+
+    var report = TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "cheat", 0L);
+
+    ReportEvidenceCapturedEvent event = new ReportEvidenceCapturedEvent(report, null);
+
+    assertEquals(report, event.getReport());
+
+    assertNull(event.getEvidence());
   }
 }

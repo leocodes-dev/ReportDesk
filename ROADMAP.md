@@ -111,14 +111,15 @@
 - 已删：通知摘要 MiniMessage 模板（embed 已是结构化字段，无明确需求）。
 - 验收：两个 URL 各自失败互不影响（单测 `slaBreachRoutesToSecondaryUrlWhenConfigured`）。
 
-### 11. 生态互通：Java 事件（实用核心）⬜
+### 11. 生态互通：Java 事件（实用核心）✅
 - 目标：把举报数据喂给其它插件。
 - 内容：
   - 广播 `ReportSubmittedEvent`（可取消=拦截提交）、`ReportClaimedEvent`、`ReportClosedEvent`、`ReportEvidenceCapturedEvent`；
   - Javadoc 明确：事件主线程同步触发，监听器须线程安全且不得阻塞；
   - 文档给 LuckPerms 集成示例（结案联动处罚命令）。
-- 可选子项：BStats 匿名统计（默认关，`telemetry.enabled`，关闭时零网络调用）。
+- 可选子项：BStats 匿名统计（默认关，`telemetry.enabled`，关闭时零网络调用）——暂不做（外部统计服务，保持边界干净）。
 - 验收：取消 Submitted 事件后提交管线终止且不落库。
+- **完成（2026-11）**：可取消拦截由既有 `ReportPreSubmitEvent`（单测 `ReportEventsTest`）承担，取消后 `ReportService#submit` 直接返回 `CANCELLED` 不落库；新增 `ReportClaimedEvent`（claim 与 assign 后触发）、`ReportClosedEvent`（结案后，携带 `Verdict` 与结案管理员）、`ReportEvidenceCapturedEvent`（证据快照采集后），均主线程同步触发 + try/catch Throwable 隔离；各事件 Javadoc 写明线程契约；README 新增「API 事件与生态集成」章节（事件表 + LuckPerms 结案联动处罚监听器骨架，处罚命令走异步池）。BStats 子项保持不做。
 
 ### 12. 管理侧批量操作 ⬜
 - 目标：大服日常运维效率。

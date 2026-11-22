@@ -45,6 +45,18 @@
 **测试**
 - 新增 `SmartReviewStatsTest`（5 项：精确率/召回率/标记率口径、十分档分布、未评分与未结案排除、窗口过滤、空窗口除零安全）；`ReportFilterTest` 补 `smartSortKeepsHighestScoreFirstThenNewest`。
 
+**新增**
+- 生态互通：Java 事件面（ROADMAP P2#11）。在既有 `ReportPreSubmitEvent`（可取消，拦截提交）、`ReportSubmittedEvent`、`ReportStatusChangedEvent` 之上，新增 3 个专用生命周期事件：`ReportClaimedEvent`（认领/指派后，携带认领管理员）、`ReportClosedEvent`（结案后，携带裁决/结案管理员）、`ReportEvidenceCapturedEvent`（证据快照采集后）。全部主线程同步触发，监听器异常被隔离（try/catch Throwable），永不中断核心流程；未评分/未开启证据层时对应事件自然不触发。
+- README 新增「API 事件与生态集成」章节：事件时机/可取消性一览表 + 结案联动处罚的 LuckPerms 监听器骨架（处罚命令走异步线程池、主线程零 IO）；同时把 `/reports` 子命令表、权限节点表更新到当前实现（assign/transfer/sla/smart review/audit search 等）。
+
+**安全**
+- 新事件均为只读广播（不可取消），不改变既有提交/管理行为；监听器抛异常不影响插件（事件隔离与既有 `fireStatusChanged` 同口径）。
+
+**文档**
+- README 命令/权限表与实际实现同步；事件契约（主线程同步、线程安全、非阻塞）写入各事件 Javadoc 与 README。
+
+ReportDesk (unreleased 1.3.0, continued) rounds out the ecosystem-integration surface (ROADMAP P2#11): three dedicated lifecycle events join the existing pre-submit/submitted/status-changed set - ReportClaimedEvent (after a claim or assignment, carrying the claiming admin), ReportClosedEvent (after closure, carrying verdict and closing admin) and ReportEvidenceCapturedEvent (after an evidence snapshot). All fire synchronously on the main thread with listener exceptions isolated, so no third-party listener can break the core workflow. The README gains an "API events & ecosystem integration" chapter with a LuckPerms close-linked punishment listener skeleton and updated command/permission tables.
+
 ReportDesk (unreleased 1.3.0, continued) adds the smart-priority retrospective from ROADMAP P1#6: `/reports smart review [days]` cross-tabs the recorded smart scores of closed reports against their final verdicts, reporting garbage-band precision, recall, the overall garbage flag rate and a 0-100 decile distribution (purely in-memory, single pass, read-only; with the smart layer off the command only prints a hint and computes nothing). A fourth queue sort option "by smart score" joins newest/priority/oldest in both admin and player-history GUIs and in `/reports list smart`, and the admin "other tools" data card gains a garbage-flag-rate line. Eleven new message keys and one lore line ship in all 12 bundled languages with full unit-test coverage.
 
 ReportDesk (unreleased 1.3.0) adds multi-admin collaboration from ROADMAP P1#4: `/reports assign <id> <admin>` hands an unclaimed report to a specific online admin (idempotent when the target already holds the claim) and `/reports transfer <id> <admin>` moves a claim between admins while preserving the original claim timestamp so the SLA timeline is not reset. The assigned admin gets a dedicated ping (muted for admins without the staff permission, off via `notifications.assign-notify-enabled`), and the statistics panel gains a per-capita handling metric in both the `/reports stats` command and the admin GUI. A new `reportdesk.admin.assign` permission node, async audit entries and the existing admin cooldown gate the new actions. All 13 new message keys ship in all 12 bundled languages, with full unit-test coverage of the pure assignment rules.

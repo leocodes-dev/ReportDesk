@@ -34,6 +34,9 @@ import com.reportdesk.core.ReportSubmissionService;
 import com.reportdesk.core.SmartPriorityPolicy;
 import com.reportdesk.core.Verdict;
 import com.reportdesk.event.ReportPreSubmitEvent;
+import com.reportdesk.event.ReportClaimedEvent;
+import com.reportdesk.event.ReportClosedEvent;
+import com.reportdesk.event.ReportEvidenceCapturedEvent;
 import com.reportdesk.event.ReportStatusChangedEvent;
 import com.reportdesk.event.ReportSubmittedEvent;
 import com.reportdesk.i18n.MessageKeys;
@@ -228,6 +231,8 @@ public final class ReportService {
 
     plugin.audit("CLAIM", staff, report.id(), "");
 
+    fireClaimed(updated, staff.getUniqueId(), staff.getName());
+
     plugin.notification().onClaimed(updated, staff.getName());
 
     return OpResult.ok(
@@ -262,6 +267,8 @@ public final class ReportService {
         fireStatusChanged(outcome.report(), ReportStatus.OPEN, ReportStatus.CLAIMED);
 
         plugin.audit("ASSIGN", actor, report.id(), "to " + target.getName());
+
+        fireClaimed(outcome.report(), target.getUniqueId(), target.getName());
 
         plugin.notification().onAssigned(outcome.report(), target.getName(), false);
 
@@ -440,6 +447,8 @@ public final class ReportService {
 
     plugin.audit(
         "CLOSE", staff, report.id(), verdict.name() + (safeNote.isBlank() ? "" : " | " + safeNote));
+
+    fireClosed(updated, verdict, staff.getUniqueId(), staff.getName());
 
     plugin.notification().onClosed(updated, staff.getName());
 
@@ -705,6 +714,8 @@ public final class ReportService {
         updated = updated.withEvidence(EvidenceMeta.of(evidence), System.currentTimeMillis());
 
         plugin.storage().saveEvidence(evidence);
+
+        fireEvidenceCaptured(updated, evidence);
       }
     }
 
@@ -892,6 +903,47 @@ public final class ReportService {
     } catch (Throwable ignored) {
 
       // A misbehaving listener must never break the admin workflow.
+    }
+  }
+
+  /** Ecosystem hook: fires after a claim took effect; a throwing listener never breaks it. */
+  private void fireClaimed(Report report, UUID staffId, String staffName) {
+
+    try {
+
+      Bukkit.getPluginManager().callEvent(new ReportClaimedEvent(report, staffId, staffName));
+
+    } catch (Throwable ignored) {
+
+      // A misbehaving listener must never break the admin workflow.
+    }
+  }
+
+  /** Ecosystem hook: fires after a closure took effect; a throwing listener never breaks it. */
+  private void fireClosed(Report report, Verdict verdict, UUID staffId, String staffName) {
+
+    try {
+
+      Bukkit.getPluginManager()
+          .callEvent(new ReportClosedEvent(report, verdict, staffId, staffName));
+
+    } catch (Throwable ignored) {
+
+      // A misbehaving listener must never break the admin workflow.
+    }
+  }
+
+  /** Ecosystem hook: fires after the evidence layer captured a snapshot for a new report. */
+  private void fireEvidenceCaptured(Report report, Evidence evidence) {
+
+    try {
+
+      Bukkit.getPluginManager()
+          .callEvent(new ReportEvidenceCapturedEvent(report, evidence));
+
+    } catch (Throwable ignored) {
+
+      // A misbehaving listener must never break the submission path.
     }
   }
 
