@@ -227,6 +227,7 @@ gui:
   filter-sort-newest: '新しい順'
   filter-sort-oldest: '古い順'
   filter-sort-priority: '優先度順'
+  filter-sort-smart: '<aqua>スマートスコア順'
   filter-priority-name: '<yellow>優先度: %priority%'
   filter-priority-lore:
     - '<gray>クリックで優先度フィルタを切り替え'
@@ -1146,6 +1147,7 @@ Javaクライアントのシステム地域言語を推定します（ベスト�
       - '<gray>総数: <white>%total%'
       - '<gray>未結: <white>%open%</white> <dark_gray>| <gray>クローズ済み: <white>%closed%'
       - '<gray>期限超過: <red>%overdue%</red>'
+      - '<gray>迷惑フラグ率: <white>%garbage-flag-rate%</white>'
     misc-retention-name: '<aqua>保持と監査'
     misc-retention-lore:
       - '<gray>報告は <white>%retention-days%</white> 日保持'
@@ -1344,6 +1346,16 @@ admin:
   stats-per-staff: '<gray>担当あたり処理件数: <white>%count%</white> 件/人（担当者 <white>%staff%</white> 名）'
   help-assign: '<gray>/reports assign <id> <管理者> <dark_gray>- <gray>オンラインの管理者に通報を割り当てる'
   help-transfer: '<gray>/reports transfer <id> <管理者> <dark_gray>- <gray>引き受けた通報を他の管理者に移管する'
+  smart-disabled: '<gray>スマート優先度は無効です（smart-priority.enabled=false）。レビュー可能なデータがありません。'
+  smart-review-header: '<gold>===== スマート優先度レビュー（評価済みクローズ %count% 件）====='
+  smart-review-invalid-days: '<red>無効な日数: %days%（0-36500 を使用、0 はすべて）。</red>'
+  smart-review-empty: '<gray>対象期間内に評価済みのクローズ通報はありません。'
+  smart-review-scores: '<gray>評価済み <white>%scored%</white> <dark_gray>| <gray>フラグ <white>%flagged%</white> <dark_gray>| <gray>実際は迷惑 <white>%garbage%</white> <dark_gray>| <gray>両方 <white>%flagged-garbage%</white>'
+  smart-review-precision: '<gray>フラグの適合率: <white>%value%</white>（フラグ付きのうち実際に迷惑の割合）'
+  smart-review-recall: '<gray>迷惑の召回率: <white>%value%</white>（実際の迷惑のうちフラグされた割合）'
+  smart-review-flag-rate: '<gray>迷惑フラグ率: <white>%value%</white>'
+  smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
+  help-smart: '<gray>/reports smart review [日数] <dark_gray>- <gray>スマート優先度の精度/召回率をレビュー'
 config:
   list-header: '<gold>===== 編集可能な設定 (%count% 項目、ページ %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

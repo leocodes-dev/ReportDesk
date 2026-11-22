@@ -3609,7 +3609,7 @@ public final class AdminGuiService {
    */
   private String garbageFlagRateText(List<Report> snapshot) {
 
-    Messages messages = messages();
+    com.reportdesk.i18n.Messages messages = messages();
 
     if (!plugin.config().smartPriority().enabled()) {
 

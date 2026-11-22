@@ -227,6 +227,7 @@ gui:
   filter-sort-newest: 'Newest first'
   filter-sort-oldest: 'Oldest first'
   filter-sort-priority: 'Priority first'
+  filter-sort-smart: '<aqua>By Smart Score'
   filter-priority-name: '<yellow>Priority: %priority%'
   filter-priority-lore:
     - '<gray>Click to cycle priority filters'
@@ -1148,6 +1149,7 @@ Probe Java clients for their system region language (best-effort).
       - '<gray>Total: <white>%total%'
       - '<gray>Open: <white>%open%</white> <dark_gray>| <gray>Closed: <white>%closed%'
       - '<gray>Overdue: <red>%overdue%</red>'
+      - '<gray>Garbage flag rate: <white>%garbage-flag-rate%</white>'
     misc-retention-name: '<aqua>Retention & Audit'
     misc-retention-lore:
       - '<gray>Reports kept for <white>%retention-days%</white> days'
@@ -1346,6 +1348,16 @@ admin:
   stats-per-staff: '<gray>Per staff: <white>%count%</white> closed reports per handler (<white>%staff%</white> active handlers)'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Assign a report to an online admin'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Transfer a claimed report to another admin'
+  smart-disabled: '<gray>The smart priority layer is off (smart-priority.enabled=false); nothing to review.'
+  smart-review-header: '<gold>===== Smart Priority Review (%count% scored closed reports) ====='
+  smart-review-invalid-days: '<red>Invalid days value: %days% (use 0-36500, 0 = all history).</red>'
+  smart-review-empty: '<gray>No scored closed reports in the window.'
+  smart-review-scores: '<gray>Scored <white>%scored%</white> <dark_gray>| <gray>Flagged <white>%flagged%</white> <dark_gray>| <gray>Actually garbage <white>%garbage%</white> <dark_gray>| <gray>Both <white>%flagged-garbage%</white>'
+  smart-review-precision: '<gray>Flag precision: <white>%value%</white> (share of flagged reports that were actually garbage)'
+  smart-review-recall: '<gray>Garbage recall: <white>%value%</white> (share of garbage reports that were flagged)'
+  smart-review-flag-rate: '<gray>Garbage flag rate: <white>%value%</white>'
+  smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
+  help-smart: '<gray>/reports smart review [days] <dark_gray>- <gray>Review smart-priority precision/recall'
 config:
   list-header: '<gold>===== Editable settings (%count% keys, page %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

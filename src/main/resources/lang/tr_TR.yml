@@ -227,6 +227,7 @@ gui:
   filter-sort-newest: 'En yeni üstte'
   filter-sort-oldest: 'En eski üstte'
   filter-sort-priority: 'Öncelik üstte'
+  filter-sort-smart: '<aqua>Akıllı puana göre'
   filter-priority-name: '<gray>Öncelik: %priority%'
   filter-priority-lore:
     - '<gray>Öncelik filtrelerini değiştirmek için tıkla'
@@ -1146,6 +1147,7 @@ Java istemcilerinin sistem bölge dilini tahmin eder (olası olduğunca).
       - '<gray>Toplam: <white>%total%'
       - '<gray>Açık: <white>%open%</white> <dark_gray>| <gray>Kapalı: <white>%closed%'
       - '<gray>Gecikmiş: <red>%overdue%</red>'
+      - '<gray>Spam işaret oranı: <white>%garbage-flag-rate%</white>'
     misc-retention-name: '<aqua>Saklama ve denetim'
     misc-retention-lore:
       - '<gray>Bildirimler <white>%retention-days%</white> gün saklanır'
@@ -1344,6 +1346,16 @@ admin:
   stats-per-staff: '<gray>Kişi başı: <white>%count%</white> kapanan şikayet/yönetici (<white>%staff%</white> sorumlu)'
   help-assign: '<gray>/reports assign <id> <yönetici> <dark_gray>- <gray>Şikayeti çevrimiçi bir yöneticiye atar'
   help-transfer: '<gray>/reports transfer <id> <yönetici> <dark_gray>- <gray>Devralınan şikayeti başka bir yöneticiye devreder'
+  smart-disabled: '<gray>Akıllı öncelik kapalı (smart-priority.enabled=false); incelencek veri yok.'
+  smart-review-header: '<gold>===== Akıllı Öncelik İncelemesi (%count% puanlı kapanan şikayet) ====='
+  smart-review-invalid-days: '<red>Geçersiz gün: %days% (0-36500 kullan, 0 = tümü).</red>'
+  smart-review-empty: '<gray>Süreçte puanlanmış kapanan şikayet yok.'
+  smart-review-scores: '<gray>Puanlı <white>%scored%</white> <dark_gray>| <gray>İşaretli <white>%flagged%</white> <dark_gray>| <gray>Asıl spam <white>%garbage%</white> <dark_gray>| <gray>Her ikisi <white>%flagged-garbage%</white>'
+  smart-review-precision: '<gray>İşaret duyarlılığı: <white>%value%</white> (işaretlilerden asıl spam oranı)'
+  smart-review-recall: '<gray>Spam yakalama: <white>%value%</white> (asıl spamden işaretlenen oran)'
+  smart-review-flag-rate: '<gray>Spam işaret oranı: <white>%value%</white>'
+  smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
+  help-smart: '<gray>/reports smart review [gün] <dark_gray>- <gray>Akıllı öncelik duyarlılık/yakalama incelemesi'
 config:
   list-header: '<gold>===== Düzenlenebilir Yapılandırmalar (%count% anahtar, sayfa %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

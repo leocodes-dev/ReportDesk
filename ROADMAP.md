@@ -67,13 +67,14 @@
 - 验收：`/reports overdue` 与新报表口径一致。
 - **核实（2026-11）**：原 `reports.sla-weekly-enabled` 键名有误，实际为 `notifications.sla.weekly-enabled`。
 
-### 6. 智能优先级复盘（新增，旗舰功能配套）⬜
+### 6. 智能优先级复盘（新增，旗舰功能配套）✅
 - 目标：smart-priority 上线一段时间后，管理员需要知道"标记得准不准、阈值该往哪调"。
 - 内容：
   - `/reports smart review [days]`：把已关闭举报的 `smartScore` 与最终判定交叉统计，输出垃圾带精确率/召回率（被标记中真垃圾占比、真垃圾中被标记占比）与分数分布；
   - 队列 GUI 排序增加"按智能分"（现有 最新/最旧/优先级 第四项）；
   - 其它工具页"数据状态"卡补一行"垃圾标记率"。
 - 验收：纯只读、内存聚合、主线程零 IO；功能关闭时命令提示而未计算。
+- **完成（2026-11）**：`SmartReviewStats.compute` 纯单遍内存聚合（精确率/召回率/标记率/十分档分布，单测 `SmartReviewStatsTest` 5 项）；`/reports smart review [days]` 入口单次开关短路（smart 关仅提示不计算，`ReportsCommand#smartReview`）；`ReportFilter.SortOrder.SMART` 第四排序项（管理/玩家历史 GUI 循环 最新→优先级→智能分→最旧，`/reports list smart`，未评分沉底，单测 `ReportFilterTest#smartSortKeepsHighestScoreFirstThenNewest`）；其它工具页数据卡 `garbageFlagRateText` 垃圾标记率一行（关闭显示"已关闭"、无数据显示"无"，纯内存）。
 
 ### 7. 审计日志增强（部分 ✅ / 链式哈希 ⚠️ 砍）
 - 目标：审计可查、可导出、可防篡改。

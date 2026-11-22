@@ -227,6 +227,7 @@ gui:
   filter-sort-newest: 'Plus récents d''abord'
   filter-sort-oldest: 'Plus anciens d''abord'
   filter-sort-priority: 'Priorité d''abord'
+  filter-sort-smart: '<aqua>Tri par score intelligent'
   filter-priority-name: '<yellow>Priorité : %priority%'
   filter-priority-lore:
     - '<gray>Clic pour basculer les filtres de priorité'
@@ -1146,6 +1147,7 @@ Détecte la langue du client de chaque joueur et affiche cette langue.
       - '<gray>Total : <white>%total%'
       - '<gray>Ouverts : <white>%open%</white> <dark_gray>| <gray>Fermés : <white>%closed%'
       - '<gray>En retard : <red>%overdue%</red>'
+      - '<gray>Taux de marquage spam : <white>%garbage-flag-rate%</white>'
     misc-retention-name: '<aqua>Rétention et audit'
     misc-retention-lore:
       - '<gray>Signalements conservés <white>%retention-days%</white> jours'
@@ -1344,6 +1346,16 @@ admin:
   stats-per-staff: '<gray>Par agent : <white>%count%</white> rapports clôturés par personne (<white>%staff%</white> agents actifs)'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Assigner un rapport à un administrateur en ligne'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Transférer un rapport pris en charge à un autre administrateur'
+  smart-disabled: "La priorité intelligente est désactivée (smart-priority.enabled=false) ; rien à examiner."
+  smart-review-header: '<gold>===== Revue de la priorité intelligente (%count% rapports clos évalués) ====='
+  smart-review-invalid-days: '<red>Jours invalides : %days% (utiliser 0-36500, 0 = tous).</red>'
+  smart-review-empty: '<gray>Aucun rapport clos évalué sur la période.'
+  smart-review-scores: '<gray>Évalués <white>%scored%</white> <dark_gray>| <gray>Marqués <white>%flagged%</white> <dark_gray>| <gray>Effectivement spam <white>%garbage%</white> <dark_gray>| <gray>Les deux <white>%flagged-garbage%</white>'
+  smart-review-precision: '<gray>Précision du marquage : <white>%value%</white> (part des marqués réellement spam)'
+  smart-review-recall: '<gray>Rappel du spam : <white>%value%</white> (part du spam effectivement marqué)'
+  smart-review-flag-rate: '<gray>Taux de marquage spam : <white>%value%</white>'
+  smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
+  help-smart: '<gray>/reports smart review [jours] <dark_gray>- <gray>Revue de la précision/rappel de la priorité intelligente'
 config:
   list-header: '<gold>===== Configurations éditables (%count% clés, page %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

@@ -28,6 +28,25 @@
 **测试**
 - 新增 `ReportAssignmentServiceTest`（10 项：指派/幂等/冲突/终态拒绝/转派时间线保留/非属主需覆盖/控制台覆盖）；`ReportTest` 补 `withTransfer` 保留 `claimedAt` 用例；`ReportStatsTest` 补人均结案口径；`ConfigLoaderTest` 补新键默认值断言。
 
+**新增**
+- 智能优先级复盘（ROADMAP P1#6）：`/reports smart review [days]` 把已结案举报的 `smartScore` 与最终判定交叉统计，输出垃圾带精确率（被标记中实为垃圾占比）、召回率（真垃圾中被标记占比）、垃圾标记率与 0-100 十分档分布条；`[days]` 限定最近 N 天窗口（0/省略=全部，非法值拒绝）。纯只读、纯内存聚合（`SmartReviewStats.compute` 单遍、无 IO）；smart 层关闭时命令仅提示不计算（入口一次开关短路）。
+- 队列排序新增第四项「按智能分」（`ReportFilter.SortOrder.SMART`）：管理 GUI 与玩家历史 GUI 的排序菜单循环为 最新→优先级→智能分→最旧；`/reports list` 支持 `smart` 排序词；未评分举报自然沉底。
+- 「其它工具」页数据状态卡新增「垃圾标记率」一行：smart 层开启时显示全历史已评分结案的标记占比，关闭时显示「已关闭」、无数据时显示「无」（纯内存）。
+
+**配置**
+- （无新增键；复盘完全复用既有 `smart-priority` 阈值，不引入新业务魔法数）
+
+**安全**
+- `smart` 子命令沿用 `reportdesk.admin` 权限与操作限流；只读命令不落盘、不触发事件、不写审计（审计仅记录变更类操作）。
+
+**i18n**
+- 新增 11 个文案键（admin ×10、gui.filter-sort-smart ×1）与 1 行 misc-data-lore 垃圾标记率，同步进入全部 12 个 `lang/*.yml`（`MessagesTest` 1:1 结构校验通过）。
+
+**测试**
+- 新增 `SmartReviewStatsTest`（5 项：精确率/召回率/标记率口径、十分档分布、未评分与未结案排除、窗口过滤、空窗口除零安全）；`ReportFilterTest` 补 `smartSortKeepsHighestScoreFirstThenNewest`。
+
+ReportDesk (unreleased 1.3.0, continued) adds the smart-priority retrospective from ROADMAP P1#6: `/reports smart review [days]` cross-tabs the recorded smart scores of closed reports against their final verdicts, reporting garbage-band precision, recall, the overall garbage flag rate and a 0-100 decile distribution (purely in-memory, single pass, read-only; with the smart layer off the command only prints a hint and computes nothing). A fourth queue sort option "by smart score" joins newest/priority/oldest in both admin and player-history GUIs and in `/reports list smart`, and the admin "other tools" data card gains a garbage-flag-rate line. Eleven new message keys and one lore line ship in all 12 bundled languages with full unit-test coverage.
+
 ReportDesk (unreleased 1.3.0) adds multi-admin collaboration from ROADMAP P1#4: `/reports assign <id> <admin>` hands an unclaimed report to a specific online admin (idempotent when the target already holds the claim) and `/reports transfer <id> <admin>` moves a claim between admins while preserving the original claim timestamp so the SLA timeline is not reset. The assigned admin gets a dedicated ping (muted for admins without the staff permission, off via `notifications.assign-notify-enabled`), and the statistics panel gains a per-capita handling metric in both the `/reports stats` command and the admin GUI. A new `reportdesk.admin.assign` permission node, async audit entries and the existing admin cooldown gate the new actions. All 13 new message keys ship in all 12 bundled languages, with full unit-test coverage of the pure assignment rules.
 
 ---

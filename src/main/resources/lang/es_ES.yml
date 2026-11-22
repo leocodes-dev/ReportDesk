@@ -227,6 +227,7 @@ gui:
   filter-sort-newest: 'Más recientes primero'
   filter-sort-oldest: 'Más antiguas primero'
   filter-sort-priority: 'Prioridad primero'
+  filter-sort-smart: '<aqua>Por puntuación inteligente'
   filter-priority-name: '<yellow>Prioridad: %priority%'
   filter-priority-lore:
     - '<gray>Clic para alternar filtros de prioridad'
@@ -1146,6 +1147,7 @@ Estima el idioma regional del sistema de los clientes Java (mejor esfuerzo).
       - '<gray>Total: <white>%total%'
       - '<gray>Abiertas: <white>%open%</white> <dark_gray>| <gray>Cerradas: <white>%closed%'
       - '<gray>Vencidas: <red>%overdue%</red>'
+      - '<gray>Tasa de marcado de basura: <white>%garbage-flag-rate%</white>'
     misc-retention-name: '<aqua>Retención y auditoría'
     misc-retention-lore:
       - '<gray>Denuncias conservadas <white>%retention-days%</white> días'
@@ -1344,6 +1346,16 @@ admin:
   stats-per-staff: '<gray>Por persona: <white>%count%</white> reportes cerrados por responsable (<white>%staff%</white> activos)'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Asignar un reporte a un administrador en línea'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Transferir un reporte reclamado a otro administrador'
+  smart-disabled: '<gray>La prioridad inteligente está desactivada (smart-priority.enabled=false); no hay nada que revisar.'
+  smart-review-header: '<gold>===== Revisión de prioridad inteligente (%count% reportes cerrados evaluados) ====='
+  smart-review-invalid-days: '<red>Días inválidos: %days% (usa 0-36500, 0 = todos).</red>'
+  smart-review-empty: '<gray>No hay reportes cerrados evaluados en el periodo.'
+  smart-review-scores: '<gray>Evaluados <white>%scored%</white> <dark_gray>| <gray>Marcados <white>%flagged%</white> <dark_gray>| <gray>Realmente basura <white>%garbage%</white> <dark_gray>| <gray>Ambos <white>%flagged-garbage%</white>'
+  smart-review-precision: '<gray>Precisión del marcado: <white>%value%</white> (proporción de los marcados que eran basura)'
+  smart-review-recall: '<gray>Recuperación de basura: <white>%value%</white> (proporción de la basura realmente marcada)'
+  smart-review-flag-rate: '<gray>Tasa de marcado de basura: <white>%value%</white>'
+  smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
+  help-smart: '<gray>/reports smart review [dias] <dark_gray>- <gray>Revisión de precisión/recuperación de la prioridad inteligente'
 config:
   list-header: '<gold>===== Configuraciones editables (%count% claves, página %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

@@ -227,6 +227,7 @@ gui:
   filter-sort-newest: '최신순'
   filter-sort-oldest: '오래된순'
   filter-sort-priority: '우선순위순'
+  filter-sort-smart: '<aqua>스마트 점수순'
   filter-priority-name: '<yellow>우선순위: %priority%'
   filter-priority-lore:
     - '<gray>클릭하여 우선순위 필터 전환'
@@ -1146,6 +1147,7 @@ Java 클라이언트의 시스템 지역 언어를 추정합니다(최선 처리
       - '<gray>총수: <white>%total%'
       - '<gray>미처리: <white>%open%</white> <dark_gray>| <gray>종료됨: <white>%closed%'
       - '<gray>기한 초과: <red>%overdue%</red>'
+      - '<gray>스팸 표시율: <white>%garbage-flag-rate%</white>'
     misc-retention-name: '<aqua>보관 및 감사'
     misc-retention-lore:
       - '<gray>제보 <white>%retention-days%</white>일 보관'
@@ -1344,6 +1346,16 @@ admin:
   stats-per-staff: '<gray>1인당 처리량: <white>%count%</white>건/명 (담당 <white>%staff%</white>명)'
   help-assign: '<gray>/reports assign <id> <관리자> <dark_gray>- <gray>온라인 관리자에게 제보를 배정합니다'
   help-transfer: '<gray>/reports transfer <id> <관리자> <dark_gray>- <gray>담당 중인 제보를 다른 관리자에게 이관합니다'
+  smart-disabled: '<gray>스마트 우선순위가 꺼져 있습니다(smart-priority.enabled=false). 검토할 데이터가 없습니다.'
+  smart-review-header: '<gold>===== 스마트 우선순위 검토 (평가된 종료 건 %count%건) ====='
+  smart-review-invalid-days: '<red>잘못된 일수: %days% (0-36500 사용, 0은 전체).</red>'
+  smart-review-empty: '<gray>해당 기간에 평가된 종료 제보가 없습니다.'
+  smart-review-scores: '<gray>평가됨 <white>%scored%</white> <dark_gray>| <gray>표시됨 <white>%flagged%</white> <dark_gray>| <gray>실제 스팸 <white>%garbage%</white> <dark_gray>| <gray>양쪽 해당 <white>%flagged-garbage%</white>'
+  smart-review-precision: '<gray>표시 정확률: <white>%value%</white> (표시된 것 중 실제 스팸 비율)'
+  smart-review-recall: '<gray>스팸 재현률: <white>%value%</white> (실제 스팸 중 표시된 비율)'
+  smart-review-flag-rate: '<gray>스팸 표시율: <white>%value%</white>'
+  smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
+  help-smart: '<gray>/reports smart review [일수] <dark_gray>- <gray>스마트 우선순위 정밀도/재현율 검토'
 config:
   list-header: '<gold>===== 편집 가능한 설정 (%count%개 키, 페이지 %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

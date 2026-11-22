@@ -227,6 +227,7 @@ gui:
   filter-sort-newest: 'Сначала новые'
   filter-sort-oldest: 'Сначала старые'
   filter-sort-priority: 'Сначала по приоритету'
+  filter-sort-smart: '<aqua>По умному баллу'
   filter-priority-name: '<yellow>Приоритет: %priority%'
   filter-priority-lore:
     - '<gray>Клик, чтобы переключить фильтры по приоритету'
@@ -1146,6 +1147,7 @@ gui:
       - '<gray>Всего: <white>%total%'
       - '<gray>Открыто: <white>%open%</white> <dark_gray>| <gray>Закрыто: <white>%closed%'
       - '<gray>Просрочено: <red>%overdue%</red>'
+      - '<gray>Доля помеченного мусора: <white>%garbage-flag-rate%</white>'
     misc-retention-name: '<aqua>Хранение и аудит'
     misc-retention-lore:
       - '<gray>Рапорты хранятся <white>%retention-days%</white> дн.'
@@ -1344,6 +1346,16 @@ admin:
   stats-per-staff: '<gray>На человека: <white>%count%</white> закрытых жалоб на исполнителя (<white>%staff%</white> исполнителей)'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Назначить жалобу онлайн-администратору'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Передать взятую в работу жалобу другому администратору'
+  smart-disabled: '<gray>Умный приоритет выключен (smart-priority.enabled=false); нечего просматривать.'
+  smart-review-header: '<gold>===== Обзор умного приоритета (%count% закрытых жалоб с оценкой) ====='
+  smart-review-invalid-days: '<red>Неверные дни: %days% (используй 0-36500, 0 = все).</red>'
+  smart-review-empty: '<gray>В окне нет закрытых жалоб с оценкой.'
+  smart-review-scores: '<gray>Оценено <white>%scored%</white> <dark_gray>| <gray>Помечено <white>%flagged%</white> <dark_gray>| <gray>Фактически мусор <white>%garbage%</white> <dark_gray>| <gray>Оба <white>%flagged-garbage%</white>'
+  smart-review-precision: '<gray>Точность пометки: <white>%value%</white> (доля помеченных, оказавшихся мусором)'
+  smart-review-recall: '<gray>Полнота по мусору: <white>%value%</white> (доля мусора, попавшего в пометку)'
+  smart-review-flag-rate: '<gray>Доля помеченного мусора: <white>%value%</white>'
+  smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
+  help-smart: '<gray>/reports smart review [дни] <dark_gray>- <gray>Просмотр точности/полноты умного приоритета'
 config:
   list-header: '<gold>===== Доступные настройки (%count% ключей, стр. %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

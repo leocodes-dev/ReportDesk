@@ -227,6 +227,7 @@ gui:
   filter-sort-newest: '最新优先'
   filter-sort-oldest: '最早优先'
   filter-sort-priority: '优先级优先'
+  filter-sort-smart: '<aqua>按智能分'
   filter-priority-name: '<yellow>优先级：%priority%'
   filter-priority-lore:
     - '<gray>点击循环切换优先级筛选'
@@ -1148,6 +1149,7 @@ gui:
       - '<gray>总数：<white>%total%'
       - '<gray>待处理：<white>%open%</white> <dark_gray>| <gray>已关闭：<white>%closed%'
       - '<gray>逾期：<red>%overdue%</red>'
+      - '<gray>垃圾标记率: <white>%garbage-flag-rate%</white>'
     misc-retention-name: '<aqua>保留与审计'
     misc-retention-lore:
       - '<gray>举报保留 <white>%retention-days%</white> 天'
@@ -1346,6 +1348,16 @@ admin:
   stats-per-staff: '<gray>人均处理量: <white>%count%</white> 条/人（共 <white>%staff%</white> 名处理员）'
   help-assign: '<gray>/reports assign <id> <管理员> <dark_gray>- <gray>将举报指派给在线管理员'
   help-transfer: '<gray>/reports transfer <id> <管理员> <dark_gray>- <gray>将已认领的举报转派给其他管理员'
+  smart-disabled: '<gray>智能优先级未开启（smart-priority.enabled=false），没有可复盘的数据。'
+  smart-review-header: '<gold>===== 智能优先级复盘（%count% 条已评分结案）====='
+  smart-review-invalid-days: '<red>非法天数: %days%（使用 0-36500，0 表示全部）。</red>'
+  smart-review-empty: '<gray>窗口内没有已评分的结案举报。'
+  smart-review-scores: '<gray>已评分 <white>%scored%</white> <dark_gray>| <gray>已标记 <white>%flagged%</white> <dark_gray>| <gray>实为垃圾 <white>%garbage%</white> <dark_gray>| <gray>两者皆是 <white>%flagged-garbage%</white>'
+  smart-review-precision: '<gray>标记精确率: <white>%value%</white>（被标记中实为垃圾占比）'
+  smart-review-recall: '<gray>垃圾召回率: <white>%value%</white>（真垃圾中被标记占比）'
+  smart-review-flag-rate: '<gray>垃圾标记率: <white>%value%</white>'
+  smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
+  help-smart: '<gray>/reports smart review [天数] <dark_gray>- <gray>智能优先级复盘（精确率/召回率/分布）'
 config:
   list-header: '<gold>===== 可在线修改的配置（%count% 项，第 %page%/%pages% 页）====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

@@ -212,4 +212,30 @@ class ReportFilterTest {
 
     assertFalse(ReportFilter.all().withQuery("low").matches(urgent));
   }
+
+  @Test
+  void smartSortKeepsHighestScoreFirstThenNewest() {
+
+    Report highScore =
+        TestFixtures.open(1L, TestFixtures.ALICE, "Alice", "Bob", "chat", 1_000L)
+            .withSmartScore(90);
+
+    Report lowScore =
+        TestFixtures.open(2L, TestFixtures.ALICE, "Alice", "Bob", "chat", 2_000L)
+            .withSmartScore(10);
+
+    Report unscored = TestFixtures.open(3L, TestFixtures.ALICE, "Alice", "Bob", "chat", 3_000L);
+
+    Report highScoreNewer =
+        TestFixtures.open(4L, TestFixtures.ALICE, "Alice", "Bob", "chat", 4_000L)
+            .withSmartScore(90);
+
+    List<Report> reports = new java.util.ArrayList<>(List.of(lowScore, unscored, highScore, highScoreNewer));
+
+    reports.sort(ReportFilter.all().withSort(ReportFilter.SortOrder.SMART).comparator());
+
+    // Highest score first; within a score the newest wins; unscored (0) sinks to the end.
+
+    assertEquals(List.of(4L, 1L, 2L, 3L), reports.stream().map(Report::id).toList());
+  }
 }
