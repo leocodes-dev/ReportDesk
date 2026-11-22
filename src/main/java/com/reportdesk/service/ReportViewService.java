@@ -27,6 +27,7 @@ import com.reportdesk.core.Report;
 import com.reportdesk.core.ReportFilter;
 import com.reportdesk.core.ReportReply;
 import com.reportdesk.core.ReportStats;
+import com.reportdesk.core.TrendStats;
 import com.reportdesk.i18n.MessageKeys;
 import com.reportdesk.i18n.Messages;
 import com.reportdesk.util.TimeText;
@@ -44,6 +45,13 @@ import org.bukkit.command.CommandSender;
 public final class ReportViewService {
 
   private final ReportDeskPlugin plugin;
+
+  /** 60-second TTL cache of the trend aggregation (roadmap P2#9); guarded by {@code this}. */
+  private volatile TrendStats.Trend lastTrendReport;
+
+  private volatile int lastTrendDays;
+
+  private volatile long lastTrendComputedAt;
 
   public ReportViewService(ReportDeskPlugin plugin) {
 
@@ -261,6 +269,16 @@ public final class ReportViewService {
 
   public void sendStats(CommandSender sender) {
 
+    sendStats(sender, null);
+  }
+
+  /**
+   * Renders the statistics block. {@code trendDaysOverride} optionally overrides the configured
+   * trend window (roadmap P2#9); the trend aggregation itself is cached for 60 seconds so
+   * repeated invocations do not re-scan the snapshot.
+   */
+  public void sendStats(CommandSender sender, Integer trendDaysOverride) {
+
     if (sender == null) {
 
       return;
@@ -336,6 +354,107 @@ public final class ReportViewService {
             Map.of(
                 "count", String.valueOf(stats.perStaffClosed()),
                 "staff", String.valueOf(stats.byStaff().size()))));
+
+    sendTrend(sender, trendDaysOverride);
+  }
+
+  /**
+   * The daily created/closed trend plus the per-category share bars (roadmap P2#9). The
+   * aggregation is a single in-memory pass over the snapshot, cached for 60 seconds so repeated
+   * commands do not re-scan; the cache is per window size.
+   */
+  private void sendTrend(CommandSender sender, Integer trendDaysOverride) {
+
+    Messages messages = plugin.messages();
+
+    int days =
+        trendDaysOverride != null
+            ? trendDaysOverride
+            : plugin.config().reports().statsTrendDays();
+
+    long now = System.currentTimeMillis();
+
+    TrendStats.Trend trend = trendFor(days, now);
+
+    sender.sendMessage(
+        messages.component(
+            MessageKeys.ADMIN_STATS_TREND_HEADER, Map.of("days", String.valueOf(trend.days()))));
+
+    if (!trend.hasActivity()) {
+
+      sender.sendMessage(messages.component(MessageKeys.ADMIN_STATS_TREND_EMPTY, Map.of()));
+
+      return;
+    }
+
+    int scale = Math.max(1, trend.maxDayCount());
+
+    java.time.format.DateTimeFormatter dayLabel =
+        java.time.format.DateTimeFormatter.ofPattern("MM-dd", java.util.Locale.ROOT);
+
+    for (TrendStats.DayPoint point : trend.dayPoints()) {
+
+      String date = java.time.LocalDate.ofEpochDay(point.dayIndex()).format(dayLabel);
+
+      String bar =
+          "█".repeat(Math.max(0, Math.min(4, (int) Math.round(point.created() / (double) scale * 4.0))));
+
+      sender.sendMessage(
+          messages.component(
+              MessageKeys.ADMIN_STATS_TREND_LINE,
+              Map.of(
+                  "date", date,
+                  "created", String.valueOf(point.created()),
+                  "closed", String.valueOf(point.closed()),
+                  "bar", bar)));
+    }
+
+    sender.sendMessage(
+        messages.component(MessageKeys.ADMIN_STATS_CATEGORY_HEADER, Map.of()));
+
+    int shown = 0;
+
+    for (TrendStats.CategoryShare share : trend.categoryShares()) {
+
+      if (shown++ >= 5) {
+
+        break;
+      }
+
+      String percent = String.format(java.util.Locale.ROOT, "%.0f%%", share.share() * 100.0);
+
+      String bar = "█".repeat(Math.max(0, Math.min(10, share.bar())));
+
+      sender.sendMessage(
+          messages.component(
+              MessageKeys.ADMIN_STATS_SHARE_LINE,
+              Map.of(
+                  "category", plugin.categoryDisplay(share.category()),
+                  "percent", percent,
+                  "bar", bar)));
+    }
+  }
+
+  /** 60-second TTL cache of the trend aggregation, keyed by the window size. */
+  private TrendStats.Trend trendFor(int days, long now) {
+
+    synchronized (this) {
+
+      if (lastTrendReport != null
+          && lastTrendDays == days
+          && now - lastTrendComputedAt < 60_000L) {
+
+        return lastTrendReport;
+      }
+
+      lastTrendReport = TrendStats.compute(plugin.repository().snapshot(), days, now);
+
+      lastTrendDays = days;
+
+      lastTrendComputedAt = now;
+
+      return lastTrendReport;
+    }
   }
 
   /**

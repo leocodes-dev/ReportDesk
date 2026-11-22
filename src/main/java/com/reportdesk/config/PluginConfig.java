@@ -213,7 +213,8 @@ public record PluginConfig(
       Priority priority,
       Replies replies,
       ChatReport chatReport,
-      int bulkMax) {}
+      int bulkMax,
+      int statsTrendDays) {}
 
   public record Priority(
       boolean enabled,

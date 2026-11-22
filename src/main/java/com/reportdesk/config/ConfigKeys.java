@@ -88,6 +88,7 @@ public final class ConfigKeys {
           intKey("reports.stats-top-targets", config -> config.reports().statsTopTargets()),
           intKey("reports.staff-stats-top", config -> config.reports().staffStatsTop()),
           intKey("reports.bulk-max", config -> config.reports().bulkMax()),
+          intKey("reports.stats-trend-days", config -> config.reports().statsTrendDays()),
           string("reports.default-category", config -> config.reports().defaultCategory()),
           bool("reports.priority.enabled", config -> config.reports().priority().enabled()),
           intKey(

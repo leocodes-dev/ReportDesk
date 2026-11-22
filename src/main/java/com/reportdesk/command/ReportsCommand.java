@@ -186,7 +186,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
 
       case "watching" -> watching(sender, args);
 
-      case "stats" -> plugin.view().sendStats(sender);
+      case "stats" -> sendStats(sender, args);
 
       case "export" -> export(sender);
 
@@ -1404,6 +1404,28 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
 
                       plugin.audit("BULK_EXPORT", actor(sender), 0L, display);
                     }));
+  }
+
+  /** /reports stats [days] - statistics panel with an optional trend window (1-90 days). */
+  private void sendStats(CommandSender sender, String[] args) {
+
+    Integer days = null;
+
+    if (args.length >= 2) {
+
+      Integer parsed = parseInteger(args[1]);
+
+      if (parsed == null || parsed < 1 || parsed > 90) {
+
+        usage(sender, "/reports stats [days 1-90]");
+
+        return;
+      }
+
+      days = parsed;
+    }
+
+    plugin.view().sendStats(sender, days);
   }
 
   private void watch(CommandSender sender, String[] args) {

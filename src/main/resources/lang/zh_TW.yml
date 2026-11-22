@@ -795,6 +795,7 @@ gui:
         stats-top-targets: '統計的目標排行數'
         staff-stats-top: '統計的管理組排行數'
         bulk-max: '批量操作上限'
+        stats-trend-days: '統計趨勢天數'
         default-category: '預設類別'
         priority:
           enabled: '啟用優先級'
@@ -974,6 +975,7 @@ gui:
         stats-top-targets: '被檢舉排行榜顯示的玩家數。'
         staff-stats-top: '統計中顯示的管理組成員數。'
         bulk-max: '單次批量操作（關閉/匯出）最多能處理的投訴數，防止批量誤操作。'
+        stats-trend-days: '/reports stats 趨勢圖展示最近多少天的新建/結案走勢。'
         default-category: '玩家未選擇時使用的類別。'
         priority:
           enabled: '依累犯與期限計算檢舉優先級。'
@@ -1346,6 +1348,11 @@ admin:
   transferred: '<green>已將投訴 <white>#%id%</white> 從 <white>%from%</white> 轉派給 <white>%staff%</white>。'
   transfer-not-owner: '<red>只有目前處理人 <white>%staff%</white> 可轉派此投訴，或需 reportdesk.admin.close 權限覆蓋。'
   stats-per-staff: '<gray>人均處理量: <white>%count%</white> 件/人（共 <white>%staff%</white> 名處理員）'
+  stats-trend-header: '<aqua>===== 趨勢（近 %days% 天）====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> 新建 <dark_gray>| <white>%closed%</white> 結案 <gray> %bar%'
+  stats-trend-empty: '<gray>該時間窗口內沒有投訴活動。'
+  stats-category-header: '<aqua>===== 分類佔比 ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <管理員> <dark_gray>- <gray>將投訴指派給線上管理員'
   help-transfer: '<gray>/reports transfer <id> <管理員> <dark_gray>- <gray>將已認領的投訴轉派給其他管理員'
   smart-disabled: '<gray>智慧優先級未開啟（smart-priority.enabled=false），沒有可複盤的數據。'

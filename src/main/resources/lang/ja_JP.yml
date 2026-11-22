@@ -795,6 +795,7 @@ Javaクライアント言語の検出
         stats-top-targets: '統計のトップ対象数'
         staff-stats-top: '統計の運営トップ数'
         bulk-max: '一括操作上限'
+        stats-trend-days: '統計トレンド日数'
         default-category: 'デフォルトカテゴリ'
         priority:
           enabled: '優先度を有効'
@@ -974,6 +975,7 @@ Javaクライアントのシステム地域言語を推定します（ベスト�
         stats-top-targets: '最多通報ランキングに表示するプレイヤー数。'
         staff-stats-top: '統計に表示する運営メンバー数。'
         bulk-max: '一度の一括操作（クローズ/エクスポート）が扱える最大通報数。誤った一括操作を防ぐ。'
+        stats-trend-days: '/reports stats のトレンドグラフに表示する日数（1日あたりの新規/クローズ数）。'
         default-category: 'プレイヤーが選ばなかった場合のカテゴリ。'
         priority:
           enabled: '常習と期限から通報の優先度を算出します。'
@@ -1346,6 +1348,11 @@ admin:
   transferred: '<green>通報 <white>#%id%</white> を <white>%from%</white> から <white>%staff%</white> に移管しました。'
   transfer-not-owner: '<red>現在対応中の <white>%staff%</white> だけが移管できます（reportdesk.admin.close 権限で上書き可）。'
   stats-per-staff: '<gray>担当あたり処理件数: <white>%count%</white> 件/人（担当者 <white>%staff%</white> 名）'
+  stats-trend-header: '<aqua>===== トレンド（過去 %days% 日）====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> 新規 <dark_gray>| <white>%closed%</white> クローズ <gray> %bar%'
+  stats-trend-empty: '<gray>対象期間に通報活動はありません。'
+  stats-category-header: '<aqua>===== カテゴリ別比率 ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <管理者> <dark_gray>- <gray>オンラインの管理者に通報を割り当てる'
   help-transfer: '<gray>/reports transfer <id> <管理者> <dark_gray>- <gray>引き受けた通報を他の管理者に移管する'
   smart-disabled: '<gray>スマート優先度は無効です（smart-priority.enabled=false）。レビュー可能なデータがありません。'

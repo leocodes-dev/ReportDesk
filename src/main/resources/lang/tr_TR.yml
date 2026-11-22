@@ -795,6 +795,7 @@ Java İstemci Dilini Algıla
         stats-top-targets: 'İstatistikte En İyi Hedef'
         staff-stats-top: 'İstatistikte Ekip En İyi'
         bulk-max: 'Toplu İşlem Sınırı'
+        stats-trend-days: 'İstatistik Trend Gün Sayısı'
         default-category: 'Varsayılan Kategori'
         priority:
           enabled: 'Öncelikler Etkin'
@@ -974,6 +975,7 @@ Java istemcilerinin sistem bölge dilini tahmin eder (olası olduğunca).
         stats-top-targets: 'En çok şikayet edilen listesinde gösterilen oyuncu sayısı.'
         staff-stats-top: 'İstatistiklerde gösterilen ekip üyesi sayısı.'
         bulk-max: 'Tek toplu işlem (kapatma/dışa aktarma)in dokunabileceği en fazla şikayet sayısı; toplu hataları önler.'
+        stats-trend-days: '/reports stats trendinin gösterdiği gün sayısı (güne göre oluşturulan/kapanan).'
         default-category: 'Oyuncu seçmediyse kullanılan kategori.'
         priority:
           enabled: 'Önceliği tekrar fail ve sürelerden hesaplar.'
@@ -1346,6 +1348,11 @@ admin:
   transferred: '<white>#%id%</white> şikayeti <white>%from%</white> üzerinden <white>%staff%</white> kişisine devredildi.'
   transfer-not-owner: '<red>Bu şikayeti yalnızca mevcut sorumlu <white>%staff%</white> devredebilir (veya reportdesk.admin.close ile zorlayabilir).'
   stats-per-staff: '<gray>Kişi başı: <white>%count%</white> kapanan şikayet/yönetici (<white>%staff%</white> sorumlu)'
+  stats-trend-header: '<aqua>===== Trend (son %days% gün) ====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> yeni <dark_gray>| <white>%closed%</white> kapatıldı <gray> %bar%'
+  stats-trend-empty: '<gray>Dönemde şikayet faaliyeti yok.'
+  stats-category-header: '<aqua>===== Kategori Dağılımı ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <yönetici> <dark_gray>- <gray>Şikayeti çevrimiçi bir yöneticiye atar'
   help-transfer: '<gray>/reports transfer <id> <yönetici> <dark_gray>- <gray>Devralınan şikayeti başka bir yöneticiye devreder'
   smart-disabled: '<gray>Akıllı öncelik kapalı (smart-priority.enabled=false); incelencek veri yok.'

@@ -795,6 +795,7 @@ Wykrywanie języka klienta Java
         stats-top-targets: 'Top celów w statystykach'
         staff-stats-top: 'Top zespołu w statystykach'
         bulk-max: 'Limit operacji zbiorczych'
+        stats-trend-days: 'Dni trendu statystyki'
         default-category: 'Domyślna kategoria'
         priority:
           enabled: 'Włącz priorytety'
@@ -974,6 +975,7 @@ Szacuje systemowy język regionalny klientów Java (dołożenie starań).
         stats-top-targets: 'Liczba graczy wyświetlanych w rankingu najczęściej zgłaszanych.'
         staff-stats-top: 'Liczba członków zespołu wyświetlanych w statystykach.'
         bulk-max: 'Maksymalna liczba zgłoszeń, które może dotknąć pojedyncza operacja zbiorcza (zamknięcie/eksport); chroni przed masowymi błędami.'
+        stats-trend-days: 'Ile dni obejmuje trend z /reports stats (utworzone i zamknięte dziennie).'
         default-category: 'Kategoria używana, gdy gracz jej nie wybrał.'
         priority:
           enabled: 'Oblicza priorytet zgłoszenia z powtórek i terminów.'
@@ -1346,6 +1348,11 @@ admin:
   transferred: '<green>Zgłoszenie <white>#%id%</white> przekazane od <white>%from%</white> do <white>%staff%</white>.'
   transfer-not-owner: '<red>Tylko aktualny opiekun <white>%staff%</white> może przekazać to zgłoszenie (lub wymusić przez reportdesk.admin.close).'
   stats-per-staff: '<gray>Na osobę: <white>%count%</white> zamkniętych zgłoszeń na administratora (<white>%staff%</white> aktywnych)'
+  stats-trend-header: '<aqua>===== Trend (ostatnie %days% dni) ====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> nowych <dark_gray>| <white>%closed%</white> zamkniętych <gray> %bar%'
+  stats-trend-empty: '<gray>Brak aktywności w oknie czasowym.'
+  stats-category-header: '<aqua>===== Udział kategorii ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Przydziel zgłoszenie administratorowi online'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Przekazane zgłoszenie do innego administratora'
   smart-disabled: '<gray>Inteligentna priorytet jest wyłączony (smart-priority.enabled=false); brak danych do przeglądu.'

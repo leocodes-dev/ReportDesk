@@ -1309,6 +1309,18 @@ public final class MessageKeys {
 
   public static final String ADMIN_STATS_PER_STAFF = "admin.stats-per-staff";
 
+  // Statistics trend (roadmap P2#9).
+  public static final String ADMIN_STATS_TREND_HEADER = "admin.stats-trend-header";
+
+  public static final String ADMIN_STATS_TREND_LINE = "admin.stats-trend-line";
+
+  public static final String ADMIN_STATS_TREND_EMPTY = "admin.stats-trend-empty";
+
+  public static final String ADMIN_STATS_CATEGORY_HEADER = "admin.stats-category-header";
+
+  public static final String ADMIN_STATS_SHARE_LINE = "admin.stats-share-line";
+
+
   public static final String ADMIN_HELP_ASSIGN = "admin.help-assign";
 
   public static final String ADMIN_HELP_TRANSFER = "admin.help-transfer";

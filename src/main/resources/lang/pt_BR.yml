@@ -795,6 +795,7 @@ Detectar idioma do cliente Java
         stats-top-targets: 'Top Alvos das Estatísticas'
         staff-stats-top: 'Top da Equipe nas Estatísticas'
         bulk-max: 'Limite de Operação em Lote'
+        stats-trend-days: 'Dias da Tendência de Estatísticas'
         default-category: 'Categoria Padrão'
         priority:
           enabled: 'Ativar Prioridades'
@@ -974,6 +975,7 @@ Estima o idioma regional do sistema dos clientes Java (melhor esforço).
         stats-top-targets: 'Quantos jogadores aparecem no ranking de mais denunciados.'
         staff-stats-top: 'Quantos membros da equipe aparecem nas estatísticas.'
         bulk-max: 'Número máximo de denúncias que uma ação em lote (fechar/exportar) pode afetar; evita erros em massa.'
+        stats-trend-days: 'Quantos dias a tendência de /reports stats mostra (criadas e encerradas por dia).'
         default-category: 'Categoria usada quando o jogador não escolhe uma.'
         priority:
           enabled: 'Calcular a prioridade da denúncia a partir de reincidentes e prazos.'
@@ -1346,6 +1348,11 @@ admin:
   transferred: '<green>Denúncia <white>#%id%</white> transferida de <white>%from%</white> para <white>%staff%</white>.'
   transfer-not-owner: '<red>Somente o responsável atual <white>%staff%</white> pode transferir esta denúncia (ou force com reportdesk.admin.close).'
   stats-per-staff: '<gray>Por pessoa: <white>%count%</white> denúncias encerradas por responsável (<white>%staff%</white> ativos)'
+  stats-trend-header: '<aqua>===== Tendência (últimos %days% dias) ====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> novas <dark_gray>| <white>%closed%</white> encerradas <gray> %bar%'
+  stats-trend-empty: '<gray>Sem atividade no período.'
+  stats-category-header: '<aqua>===== Participação por categoria ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Atribuir uma denúncia a um admin online'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Transferir uma denúncia assumida para outro admin'
   smart-disabled: '<gray>A prioridade inteligente está desativada (smart-priority.enabled=false); não há nada para revisar.'

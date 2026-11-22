@@ -795,6 +795,7 @@ gui:
         stats-top-targets: 'Топ целей в статистике'
         staff-stats-top: 'Топ команды в статистике'
         bulk-max: 'Лимит пакетных операций'
+        stats-trend-days: 'Дни тренда статистики'
         default-category: 'Категория по умолчанию'
         priority:
           enabled: 'Приоритеты включены'
@@ -974,6 +975,7 @@ gui:
         stats-top-targets: 'Сколько игроков в топ целей.'
         staff-stats-top: 'Сколько сотрудников в статистике.'
         bulk-max: 'Максимум жалоб, на которые может повлиять одна пакетная операция (закрытие/экспорт); защита от массовых ошибок.'
+        stats-trend-days: 'Сколько дней показывает тренд /reports stats (создано и закрыто в день).'
         default-category: 'Категория, если игрок её не выбрал.'
         priority:
           enabled: 'Считать приоритет из повторных нарушений и сроков.'
@@ -1346,6 +1348,11 @@ admin:
   transferred: '<green>Жалоба <white>#%id%</white> передана от <white>%from%</white> к <white>%staff%</white>.'
   transfer-not-owner: '<red>Передать жалобу может только текущий исполнитель <white>%staff%</white> (или принудительно с правом reportdesk.admin.close).'
   stats-per-staff: '<gray>На человека: <white>%count%</white> закрытых жалоб на исполнителя (<white>%staff%</white> исполнителей)'
+  stats-trend-header: '<aqua>===== Тренд (последние %days% дн.) ====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> новых <dark_gray>| <white>%closed%</white> закрыто <gray> %bar%'
+  stats-trend-empty: '<gray>Активности за период нет.'
+  stats-category-header: '<aqua>===== Доля по категориям ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Назначить жалобу онлайн-администратору'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Передать взятую в работу жалобу другому администратору'
   smart-disabled: '<gray>Умный приоритет выключен (smart-priority.enabled=false); нечего просматривать.'

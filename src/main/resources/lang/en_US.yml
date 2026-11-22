@@ -795,6 +795,7 @@ Detect Java Client Language
         stats-top-targets: 'Stats Top Targets'
         staff-stats-top: 'Staff Stats Top'
         bulk-max: 'Batch Operation Limit'
+        stats-trend-days: 'Stats Trend Days'
         default-category: 'Default Category'
         priority:
           enabled: 'Enable Priorities'
@@ -975,6 +976,7 @@ Probe Java clients for their system region language (best-effort).
         stats-top-targets: 'How many players are shown in the most-reported leaderboard.'
         staff-stats-top: 'How many staff members are shown in staff statistics.'
         bulk-max: 'Maximum reports a single bulk action (close/export) may touch, guarding against mass mistakes.'
+        stats-trend-days: 'How many days the /reports stats trend shows (created and closed per day).'
         default-category: 'Category used when a player does not choose one.'
         priority:
           enabled: 'Calculate report priority from repeat offenders and overdue rules.'
@@ -1348,6 +1350,11 @@ admin:
   transferred: '<green>Transferred report <white>#%id%</white> from <white>%from%</white> to <white>%staff%</white>.'
   transfer-not-owner: '<red>Only the current handler <white>%staff%</white> can transfer this report, or use reportdesk.admin.close to override.'
   stats-per-staff: '<gray>Per staff: <white>%count%</white> closed reports per handler (<white>%staff%</white> active handlers)'
+  stats-trend-header: '<aqua>===== Trend (last %days% days) ====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> new <dark_gray>| <white>%closed%</white> closed <gray> %bar%'
+  stats-trend-empty: '<gray>No report activity in the window.'
+  stats-category-header: '<aqua>===== Category Share ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Assign a report to an online admin'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Transfer a claimed report to another admin'
   smart-disabled: '<gray>The smart priority layer is off (smart-priority.enabled=false); nothing to review.'

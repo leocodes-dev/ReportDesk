@@ -795,6 +795,7 @@ Java-Client-Sprache erkennen
         stats-top-targets: 'Top-Ziele in Statistik'
         staff-stats-top: 'Team-Top in Statistik'
         bulk-max: 'Grenze für Bulk-Operationen'
+        stats-trend-days: 'Trend-Tage (Statistik)'
         default-category: 'Standard-Kategorie'
         priority:
           enabled: 'Prioritäten aktiv'
@@ -974,6 +975,7 @@ Schätzt die Systemregionssprache von Java-Clients ab (Best-Effort).
         stats-top-targets: 'Wie viele Spieler im Top-Ziele-Ranking erscheinen.'
         staff-stats-top: 'Wie viele Teammitglieder in den Statistiken erscheinen.'
         bulk-max: 'Maximale Meldungen, die eine einzelne Bulk-Operation (Schließen/Export) betreffen darf; schützt vor massenhaften Fehlern.'
+        stats-trend-days: 'Wie viele Tage der Statistik-Trend (Angelegt/Geschlossen pro Tag) zeigt.'
         default-category: 'Kategorie, wenn der Spieler keine gewählt hat.'
         priority:
           enabled: 'Priorität aus Wiederholungstätern und Fristen ableiten.'
@@ -1346,6 +1348,11 @@ admin:
   transferred: '<green>Meldung <white>#%id%</white> von <white>%from%</white> an <white>%staff%</white> übergeben.'
   transfer-not-owner: '<red>Nur der aktuelle Bearbeiter <white>%staff%</white> kann diese Meldung übergeben (oder mit reportdesk.admin.close übersteuern).'
   stats-per-staff: '<gray>Pro Kopf: <white>%count%</white> erledigte Meldungen pro Bearbeiter (<white>%staff%</white> aktiv)'
+  stats-trend-header: '<aqua>===== Trend (letzte %days% Tage) ====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> neu <dark_gray>| <white>%closed%</white> geschlossen <gray> %bar%'
+  stats-trend-empty: '<gray>Keine Meldung-Aktivität im Zeitraum.'
+  stats-category-header: '<aqua>===== Kategoria-Verteilung ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Meldung an einen online-Admin zuweisen'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Übertragene Meldung an einen anderen Admin übergeben'
   smart-disabled: '<gray>Intelligente Priorisierung ist deaktiviert (smart-priority.enabled=false); es gibt nichts zu überprüfen.'

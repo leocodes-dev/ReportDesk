@@ -795,6 +795,7 @@ gui:
         stats-top-targets: '统计显示目标数'
         staff-stats-top: '管理员统计数量'
         bulk-max: '批量操作上限'
+        stats-trend-days: '统计趋势天数'
         default-category: '默认举报分类'
         priority:
           enabled: '启用优先级'
@@ -975,6 +976,7 @@ gui:
         stats-top-targets: '统计页面显示的被举报玩家排行榜数量。'
         staff-stats-top: '管理员统计页面显示的管理员数量。'
         bulk-max: '单次批量操作（关闭/导出）最多能处理的举报数，防止批量误操作。'
+        stats-trend-days: '/reports stats 趋势图展示最近多少天的新建/结案走势。'
         default-category: '玩家未指定分类时使用的默认举报类型。'
         priority:
           enabled: '根据重复违规和逾期规则为举报计算优先级。'
@@ -1348,6 +1350,11 @@ admin:
   transferred: '<green>已将举报 <white>#%id%</white> 从 <white>%from%</white> 转派给 <white>%staff%</white>。'
   transfer-not-owner: '<red>只有当前处理人 <white>%staff%</white> 可转派此举报，或需 reportdesk.admin.close 权限覆盖。'
   stats-per-staff: '<gray>人均处理量: <white>%count%</white> 条/人（共 <white>%staff%</white> 名处理员）'
+  stats-trend-header: '<aqua>===== 趋势（近 %days% 天）====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> 新建 <dark_gray>| <white>%closed%</white> 结案 <gray> %bar%'
+  stats-trend-empty: '<gray>该时间窗口内没有举报活动。'
+  stats-category-header: '<aqua>===== 分类占比 ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <管理员> <dark_gray>- <gray>将举报指派给在线管理员'
   help-transfer: '<gray>/reports transfer <id> <管理员> <dark_gray>- <gray>将已认领的举报转派给其他管理员'
   smart-disabled: '<gray>智能优先级未开启（smart-priority.enabled=false），没有可复盘的数据。'

@@ -89,6 +89,9 @@ reports:
   # 单次批量操作（/reports bulk close / bulk export）最多处理的举报数，防止误操作。
   bulk-max: 50
 
+  # /reports stats 趋势图展示最近多少天的新建/结案走势。
+  stats-trend-days: 7
+
   # 举报优先级与处理时限（SLA）。
   priority:
     # 是否启用优先级与超时提醒。关闭后所有举报使用分类默认优先级。

@@ -795,6 +795,7 @@ Détecter la langue du client Java
         stats-top-targets: 'Cibles principales dans les stats'
         staff-stats-top: 'Équipe principale dans les stats'
         bulk-max: 'Limite des opérations groupées'
+        stats-trend-days: 'Jours de tendance statistique'
         default-category: 'Catégorie par défaut'
         priority:
           enabled: 'Priorités activées'
@@ -974,6 +975,7 @@ Détecte la langue du client de chaque joueur et affiche cette langue.
         stats-top-targets: 'Nombre de joueurs affichés dans le classement des plus signalés.'
         staff-stats-top: 'Nombre de membres de l''équipe affichés dans les statistiques.'
         bulk-max: 'Nombre maximum de rapports qu’une opération groupée (fermeture/export) peut toucher, pour éviter les erreurs de masse.'
+        stats-trend-days: 'Nombre de jours de la tendance affichée par /reports stats (créés et clos par jour).'
         default-category: 'Catégorie utilisée quand le joueur n''en choisit pas.'
         priority:
           enabled: 'Calcule la priorité du signalement à partir des récidives et des délais.'
@@ -1346,6 +1348,11 @@ admin:
   transferred: '<green>Rapport <white>#%id%</white> transféré de <white>%from%</white> à <white>%staff%</white>.'
   transfer-not-owner: '<red>Seul le gestionnaire actuel <white>%staff%</white> peut transférer ce rapport (ou forcer avec reportdesk.admin.close).'
   stats-per-staff: '<gray>Par agent : <white>%count%</white> rapports clôturés par personne (<white>%staff%</white> agents actifs)'
+  stats-trend-header: '<aqua>===== Tendance (%days% derniers jours) ====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> nouveaux <dark_gray>| <white>%closed%</white> clos <gray> %bar%'
+  stats-trend-empty: '<gray>Aucune activité dans la période.'
+  stats-category-header: '<aqua>===== Répartition par catégorie ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <admin> <dark_gray>- <gray>Assigner un rapport à un administrateur en ligne'
   help-transfer: '<gray>/reports transfer <id> <admin> <dark_gray>- <gray>Transférer un rapport pris en charge à un autre administrateur'
   smart-disabled: "La priorité intelligente est désactivée (smart-priority.enabled=false) ; rien à examiner."

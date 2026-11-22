@@ -70,6 +70,22 @@
 
 ReportDesk (unreleased 1.3.0, continued) adds admin bulk operations (ROADMAP P2#12): `/reports bulk close <verdict> <id...>` (verdict-first so the variable id tail is unambiguous; gated by `reportdesk.admin.delete`) and `/reports bulk export [status|overdue]` (async CSV reusing the existing exporter, bounded by the same cap). A bulk close reuses the per-report event/notification/punishment pipeline but writes a single consolidated `BULK_CLOSE` audit entry. The configurable cap `reports.bulk-max` (default 50) prevents mass accidents; a pure `BulkClosePlan` class buckets each id into closed/skipped/missing and truncates over-long batches (7 unit tests). Five new message keys ship in all 12 languages.
 
+### 数据看板趋势（ROADMAP P2#9）
+
+**新增**
+- `/reports stats [days 1-90]` 支持可选时间窗口参数，输出最近 N 天的逐日「新建 | 结案」文本条形（`█` 按窗口内单日峰值缩放）与 TOP5 分类占比条（百分比 + `█` 条形）；缺省窗口由 `reports.stats-trend-days`（默认 7）配置。
+
+**优化**
+- 趋势聚合为纯内存单遍（`TrendStats.compute`，UTC 日桶，不落盘）；带 60 秒 TTL 缓存且按窗口分桶，重复调用不重复扫描（`ReportViewService#trendFor`，`TrendStatsTest` 7 项）。
+
+**配置**
+- 新增 `reports.stats-trend-days`（默认 7，范围 1-90），进 `ConfigKeys` 注册并补 12 语言配置编辑器 label/desc。
+
+**i18n**
+- 新增 5 个文案键（stats-trend-header / trend-line / trend-empty / category-header / share-line）同步进入全部 12 个 `lang/*.yml`。
+
+ReportDesk (unreleased 1.3.0, continued) completes the statistics dashboard trend workstream (ROADMAP P2#9): `/reports stats [days 1-90]` now prints a per-day "created | closed" text bar chart for the last N days plus a top-5 category-share bar, with the default window driven by the new `reports.stats-trend-days` config (default 7). The aggregation is a single in-memory pass over the UTC-day buckets (`TrendStats`, no file IO) and is cached for 60 seconds per window size so repeated invocations do not re-scan. Five new message keys ship in all 12 bundled languages, with full unit-test coverage.
+
 ReportDesk (unreleased 1.3.0, continued) rounds out the ecosystem-integration surface (ROADMAP P2#11): three dedicated lifecycle events join the existing pre-submit/submitted/status-changed set - ReportClaimedEvent (after a claim or assignment, carrying the claiming admin), ReportClosedEvent (after closure, carrying verdict and closing admin) and ReportEvidenceCapturedEvent (after an evidence snapshot). All fire synchronously on the main thread with listener exceptions isolated, so no third-party listener can break the core workflow. The README gains an "API events & ecosystem integration" chapter with a LuckPerms close-linked punishment listener skeleton and updated command/permission tables.
 
 ReportDesk (unreleased 1.3.0, continued) adds the smart-priority retrospective from ROADMAP P1#6: `/reports smart review [days]` cross-tabs the recorded smart scores of closed reports against their final verdicts, reporting garbage-band precision, recall, the overall garbage flag rate and a 0-100 decile distribution (purely in-memory, single pass, read-only; with the smart layer off the command only prints a hint and computes nothing). A fourth queue sort option "by smart score" joins newest/priority/oldest in both admin and player-history GUIs and in `/reports list smart`, and the admin "other tools" data card gains a garbage-flag-rate line. Eleven new message keys and one lore line ship in all 12 bundled languages with full unit-test coverage.

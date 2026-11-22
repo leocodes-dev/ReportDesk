@@ -795,6 +795,7 @@ Java 클라이언트 언어 감지
         stats-top-targets: '통계 상위 대상 수'
         staff-stats-top: '통계 운영진 상위 수'
         bulk-max: '일괄 처리 한도'
+        stats-trend-days: '통계 추세 일수'
         default-category: '기본 분류'
         priority:
           enabled: '우선순위 사용'
@@ -974,6 +975,7 @@ Java 클라이언트의 시스템 지역 언어를 추정합니다(최선 처리
         stats-top-targets: '최다 신고 랭킹에 표시할 플레이어 수.'
         staff-stats-top: '통계에 표시할 운영진 멤버 수.'
         bulk-max: '일괄 작업(종료/내보내기) 한 번에 처리할 수 있는 최대 제보 수. 대량 실수를 방지합니다.'
+        stats-trend-days: '/reports stats 추세 그래프에 표시할 일수(하루 신규/종료 건수).'
         default-category: '플레이어가 선택하지 않았을 때의 분류.'
         priority:
           enabled: '범법 이력과 기한으로부터 신고 우선순위를 계산합니다.'
@@ -1346,6 +1348,11 @@ admin:
   transferred: '<green>제보 <white>#%id%</white>을(를) <white>%from%</white>에서 <white>%staff%</white>(으)로 이관했습니다.'
   transfer-not-owner: '<red>현재 담당자 <white>%staff%</white>만이 이관을 할 수 있습니다(reportdesk.admin.close 권한으로 우회 가능).'
   stats-per-staff: '<gray>1인당 처리량: <white>%count%</white>건/명 (담당 <white>%staff%</white>명)'
+  stats-trend-header: '<aqua>===== 추세 (최근 %days%일) ====='
+  stats-trend-line: '<gray>%date% <white>%created%</white> 신규 <dark_gray>| <white>%closed%</white> 종료 <gray> %bar%'
+  stats-trend-empty: '<gray>해당 기간에 제보 활동이 없습니다.'
+  stats-category-header: '<aqua>===== 카테고리 비중 ====='
+  stats-share-line: '<gray>%category% <white>%percent%</white> <gray> %bar%'
   help-assign: '<gray>/reports assign <id> <관리자> <dark_gray>- <gray>온라인 관리자에게 제보를 배정합니다'
   help-transfer: '<gray>/reports transfer <id> <관리자> <dark_gray>- <gray>담당 중인 제보를 다른 관리자에게 이관합니다'
   smart-disabled: '<gray>스마트 우선순위가 꺼져 있습니다(smart-priority.enabled=false). 검토할 데이터가 없습니다.'
