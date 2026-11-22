@@ -212,7 +212,8 @@ public record PluginConfig(
       String defaultCategory,
       Priority priority,
       Replies replies,
-      ChatReport chatReport) {}
+      ChatReport chatReport,
+      int bulkMax) {}
 
   public record Priority(
       boolean enabled,

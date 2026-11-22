@@ -87,6 +87,7 @@ public final class ConfigKeys {
               config -> config.reports().maintenanceIntervalMinutes()),
           intKey("reports.stats-top-targets", config -> config.reports().statsTopTargets()),
           intKey("reports.staff-stats-top", config -> config.reports().staffStatsTop()),
+          intKey("reports.bulk-max", config -> config.reports().bulkMax()),
           string("reports.default-category", config -> config.reports().defaultCategory()),
           bool("reports.priority.enabled", config -> config.reports().priority().enabled()),
           intKey(

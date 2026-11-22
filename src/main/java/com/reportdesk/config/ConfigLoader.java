@@ -240,7 +240,8 @@ public final class ConfigLoader {
                 integer(replies, "max-length", 300, 16, 2_000),
                 integer(replies, "max-per-report", 50, 1, 500),
                 bool(replies, "notify", true)),
-            readChatReport(chatReport, categories));
+            readChatReport(chatReport, categories),
+            integer(reports, "bulk-max", 50, 1, 1000));
 
     ConfigSource guiSounds = gui.section("sounds");
 
