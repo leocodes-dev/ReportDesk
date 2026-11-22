@@ -1074,7 +1074,7 @@ public final class ReportDeskPlugin extends JavaPlugin {
 
     return config
         .category(id)
-        .map(category -> messages.plain(messages.render(category.display(), Map.of())))
+        .map(category -> com.reportdesk.i18n.Messages.stripColors(messages.render(category.display(), Map.of())))
         .filter(value -> !value.isBlank())
         .orElse(id == null ? "" : id);
   }

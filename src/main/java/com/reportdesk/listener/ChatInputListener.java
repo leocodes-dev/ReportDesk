@@ -19,13 +19,12 @@
 package com.reportdesk.listener;
 
 import com.reportdesk.ReportDeskPlugin;
-import io.papermc.paper.event.player.AsyncChatEvent;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 /**
  * Routes a pending GUI/command chat prompt back to the main thread. The chat event itself is async,
@@ -41,8 +40,12 @@ public final class ChatInputListener implements Listener {
     this.plugin = plugin;
   }
 
+  /**
+   * Listens for the classic {@link AsyncPlayerChatEvent}, which fires on every supported core
+   * (Spigot, Paper and Folia), instead of the Paper-only {@code AsyncChatEvent}.
+   */
   @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-  public void onChat(AsyncChatEvent event) {
+  public void onChat(AsyncPlayerChatEvent event) {
 
     Player player = event.getPlayer();
 
@@ -53,7 +56,7 @@ public final class ChatInputListener implements Listener {
 
     event.setCancelled(true);
 
-    String text = PlainTextComponentSerializer.plainText().serialize(event.message());
+    String text = event.getMessage();
 
     Bukkit.getScheduler().runTask(plugin, () -> plugin.chatInput().consume(player, text));
   }

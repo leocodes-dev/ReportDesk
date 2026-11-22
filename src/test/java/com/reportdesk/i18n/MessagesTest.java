@@ -95,7 +95,7 @@ class MessagesTest {
                 "body", "<white>ok</white>"),
             "en_US");
 
-    assertEquals("[RD] ok", messages.plain(messages.prefixed("body", Map.of())));
+    assertEquals("[RD] ok", Messages.stripColors(messages.prefixed("body", Map.of())));
   }
 
   @Test
@@ -107,11 +107,11 @@ class MessagesTest {
 
     assertEquals(2, messages.components("lore").size());
 
-    assertEquals("first", messages.plain(messages.components("lore").get(0)));
+    assertEquals("first", Messages.stripColors(messages.components("lore").get(0)));
 
     assertEquals(1, messages.components("missing").size());
 
-    assertEquals("missing", messages.plain(messages.components("missing").get(0)));
+    assertEquals("missing", Messages.stripColors(messages.components("missing").get(0)));
   }
 
   @Test

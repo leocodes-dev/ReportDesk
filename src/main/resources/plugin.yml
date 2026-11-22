@@ -1,7 +1,7 @@
-# Legacy command/permission declarations. paper-plugin.yml is the authoritative
-# plugin descriptor (api-version '1.20'). This file is kept so /report and
-# /reports keep working on servers that still resolve commands from plugin.yml;
-# the plugin also has a runtime CommandMap fallback.
+# Authoritative command/permission descriptor for Spigot servers: Spigot only
+# reads plugin.yml. Paper and Folia use paper-plugin.yml instead, which is the
+# authoritative descriptor there (both keep api-version '1.20'). The plugin
+# also has a runtime CommandMap fallback for alias resolution.
 name: ReportDesk
 version: '1.0.0'
 main: com.reportdesk.ReportDeskPlugin
@@ -28,6 +28,9 @@ permissions:
     default: op
   reportdesk.admin.close:
     description: Allows closing reports.
+    default: op
+  reportdesk.admin.assign:
+    description: Allows assigning and transferring reports between admins.
     default: op
   reportdesk.admin.delete:
     description: Allows deleting and purging reports.

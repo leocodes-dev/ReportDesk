@@ -35,7 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 
 /**
@@ -908,11 +907,11 @@ public final class ReportViewService {
     return String.join(" · ", parts);
   }
 
-  public List<Component> evidenceSummary(Evidence evidence) {
+  public List<String> evidenceSummary(Evidence evidence) {
 
     Messages messages = plugin.messages();
 
-    java.util.ArrayList<Component> lines = new java.util.ArrayList<>();
+    java.util.ArrayList<String> lines = new java.util.ArrayList<>();
 
     if (evidence == null) {
 

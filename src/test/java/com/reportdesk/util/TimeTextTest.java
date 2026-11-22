@@ -59,24 +59,24 @@ class TimeTextTest {
 
     long now = 10L * 86_400_000L;
 
-    assertEquals("now", messages.plain(TimeText.relative(now - 1_000L, now, messages)));
+    assertEquals("now", Messages.stripColors(TimeText.relative(now - 1_000L, now, messages)));
 
-    assertEquals("10s ago", messages.plain(TimeText.relative(now - 10_000L, now, messages)));
+    assertEquals("10s ago", Messages.stripColors(TimeText.relative(now - 10_000L, now, messages)));
 
-    assertEquals("5m ago", messages.plain(TimeText.relative(now - 5L * 60_000L, now, messages)));
+    assertEquals("5m ago", Messages.stripColors(TimeText.relative(now - 5L * 60_000L, now, messages)));
 
-    assertEquals("3h ago", messages.plain(TimeText.relative(now - 3L * 3_600_000L, now, messages)));
+    assertEquals("3h ago", Messages.stripColors(TimeText.relative(now - 3L * 3_600_000L, now, messages)));
 
     assertEquals(
-        "2d ago", messages.plain(TimeText.relative(now - 2L * 86_400_000L, now, messages)));
+        "2d ago", Messages.stripColors(TimeText.relative(now - 2L * 86_400_000L, now, messages)));
   }
 
   @Test
   void negativeOrMissingTimestampsAreSafe() {
 
-    assertEquals("-", messages.plain(TimeText.relative(0L, 1_000L, messages)));
+    assertEquals("-", Messages.stripColors(TimeText.relative(0L, 1_000L, messages)));
 
-    assertEquals("now", messages.plain(TimeText.relative(2_000L, 1_000L, messages)));
+    assertEquals("now", Messages.stripColors(TimeText.relative(2_000L, 1_000L, messages)));
   }
 
   @Test
@@ -106,10 +106,12 @@ class TimeTextTest {
 
       String raw = real.raw("time.now");
 
-      net.kyori.adventure.text.Component rendered = real.render(raw, Map.of());
+      String rendered = real.render(raw, Map.of());
 
       assertEquals(
-          "just now", real.plain(rendered), "raw=" + raw + " rendered=" + real.plain(rendered));
+          "just now",
+          Messages.stripColors(rendered),
+          "raw=" + raw + " rendered=" + Messages.stripColors(rendered));
 
     } catch (java.io.IOException exception) {
 

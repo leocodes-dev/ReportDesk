@@ -422,7 +422,7 @@ public final class WebhookService {
 
                   String permission = plugin.config().notifications().staffPermission();
 
-                  net.kyori.adventure.text.Component text =
+                  String text =
                       plugin
                           .messages()
                           .prefixed(MessageKeys.WEBHOOK_FAILURE_ALERT, Map.of("event", label));

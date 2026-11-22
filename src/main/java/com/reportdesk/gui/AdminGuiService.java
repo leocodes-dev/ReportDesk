@@ -44,9 +44,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -806,12 +805,11 @@ public final class AdminGuiService {
         4,
         gui.item(
             Material.DIAMOND,
-            messages()
-                .component(MessageKeys.ADMIN_GUI_STATS_OVERVIEW_NAME, placeholders)
-                .decoration(TextDecoration.BOLD, true),
+            ChatColor.BOLD +
+                messages().component(MessageKeys.ADMIN_GUI_STATS_OVERVIEW_NAME, placeholders),
             messages().components(MessageKeys.ADMIN_GUI_STATS_OVERVIEW_LORE, placeholders)));
 
-    List<Component> statusLore = new ArrayList<>();
+    List<String> statusLore = new ArrayList<>();
 
     statusLore.add(statsLine(MessageKeys.STATUS_OPEN, stats.open()));
 
@@ -829,45 +827,40 @@ public final class AdminGuiService {
         10,
         gui.item(
             Material.CHEST,
-            messages()
-                .component(MessageKeys.ADMIN_GUI_STATS_STATUS_NAME, placeholders)
-                .decoration(TextDecoration.BOLD, true),
+            ChatColor.BOLD +
+                messages().component(MessageKeys.ADMIN_GUI_STATS_STATUS_NAME, placeholders),
             statusLore));
 
     inventory.setItem(
         12,
         gui.item(
             Material.GOLD_INGOT,
-            messages()
-                .component(MessageKeys.ADMIN_GUI_STATS_CATEGORIES_NAME, placeholders)
-                .decoration(TextDecoration.BOLD, true),
+            ChatColor.BOLD +
+                messages().component(MessageKeys.ADMIN_GUI_STATS_CATEGORIES_NAME, placeholders),
             topLore(stats.byCategory(), plugin.config().reports().statsTopTargets())));
 
     inventory.setItem(
         14,
         gui.item(
             Material.IRON_SWORD,
-            messages()
-                .component(MessageKeys.ADMIN_GUI_STATS_TARGETS_NAME, placeholders)
-                .decoration(TextDecoration.BOLD, true),
+            ChatColor.BOLD +
+                messages().component(MessageKeys.ADMIN_GUI_STATS_TARGETS_NAME, placeholders),
             allSortedLore(stats.byTarget())));
 
     inventory.setItem(
         16,
         gui.item(
             Material.NAME_TAG,
-            messages()
-                .component(MessageKeys.ADMIN_GUI_STATS_STAFF_NAME, placeholders)
-                .decoration(TextDecoration.BOLD, true),
+            ChatColor.BOLD +
+                messages().component(MessageKeys.ADMIN_GUI_STATS_STAFF_NAME, placeholders),
             allSortedLore(stats.byStaff())));
 
     inventory.setItem(
         22,
         gui.item(
             Material.BOOK,
-            messages()
-                .component(MessageKeys.ADMIN_GUI_STATS_PER_STAFF_NAME, placeholders)
-                .decoration(TextDecoration.BOLD, true),
+            ChatColor.BOLD +
+                messages().component(MessageKeys.ADMIN_GUI_STATS_PER_STAFF_NAME, placeholders),
             messages().components(MessageKeys.ADMIN_GUI_STATS_PER_STAFF_LORE, placeholders)));
 
     inventory.setItem(
@@ -897,7 +890,7 @@ public final class AdminGuiService {
     player.openInventory(inventory);
   }
 
-  private Component statsLine(String labelKey, int value) {
+  private String statsLine(String labelKey, int value) {
 
     return messages()
         .component(
@@ -907,9 +900,9 @@ public final class AdminGuiService {
                 "value", String.valueOf(value)));
   }
 
-  private List<Component> topLore(Map<String, Integer> counts, int limit) {
+  private List<String> topLore(Map<String, Integer> counts, int limit) {
 
-    List<Component> lore = new ArrayList<>();
+    List<String> lore = new ArrayList<>();
 
     int shown = 0;
 
@@ -944,9 +937,9 @@ public final class AdminGuiService {
    * alphabetically) with no top-N limit. Used for the "most reported" and "most handled" boards
    * so an admin can see every player, not just the top few.
    */
-  private List<Component> allSortedLore(Map<String, Integer> counts) {
+  private List<String> allSortedLore(Map<String, Integer> counts) {
 
-    List<Component> lore = new ArrayList<>();
+    List<String> lore = new ArrayList<>();
 
     if (counts == null || counts.isEmpty()) {
 
@@ -1503,7 +1496,7 @@ public final class AdminGuiService {
     Inventory inventory =
         gui.create(holder, MessageKeys.ADMIN_GUI_CONFIG_ENTRY_DETAIL_TITLE, placeholders);
 
-    List<Component> info =
+    List<String> info =
         new ArrayList<>(
             messages()
                 .components(MessageKeys.ADMIN_GUI_CONFIG_ENTRY_DETAIL_INFO_LORE, placeholders));
@@ -1623,7 +1616,7 @@ public final class AdminGuiService {
     ConfigGuiSupport.adjustedValue(key, plugin.config(), amount)
         .ifPresent(after -> values.put("after", after));
 
-    List<Component> lore =
+    List<String> lore =
         new ArrayList<>(
             messages().components(MessageKeys.ADMIN_GUI_CONFIG_ENTRY_DETAIL_ADJUST_LORE, values));
 
@@ -1730,9 +1723,9 @@ public final class AdminGuiService {
     return next;
   }
 
-  private List<Component> configLore(ConfigKey key, Map<String, String> placeholders) {
+  private List<String> configLore(ConfigKey key, Map<String, String> placeholders) {
 
-    List<Component> lore =
+    List<String> lore =
         new ArrayList<>(
             messages().components(MessageKeys.ADMIN_GUI_CONFIG_ENTRY_LORE, placeholders));
 
@@ -1750,7 +1743,7 @@ public final class AdminGuiService {
                     ? MessageKeys.ADMIN_GUI_CONFIG_ENTRY_STATE_DEFAULT
                     : MessageKeys.ADMIN_GUI_CONFIG_ENTRY_STATE_MODIFIED));
 
-    lore.add(Component.empty());
+    lore.add("");
 
     lore.add(messages().component(configHintKey(key)));
 
@@ -1794,7 +1787,7 @@ public final class AdminGuiService {
 
     placeholders.put("server", plugin.config().serverName());
 
-    placeholders.put("version", plugin.getPluginMeta().getVersion());
+    placeholders.put("version", plugin.getDescription().getVersion());
 
     placeholders.put("language", plugin.config().language());
 
@@ -2059,16 +2052,16 @@ public final class AdminGuiService {
     player.openInventory(inventory);
   }
 
-  private List<Component> auditLore(AuditEntry entry, Map<String, String> placeholders) {
+  private List<String> auditLore(AuditEntry entry, Map<String, String> placeholders) {
 
-    List<Component> lore =
+    List<String> lore =
         new ArrayList<>(messages().components(MessageKeys.ADMIN_GUI_AUDIT_ITEM_LORE, placeholders));
 
     if (entry.detail() != null && !entry.detail().isBlank()) {
 
       for (String line : wrap(entry.detail(), 48)) {
 
-        lore.add(Component.text(line));
+        lore.add(line);
       }
     }
 

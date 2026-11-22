@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -443,7 +442,7 @@ public final class GuiService {
 
       holder.putValue(slot, category.id());
 
-      List<Component> lore = new ArrayList<>();
+      List<String> lore = new ArrayList<>();
 
       List<String> descriptionLines =
           plugin.messages().categoryDescription(category.id());
@@ -772,7 +771,7 @@ public final class GuiService {
     // the whole submission is visible at a glance before the action row.
     boolean targetOnline = Bukkit.getPlayerExact(flow.target) != null;
 
-    List<Component> targetLore =
+    List<String> targetLore =
         new ArrayList<>(
             plugin.messages().components(
                 MessageKeys.REPORT_CONFIRM_TARGET, Map.of("target", flow.target)));
@@ -813,7 +812,7 @@ public final class GuiService {
                         MessageKeys.REPORT_CONFIRM_CATEGORY,
                         Map.of("category", plugin.categoryDisplay(category.id()))))));
 
-    List<Component> detailLore = new ArrayList<>();
+    List<String> detailLore = new ArrayList<>();
 
     if (flow.detail.isBlank()) {
 
@@ -833,7 +832,7 @@ public final class GuiService {
 
       List<ReportChatSelection> selections = flow.selectedChatSelections();
 
-      List<Component> chatLore = new ArrayList<>(components(MessageKeys.REPORT_CONFIRM_CHAT_LORE));
+      List<String> chatLore = new ArrayList<>(components(MessageKeys.REPORT_CONFIRM_CHAT_LORE));
 
       if (selections.isEmpty()) {
 
@@ -1081,14 +1080,9 @@ public final class GuiService {
       // Queue entries are built from three layers: the priority word keeps its
       // status color, the gray id/target structure follows, and open reports
       // that passed their SLA gain a red overdue flag.
-      Component name =
-          plugin
-              .messages()
-              .component(NotificationService.priorityKey(report.priority()))
-              .append(
-                  plugin
-                      .messages()
-                      .component(MessageKeys.ADMIN_GUI_QUEUE_ITEM_NAME, itemPlaceholders));
+      String name =
+          plugin.messages().component(NotificationService.priorityKey(report.priority()))
+              + plugin.messages().component(MessageKeys.ADMIN_GUI_QUEUE_ITEM_NAME, itemPlaceholders);
 
       boolean overdue =
           report.status() == ReportStatus.OPEN && report.isOverdue(now);
@@ -1096,12 +1090,12 @@ public final class GuiService {
       if (overdue) {
 
         name =
-            name.append(
-                plugin.messages().component(MessageKeys.ADMIN_GUI_QUEUE_ITEM_OVERDUE, Map.of()));
+            name + plugin.messages().component(MessageKeys.ADMIN_GUI_QUEUE_ITEM_OVERDUE, Map.of());
       }
 
-      List<Component> lore =
-          plugin.messages().components(MessageKeys.GUI_LIST_ITEM_LORE, itemPlaceholders);
+      List<String> lore =
+          new ArrayList<>(
+              plugin.messages().components(MessageKeys.GUI_LIST_ITEM_LORE, itemPlaceholders));
 
       if (report.smartScore() > 0) {
 
@@ -1230,7 +1224,7 @@ public final class GuiService {
               ? state.filter.statuses().isEmpty()
               : state.filter.statuses().contains(status);
 
-      List<Component> lore = new ArrayList<>(components(MessageKeys.GUI_FILTER_STATUS_LORE));
+      List<String> lore = new ArrayList<>(components(MessageKeys.GUI_FILTER_STATUS_LORE));
 
       if (selected) {
 
@@ -1387,7 +1381,7 @@ public final class GuiService {
           case LOW -> Material.STONE;
         };
 
-    List<Component> priorityLore = new ArrayList<>();
+    List<String> priorityLore = new ArrayList<>();
 
     priorityLore.add(
         plugin
@@ -1436,7 +1430,7 @@ public final class GuiService {
             plugin.messages().component(MessageKeys.GUI_DETAIL_INFO_NAME, placeholders),
             plugin.messages().components(MessageKeys.GUI_DETAIL_INFO_LORE, placeholders)));
 
-    List<Component> targetLore = new ArrayList<>();
+    List<String> targetLore = new ArrayList<>();
 
     targetLore.add(
         plugin
@@ -1996,11 +1990,11 @@ public final class GuiService {
                         "ping", String.valueOf(evidence.ping()))),
             List.of()));
 
-    List<Component> inventoryLore = new ArrayList<>();
+    List<String> inventoryLore = new ArrayList<>();
 
     for (String line : evidence.inventory()) {
 
-      inventoryLore.add(Component.text(line));
+      inventoryLore.add(line);
     }
 
     if (inventoryLore.isEmpty()) {
@@ -2021,11 +2015,11 @@ public final class GuiService {
 
     if (!evidence.armor().isEmpty()) {
 
-      List<Component> armorLore = new ArrayList<>();
+      List<String> armorLore = new ArrayList<>();
 
       for (String line : evidence.armor()) {
 
-        armorLore.add(Component.text(line));
+        armorLore.add(line);
       }
 
       inventory.setItem(
@@ -2036,7 +2030,7 @@ public final class GuiService {
               armorLore));
     }
 
-    List<Component> chatLore = new ArrayList<>();
+    List<String> chatLore = new ArrayList<>();
 
     for (ChatSample sample : evidence.chat()) {
 
@@ -2063,7 +2057,7 @@ public final class GuiService {
             plugin.messages().component(MessageKeys.EVIDENCE_CHAT),
             chatLore));
 
-    List<Component> breakLore = new ArrayList<>();
+    List<String> breakLore = new ArrayList<>();
 
     for (BreakSample sample : evidence.blockBreaks()) {
 
@@ -2092,7 +2086,7 @@ public final class GuiService {
                     Map.of("count", String.valueOf(evidence.blockBreaks().size()))),
             breakLore));
 
-    List<Component> moveLore = new ArrayList<>();
+    List<String> moveLore = new ArrayList<>();
 
     for (MoveSample sample : evidence.movement()) {
 
@@ -2702,7 +2696,7 @@ public final class GuiService {
               ? effective.statuses().isEmpty()
               : effective.statuses().contains(status);
 
-      List<Component> lore = new ArrayList<>(components(MessageKeys.GUI_FILTER_STATUS_LORE));
+      List<String> lore = new ArrayList<>(components(MessageKeys.GUI_FILTER_STATUS_LORE));
 
       if (selected) {
 
@@ -2855,7 +2849,7 @@ public final class GuiService {
                             ? plugin.messages().plain(MessageKeys.GENERAL_NONE)
                             : report.detail()))));
 
-    List<Component> resultLore = new ArrayList<>();
+    List<String> resultLore = new ArrayList<>();
 
     Messages messages = plugin.messages();
 
@@ -4800,7 +4794,7 @@ public final class GuiService {
 
     if (page > 1) {
 
-      List<Component> lore =
+      List<String> lore =
           new ArrayList<>(plugin.messages().components(MessageKeys.GENERAL_PREVIOUS_LORE));
 
       lore.add(plugin.messages().component(MessageKeys.GUI_PAGE_NAME, placeholders));
@@ -4811,7 +4805,7 @@ public final class GuiService {
 
     if (page < totalPages) {
 
-      List<Component> lore =
+      List<String> lore =
           new ArrayList<>(plugin.messages().components(MessageKeys.GENERAL_NEXT_LORE));
 
       lore.add(plugin.messages().component(MessageKeys.GUI_PAGE_NAME, placeholders));
@@ -4863,7 +4857,7 @@ public final class GuiService {
         HUB_SLOT, item(Material.COMPASS, component(MessageKeys.ADMIN_GUI_HUB_BACK), List.of()));
   }
 
-  void header(Inventory inventory, Material material, String nameKey, List<Component> lore) {
+  void header(Inventory inventory, Material material, String nameKey, List<String> lore) {
 
     inventory.setItem(HEADER_SLOT, item(material, component(nameKey), lore));
   }
@@ -4872,7 +4866,7 @@ public final class GuiService {
       Inventory inventory,
       Material material,
       String nameKey,
-      List<Component> lore,
+      List<String> lore,
       Map<String, String> placeholders) {
 
     inventory.setItem(
@@ -4886,7 +4880,7 @@ public final class GuiService {
       return;
     }
 
-    ItemStack filler = item(Material.GRAY_STAINED_GLASS_PANE, Component.text(" "), List.of());
+    ItemStack filler = item(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
 
     for (int slot = 0; slot < inventory.getSize(); slot++) {
 
@@ -4902,7 +4896,7 @@ public final class GuiService {
     }
   }
 
-  ItemStack item(Material material, Component name, List<Component> lore) {
+  ItemStack item(Material material, String name, List<String> lore) {
 
     ItemStack stack = new ItemStack(material == null ? Material.PAPER : material);
 
@@ -4910,11 +4904,11 @@ public final class GuiService {
 
     if (meta != null) {
 
-      meta.displayName(name == null ? Component.empty() : name);
+      meta.setDisplayName(name == null || name.isEmpty() ? null : name);
 
       if (lore != null && !lore.isEmpty()) {
 
-        meta.lore(lore);
+        meta.setLore(lore);
       }
 
       stack.setItemMeta(meta);
@@ -4923,17 +4917,17 @@ public final class GuiService {
     return stack;
   }
 
-  private Component component(String key) {
+  private String component(String key) {
 
     return plugin.messages().component(key);
   }
 
-  private List<Component> components(String key) {
+  private List<String> components(String key) {
 
     return plugin.messages().components(key, Map.of());
   }
 
-  private List<Component> components(String key, Map<String, String> placeholders) {
+  private List<String> components(String key, Map<String, String> placeholders) {
 
     return plugin.messages().components(key, placeholders);
   }

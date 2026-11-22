@@ -84,6 +84,34 @@ ReportDesk (unreleased 1.3.0, continued) adds admin bulk operations (ROADMAP P2#
 **i18n**
 - 新增 5 个文案键（stats-trend-header / trend-line / trend-empty / category-header / share-line）同步进入全部 12 个 `lang/*.yml`。
 
+### Spigot 核心支持（多核心：Spigot / Paper / Folia）
+
+**新增**
+- 同一份 jar 同时支持 **Spigot、Paper、Folia** 三大服务端核心（此前仅 Paper/Folia）。编译目标由 `paper-api` 切换为 `spigot-api`（1.20.x，最低公共 API 子集），`api-version` 仍锁定 `'1.20'`，Java 字节码仍为 17。
+- 文案引擎改为在边界处统一输出 **legacy 字符串**（`§` 颜色码）：`Messages` 内部仍用随包 MiniMessage 渲染，但对 Bukkit 的调用面（聊天 `sendMessage`、物品名 `setDisplayName`、物品 lore `setLore`、背包标题）全部改用 Spigot/Paper 共有的 String 型 API，因此一份产物在三核心行为一致。
+- 随包（relocated 到 `com.reportdesk.libs.*`）`adventure`（MiniMessage + legacy/plain 序列化器）与 `gson`：Spigot 不向插件提供这些库，Paper 自带副本，relocate 后互不冲突。
+- 聊天监听由 Paper 专有 `AsyncChatEvent` 改为三核心共有的 `AsyncPlayerChatEvent`（Spigot 直接 `getMessage()` 取纯文本，Paper/Folia 上同一事件仍生效）。
+- 主线程判定新增 `com.reportdesk.util.PrimaryThread`：反射探测 Paper/Folia 的 `Bukkit.isPrimaryThread()` 与 Spigot 的 `CraftScheduler.isPrimaryThread()`，两者都缺失（未知核心/无服务端单测）时保守返回 false、交回调度器，绝不就地执行。
+- `plugin.yml` 补齐 `reportdesk.admin.assign` 权限声明，与 `registerPermissions` 的 12 个运行时权限节点对齐。
+
+**优化**
+- `EvidenceService` 物品名读取由 Paper 专有 `ItemMeta#displayName()`（Component）改为通用 `getDisplayName()`（String）+ `Messages.stripColors` 去色，证据快照在三核心一致。
+- GUI 统计页加粗样式由 Adventure `TextDecoration.BOLD` 组件链改为 `ChatColor.BOLD + 字符串` 前缀，语义不变。
+
+**配置**
+- 无新增配置键；所有业务阈值仍由 `config.yml` 驱动，默认值不变。
+
+**安全**
+- 主线程探测失败时一律「交回调度器」的保守路径，不会把管理操作留在异步线程执行；输入校验、限流、审计与既有异步红线不受影响。
+
+**文档**
+- `README.md`「支持版本」更新为 Spigot / Paper / Folia 1.20+，说明双描述符（`plugin.yml`/`paper-plugin.yml`）随包、Adventure/Gson 随包 relocate、legacy 字符串边界的取舍与降级（渐变/点击/悬停标签在 Spigot 上降级为纯文本）。
+
+**测试**
+- `MessagesTest`/`TimeTextTest` 断言由 `Component` 改为 legacy 字符串 + `Messages.stripColors`；`PluginDescriptorTest` 继续校验双描述符 `api-version '1.20'`。`./gradlew test build` 全量 41 个测试类、300+ 用例通过。
+
+ReportDesk (unreleased 1.3.0, continued) adds Spigot-core support so a single jar now runs on **Spigot, Paper and Folia** alike. The compile target moves from the Paper API to the Spigot API (1.20.x, the lowest common API subset) while `api-version` stays pinned to `'1.20'` and bytecode stays Java 17. The message engine now emits **legacy-format strings** (`&sect;` color codes) at the Bukkit boundary: MiniMessage still renders internally (bundled + relocated under `com.reportdesk.libs.*`, together with Gson), but every chat, item-name, item-lore and inventory-title call uses the String-based APIs shared by all three cores, so one artifact behaves identically everywhere. Chat capture switches from the Paper-only `AsyncChatEvent` to the cross-core `AsyncPlayerChatEvent`, and a new reflective `PrimaryThread` helper replaces the Paper-only `Bukkit.isPrimaryThread()` (conservatively deferring to the scheduler when no surface is present). `plugin.yml` gains the missing `reportdesk.admin.assign` declaration. No new config keys; thresholds remain fully config-driven. MiniMessage tags with no legacy equivalent (gradients, click/hover) degrade to plain text on Spigot.
+
 ReportDesk (unreleased 1.3.0, continued) completes the statistics dashboard trend workstream (ROADMAP P2#9): `/reports stats [days 1-90]` now prints a per-day "created | closed" text bar chart for the last N days plus a top-5 category-share bar, with the default window driven by the new `reports.stats-trend-days` config (default 7). The aggregation is a single in-memory pass over the UTC-day buckets (`TrendStats`, no file IO) and is cached for 60 seconds per window size so repeated invocations do not re-scan. Five new message keys ship in all 12 bundled languages, with full unit-test coverage.
 
 ReportDesk (unreleased 1.3.0, continued) rounds out the ecosystem-integration surface (ROADMAP P2#11): three dedicated lifecycle events join the existing pre-submit/submitted/status-changed set - ReportClaimedEvent (after a claim or assignment, carrying the claiming admin), ReportClosedEvent (after closure, carrying verdict and closing admin) and ReportEvidenceCapturedEvent (after an evidence snapshot). All fire synchronously on the main thread with listener exceptions isolated, so no third-party listener can break the core workflow. The README gains an "API events & ecosystem integration" chapter with a LuckPerms close-linked punishment listener skeleton and updated command/permission tables.

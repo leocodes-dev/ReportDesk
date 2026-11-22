@@ -28,7 +28,6 @@ import com.reportdesk.i18n.Messages;
 import com.reportdesk.util.TimeText;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -64,7 +63,7 @@ public final class NotificationService {
 
           if (settings.broadcastEnabled()) {
 
-            Component broadcast = messages.prefixed(MessageKeys.NOTIFY_BROADCAST_NEW, placeholders);
+            String broadcast = messages.prefixed(MessageKeys.NOTIFY_BROADCAST_NEW, placeholders);
 
             for (Player online : Bukkit.getOnlinePlayers()) {
 
@@ -205,7 +204,7 @@ public final class NotificationService {
         });
   }
 
-  public void staffAlert(Component message) {
+  public void staffAlert(String message) {
 
     runSync(() -> sendStaff(message));
   }
@@ -319,7 +318,7 @@ public final class NotificationService {
 
           Map<String, String> placeholders = placeholders(report);
 
-          Component message = messages.prefixed(MessageKeys.NOTIFY_STAFF_WATCHED, placeholders);
+          String message = messages.prefixed(MessageKeys.NOTIFY_STAFF_WATCHED, placeholders);
 
           for (java.util.UUID watcherId : watcherIds) {
 
@@ -333,7 +332,7 @@ public final class NotificationService {
         });
   }
 
-  private void sendStaff(Component message) {
+  private void sendStaff(String message) {
 
     PluginConfig.Notifications settings = plugin.config().notifications();
 
@@ -496,7 +495,7 @@ public final class NotificationService {
 
   private void runSync(Runnable action) {
 
-    if (Bukkit.isPrimaryThread()) {
+    if (com.reportdesk.util.PrimaryThread.isPrimaryThread()) {
 
       action.run();
 

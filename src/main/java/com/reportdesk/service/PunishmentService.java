@@ -106,7 +106,7 @@ public final class PunishmentService {
                 .punishmentChannelRegistry()
                 .dispatch(report, verdict, staffName == null ? "" : staffName);
 
-    if (Bukkit.isPrimaryThread()) {
+    if (com.reportdesk.util.PrimaryThread.isPrimaryThread()) {
 
       dispatch.run();
 

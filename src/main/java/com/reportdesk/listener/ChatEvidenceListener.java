@@ -19,12 +19,11 @@
 package com.reportdesk.listener;
 
 import com.reportdesk.ReportDeskPlugin;
-import io.papermc.paper.event.player.AsyncChatEvent;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 /**
  * Optional chat evidence layer. Registered only when evidence and chat capture are both enabled.
@@ -39,8 +38,12 @@ public final class ChatEvidenceListener implements Listener {
     this.plugin = plugin;
   }
 
+  /**
+   * Uses the classic {@link AsyncPlayerChatEvent} (fires on Spigot, Paper and Folia) instead of
+   * the Paper-only {@code AsyncChatEvent}.
+   */
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-  public void onChat(AsyncChatEvent event) {
+  public void onChat(AsyncPlayerChatEvent event) {
 
     if (!plugin.config().evidence().enabled()) {
 
@@ -59,7 +62,7 @@ public final class ChatEvidenceListener implements Listener {
       return;
     }
 
-    String message = PlainTextComponentSerializer.plainText().serialize(event.message());
+    String message = event.getMessage();
 
     plugin.evidence().recordChat(player, message);
   }

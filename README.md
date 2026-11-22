@@ -24,9 +24,13 @@ ReportDesk 是一个面向 Minecraft 服务器的玩家举报工作台：完整�
 
 ## 支持版本
 
-- 服务端：Paper 1.20 – 1.21.x（`api-version: 1.20`，对 1.20 及以上的 Paper 均可加载）
+- 服务端：Spigot / Paper / Folia 1.20+（`api-version: 1.20`，对 1.20 及以上的各核心均可加载；编译目标为 Spigot 1.20.1 API，即三核心最低公共子集）
 - 运行 JDK：Java 17+（产物为 Java 17 字节码，1.20 时代默认 JDK 17 可直接运行；1.21+ 的 Java 21 服务端同样兼容）
-- 兼容性说明：`paper-plugin.yml` 为权威描述符；另保留一份遗留 `plugin.yml`，旧服务器若仍从 `plugin.yml` 解析命令也能工作，插件同时有运行时 CommandMap 兜底
+- 兼容性说明：
+  - `plugin.yml` 是 Spigot 的权威描述符，`paper-plugin.yml` 是 Paper/Folia 的权威描述符（两者 `api-version` 均为 `'1.20'`），随 jar 同发，核心各取所需
+  - 插件 jar 内部打包（relocate 到 `com.reportdesk.libs.*`）Adventure/MiniMessage 与 Gson，聊天与 GUI 文本统一走 legacy 格式（`§` 颜色码），三个核心上行为一致；lang 文件中没有 legacy 对应物的 MiniMessage 标签（如渐变、点击/悬停）在 Spigot 上降级为纯文本
+  - 主线程判定由 `com.reportdesk.util.PrimaryThread` 反射适配（Paper/Folia 的 `Bukkit.isPrimaryThread()`，Spigot 的 `CraftScheduler.isPrimaryThread()`），聊天输入监听使用三核心共有的 `AsyncPlayerChatEvent`
+  - 运行时 CommandMap 兜底，别名 `rdreport` / `jb` / `reportdesk` / `rd` 在各核心均有效
 
 ## 指令与权限
 

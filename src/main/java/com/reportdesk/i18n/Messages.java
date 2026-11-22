@@ -34,18 +34,36 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.yaml.snakeyaml.Yaml;
 
 /**
- * Loads messages from lang/*.yml and renders them with MiniMessage.
+ * Loads messages from lang/*.yml and renders them with the bundled MiniMessage engine.
  *
  * <p>All placeholders are inserted through {@link Placeholder#unparsed}, so a player cannot inject
  * clickable text or formatting through a report detail.
+ *
+ * <p><b>Multi-core contract:</b> Adventure (MiniMessage + Component) is shaded into the plugin
+ * jar, and every rendered message is converted to a <em>legacy-format string</em> (section-sign
+ * color codes) at this boundary. Bukkit-level consumers ({@code sendMessage}, item names, item
+ * lore, inventory titles) therefore only ever see plain strings, which works identically on
+ * Spigot, Paper and Folia. The lang files keep their MiniMessage syntax; tags that have no
+ * legacy equivalent (gradients, clickable text) degrade to plain text on non-Paper cores.
  */
 public final class Messages {
 
   private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+
+  private static final PlainTextComponentSerializer PLAIN_TEXT =
+      PlainTextComponentSerializer.plainText();
+
+  /**
+   * Converts rendered components to legacy section-sign strings for Bukkit consumers that only
+   * accept plain strings (Spigot chat/GUI APIs, and the same APIs on Paper/Folia).
+   */
+  private static final LegacyComponentSerializer LEGACY_TEXT =
+      LegacyComponentSerializer.builder().hexColors().build();
 
   private static final DateTimeFormatter DEFAULT_DATE =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -198,27 +216,30 @@ public final class Messages {
     return List.of();
   }
 
-  public Component component(String key) {
+  /** Renders a message as a legacy-format string (section-sign color codes). */
+  public String component(String key) {
 
     return component(key, Map.of());
   }
 
-  public Component component(String key, Map<String, String> placeholders) {
+  /** Renders a message with placeholders as a legacy-format string. */
+  public String component(String key, Map<String, String> placeholders) {
 
     return render(raw(key), placeholders);
   }
 
-  public Component prefixed(String key, Map<String, String> placeholders) {
+  /** Renders the message prefix and the body, concatenated as one legacy-format string. */
+  public String prefixed(String key, Map<String, String> placeholders) {
 
-    Component prefix = component(MessageKeys.PREFIX);
+    String prefix = component(MessageKeys.PREFIX);
 
-    Component body = component(key, placeholders);
+    String body = component(key, placeholders);
 
-    return Component.empty().append(prefix).append(body);
+    return prefix + body;
   }
 
   /**
-   * Renders a message and strips all styling. Useful when a component is used
+   * Renders a message and strips all styling. Useful when the result is inserted
    *
    * <p>as a placeholder inside another message or a webhook payload.
    */
@@ -229,20 +250,83 @@ public final class Messages {
 
   public String plain(String key, Map<String, String> placeholders) {
 
-    return PlainTextComponentSerializer.plainText().serialize(component(key, placeholders));
+    return plainTemplate(raw(key), placeholders);
   }
 
-  public String plain(Component component) {
+  /**
+   * Strips legacy color codes ({@code &sect;x} and {@code &amp;x} sequences, including
+   * {@code &sect;x} hex runs) from an already rendered string, so plain-text consumers
+   * (evidence snapshots, audit detail, webhook payloads) see the words without color.
+   */
+  public static String stripColors(String text) {
 
-    return PlainTextComponentSerializer.plainText().serialize(component);
+    if (text == null || text.isEmpty()) {
+
+      return text;
+    }
+
+    StringBuilder out = new StringBuilder(text.length());
+
+    int index = 0;
+
+    while (index < text.length()) {
+
+      char c = text.charAt(index);
+
+      if ((c == '§' || c == '&') && index + 1 < text.length()) {
+
+        char next = Character.toLowerCase(text.charAt(index + 1));
+
+        boolean code =
+            (next >= '0' && next <= '9')
+                || (next >= 'a' && next <= 'f')
+                || next == 'k'
+                || next == 'l'
+                || next == 'm'
+                || next == 'n'
+                || next == 'o'
+                || next == 'r'
+                || next == 'x';
+
+        if (code) {
+
+          if (next == 'x') {
+
+            // Hex color run: §xRRGGBB — drop the six hex digits as well.
+            int end = index + 2;
+
+            while (end < text.length()
+                && end - (index + 2) < 6
+                && "0123456789abcdefABCDEF".indexOf(text.charAt(end)) >= 0) {
+
+              end++;
+            }
+
+            index = end;
+
+            continue;
+          }
+
+          index += 2;
+
+          continue;
+        }
+      }
+
+      out.append(c);
+
+      index++;
+    }
+
+    return out.toString();
   }
 
-  public List<Component> components(String key) {
+  public List<String> components(String key) {
 
     return components(key, Map.of());
   }
 
-  public List<Component> components(String key, Map<String, String> placeholders) {
+  public List<String> components(String key, Map<String, String> placeholders) {
 
     List<String> lines = rawList(key);
 
@@ -251,7 +335,7 @@ public final class Messages {
       return List.of(component(key, placeholders));
     }
 
-    List<Component> result = new ArrayList<>(lines.size());
+    List<String> result = new ArrayList<>(lines.size());
 
     for (String line : lines) {
 
@@ -261,7 +345,29 @@ public final class Messages {
     return result;
   }
 
-  public Component render(String template, Map<String, String> placeholders) {
+  /**
+   * Renders a trusted MiniMessage template with user values inserted unparsed,
+   *
+   * <p>and converts the result to a legacy-format string.
+   */
+  public String render(String template, Map<String, String> placeholders) {
+
+    return legacy(renderComponent(template, placeholders));
+  }
+
+  /** Renders the template to a plain string with all styling stripped. */
+  private String plainTemplate(String template, Map<String, String> placeholders) {
+
+    return PLAIN_TEXT.serialize(renderComponent(template, placeholders));
+  }
+
+  /**
+   * Core MiniMessage render. Messages use the familiar %name% token syntax, while
+   *
+   * <p>MiniMessage resolvers are tag based. Rewriting the trusted template tokens to tags keeps
+   * the user-supplied values unparsed and injection safe.
+   */
+  private Component renderComponent(String template, Map<String, String> placeholders) {
 
     if (template == null) {
 
@@ -274,12 +380,6 @@ public final class Messages {
 
         return MINI_MESSAGE.deserialize(template);
       }
-
-      // Messages use the familiar %name% token syntax, while MiniMessage
-
-      // resolvers are tag based. Rewriting the trusted template tokens to
-
-      // tags keeps the user-supplied values unparsed and injection safe.
 
       String prepared = template;
 
@@ -307,6 +407,12 @@ public final class Messages {
 
       return Component.text(template);
     }
+  }
+
+  /** Converts a rendered component to the legacy string the Bukkit boundary consumes. */
+  private static String legacy(Component component) {
+
+    return component == null ? "" : LEGACY_TEXT.serialize(component);
   }
 
   public DateTimeFormatter dateFormatter() {
@@ -373,7 +479,7 @@ public final class Messages {
    */
   private String renderPlain(String template) {
 
-    return plain(render(template, Map.of()));
+    return plainTemplate(template, Map.of());
   }
 
   private static Map<String, Object> read(Path path, Consumer<String> warning) {

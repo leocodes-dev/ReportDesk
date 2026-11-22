@@ -24,7 +24,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import net.kyori.adventure.text.Component;
 
 /** Human readable timestamps for chat output and GUI lore. */
 public final class TimeText {
@@ -44,7 +43,7 @@ public final class TimeText {
         .format(Instant.ofEpochMilli(timestamp));
   }
 
-  public static Component relative(long timestamp, long now, Messages messages) {
+  public static String relative(long timestamp, long now, Messages messages) {
 
     if (timestamp <= 0) {
 

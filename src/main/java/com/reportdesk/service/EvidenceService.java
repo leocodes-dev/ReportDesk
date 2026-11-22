@@ -149,7 +149,13 @@ public final class EvidenceService {
 
     MoveSample sample =
         new MoveSample(
-            now, to.getWorld().getName(), to.getX(), to.getY(), to.getZ(), player.isOnGround());
+            now,
+            to.getWorld().getName(),
+            to.getX(),
+            to.getY(),
+            to.getZ(),
+            // Entity-level accessor: the Player override is deprecated in the 1.20 API.
+            ((org.bukkit.entity.Entity) player).isOnGround());
 
     Deque<MoveSample> deque =
         movement.computeIfAbsent(player.getUniqueId(), ignored -> new ArrayDeque<>());
@@ -491,9 +497,12 @@ public final class EvidenceService {
 
     if (meta != null) {
 
-      if (meta.hasDisplayName() && meta.displayName() != null) {
+      // Legacy display name (String on every core); strip color codes for the plain-text record.
+      String rawName = meta.getDisplayName();
 
-        String name = plugin.messages().plain(meta.displayName());
+      if (rawName != null) {
+
+        String name = com.reportdesk.i18n.Messages.stripColors(rawName);
 
         if (!name.isBlank()) {
 
