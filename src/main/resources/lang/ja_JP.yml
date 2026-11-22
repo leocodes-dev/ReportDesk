@@ -794,6 +794,7 @@ Javaクライアント言語の検出
         maintenance-interval-minutes: 'メンテナンス間隔 (分)'
         stats-top-targets: '統計のトップ対象数'
         staff-stats-top: '統計の運営トップ数'
+        bulk-max: '一括操作上限'
         default-category: 'デフォルトカテゴリ'
         priority:
           enabled: '優先度を有効'
@@ -972,6 +973,7 @@ Javaクライアントのシステム地域言語を推定します（ベスト�
         maintenance-interval-minutes: 'クリーンアップ・バックアップ・統計ジョブの頻度 (分)。'
         stats-top-targets: '最多通報ランキングに表示するプレイヤー数。'
         staff-stats-top: '統計に表示する運営メンバー数。'
+        bulk-max: '一度の一括操作（クローズ/エクスポート）が扱える最大通報数。誤った一括操作を防ぐ。'
         default-category: 'プレイヤーが選ばなかった場合のカテゴリ。'
         priority:
           enabled: '常習と期限から通報の優先度を算出します。'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>迷惑フラグ率: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [日数] <dark_gray>- <gray>スマート優先度の精度/召回率をレビュー'
+  bulk-closed: '<green>一括で <white>%closed%</white> 件の通報を %verdict% でクローズしました（<white>%skipped%</white> 件はすでにクローズ済み、<white>%missing%</white> 件は見つかりません）。'
+  bulk-empty: '<yellow>一括クローズには少なくとも1件の通報IDが必要です。'
+  bulk-capped: '<yellow>バッチは設定上限（<white>%capped%</white>）まで切り詰められました。小分けにしてください。'
+  bulk-export-done: '<green>一括エクスポート完了: <white>%file%</white>（<white>%count%</white> 件）。'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>通報の一括クローズ / エクスポート（reports.bulk-max で上限）'
 config:
   list-header: '<gold>===== 編集可能な設定 (%count% 項目、ページ %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

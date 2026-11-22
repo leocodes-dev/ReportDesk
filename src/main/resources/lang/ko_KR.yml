@@ -794,6 +794,7 @@ Java 클라이언트 언어 감지
         maintenance-interval-minutes: '유지보수 간격 (분)'
         stats-top-targets: '통계 상위 대상 수'
         staff-stats-top: '통계 운영진 상위 수'
+        bulk-max: '일괄 처리 한도'
         default-category: '기본 분류'
         priority:
           enabled: '우선순위 사용'
@@ -972,6 +973,7 @@ Java 클라이언트의 시스템 지역 언어를 추정합니다(최선 처리
         maintenance-interval-minutes: '정리, 백업, 통계 작업 주기 (분).'
         stats-top-targets: '최다 신고 랭킹에 표시할 플레이어 수.'
         staff-stats-top: '통계에 표시할 운영진 멤버 수.'
+        bulk-max: '일괄 작업(종료/내보내기) 한 번에 처리할 수 있는 최대 제보 수. 대량 실수를 방지합니다.'
         default-category: '플레이어가 선택하지 않았을 때의 분류.'
         priority:
           enabled: '범법 이력과 기한으로부터 신고 우선순위를 계산합니다.'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>스팸 표시율: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [일수] <dark_gray>- <gray>스마트 우선순위 정밀도/재현율 검토'
+  bulk-closed: '<green>제보 <white>%closed%</white>건을 %verdict%로 일괄 종료했습니다(<white>%skipped%</white>건 이미 종료, <white>%missing%</white>건 찾지 못함).'
+  bulk-empty: '<yellow>일괄 종료를 위해 제보 ID를 최소 1개 이상 입력하세요.'
+  bulk-capped: '<yellow>배치는 설정한 한도(<white>%capped%</white>)까지 잘렸습니다. 더 작은 배치로 나누세요.'
+  bulk-export-done: '<green>일괄 내보내기 완료: <white>%file%</white>(<white>%count%</white>건).'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>제보 일괄 종료 / 내보내기(reports.bulk-max 한도)'
 config:
   list-header: '<gold>===== 편집 가능한 설정 (%count%개 키, 페이지 %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

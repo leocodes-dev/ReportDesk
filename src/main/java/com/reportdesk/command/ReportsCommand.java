@@ -83,6 +83,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
           "overdue",
           "sla",
           "smart",
+          "bulk",
           "stats",
           "export",
           "audit",
@@ -176,6 +177,8 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
       case "sla" -> sla(sender, args);
 
       case "smart" -> smart(sender, args);
+
+      case "bulk" -> bulk(sender, args);
 
       case "watch" -> watch(sender, args);
 
@@ -1205,6 +1208,204 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
     return String.format(Locale.ROOT, "%.0f%%", ratio * 100.0);
   }
 
+  /**
+   * /reports bulk close <verdict> <id...> | /reports bulk export [status|overdue]
+   */
+  private void bulk(CommandSender sender, String[] args) {
+
+    if (args.length < 2) {
+
+      usage(sender, "/reports bulk <close|export> ...");
+
+      return;
+    }
+
+    String action = args[1].toLowerCase(Locale.ROOT);
+
+    switch (action) {
+      case "close":
+
+        bulkCloseCmd(sender, args);
+
+        break;
+
+      case "export":
+
+        bulkExport(sender, args);
+
+        break;
+
+      default:
+
+        usage(sender, "/reports bulk <close|export> ...");
+    }
+  }
+
+  /** /reports bulk close <verdict> <id...> */
+  private void bulkCloseCmd(CommandSender sender, String[] args) {
+
+    if (!require(sender, "reportdesk.admin.delete")) {
+
+      return;
+    }
+
+    if (!allowAction(sender)) {
+
+      return;
+    }
+
+    if (args.length < 3) {
+
+      usage(sender, "/reports bulk close <verdict> <id...>");
+
+      return;
+    }
+
+    Verdict verdict = Verdict.parse(args[2]);
+
+    if (verdict == null || verdict == Verdict.AUTO_CLOSED) {
+
+      sender.sendMessage(plugin.messages().prefixed(MessageKeys.GENERAL_INVALID_VERDICT, Map.of()));
+
+      return;
+    }
+
+    List<Long> ids = new java.util.ArrayList<>();
+
+    for (int i = 3; i < args.length; i++) {
+
+      Long id = parseLong(args[i]);
+
+      if (id == null || id <= 0) {
+
+        sender.sendMessage(
+            plugin
+                .messages()
+                .prefixed(MessageKeys.GENERAL_INVALID_ID, Map.of("id", args[i])));
+
+        return;
+      }
+
+      ids.add(id);
+    }
+
+    if (ids.isEmpty()) {
+
+      sender.sendMessage(plugin.messages().prefixed(MessageKeys.ADMIN_BULK_EMPTY, Map.of()));
+
+      return;
+    }
+
+    ReportService.OpResult result =
+        plugin.reportService().bulkClose(ids, verdict, actor(sender), "");
+
+    sendResult(sender, result);
+
+    if (result.success() && result.placeholders().containsKey("capped")) {
+
+      sender.sendMessage(
+          plugin.messages().prefixed(MessageKeys.ADMIN_BULK_CAPPED, result.placeholders()));
+    }
+  }
+
+  /** /reports bulk export [status|overdue] */
+  private void bulkExport(CommandSender sender, String[] args) {
+
+    if (!require(sender, "reportdesk.admin")) {
+
+      return;
+    }
+
+    if (!allowAction(sender)) {
+
+      return;
+    }
+
+    ReportFilter filter = ReportFilter.all();
+
+    if (args.length >= 3) {
+
+      String token = args[2].toLowerCase(Locale.ROOT);
+
+      if ("overdue".equals(token)) {
+
+        filter = filter.withOverdueOnly(true);
+
+      } else {
+
+        ReportStatus status = ReportStatus.parse(token, null);
+
+        if (status == null) {
+
+          sender.sendMessage(
+              plugin
+                  .messages()
+                  .prefixed(
+                      MessageKeys.ADMIN_LIST_UNKNOWN_FILTER,
+                      Map.of("value", args[2])));
+
+          return;
+        }
+
+        filter = ReportFilter.ofStatus(status);
+      }
+    }
+
+    List<Report> reports = plugin.repository().filter(filter);
+
+    int cap = plugin.config().reports().bulkMax();
+
+    if (reports.size() > cap) {
+
+      reports = List.copyOf(reports.subList(0, cap));
+    }
+
+    final int exportedCount = reports.size();
+
+    final List<Report> toExport = reports;
+
+    sender.sendMessage(plugin.messages().prefixed(MessageKeys.ADMIN_EXPORT_STARTED, Map.of()));
+
+    plugin
+        .storage()
+        .exportCsv(toExport)
+        .whenComplete(
+            (path, throwable) ->
+                runOnMain(
+                    () -> {
+                      if (throwable != null) {
+
+                        plugin.getLogger().warning("Bulk export failed: " + throwable.getMessage());
+
+                        sender.sendMessage(
+                            plugin.messages().prefixed(MessageKeys.ADMIN_EXPORT_FAILED, Map.of()));
+
+                        return;
+                      }
+
+                      String display;
+
+                      try {
+
+                        display =
+                            plugin.getDataFolder().toPath().relativize(path).toString();
+
+                      } catch (IllegalArgumentException exception) {
+
+                        display = path.getFileName().toString();
+                      }
+
+                      sender.sendMessage(
+                          plugin
+                              .messages()
+                              .prefixed(
+                                  MessageKeys.ADMIN_BULK_EXPORT_DONE,
+                                  Map.of("file", display, "count", String.valueOf(exportedCount))));
+
+                      plugin.audit("BULK_EXPORT", actor(sender), 0L, display);
+                    }));
+  }
+
   private void watch(CommandSender sender, String[] args) {
 
     if (args.length < 2) {
@@ -2054,6 +2255,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
             MessageKeys.ADMIN_HELP_OVERDUE,
             MessageKeys.ADMIN_HELP_SLA,
             MessageKeys.ADMIN_HELP_SMART,
+            MessageKeys.ADMIN_HELP_BULK,
             MessageKeys.ADMIN_HELP_WATCH,
             MessageKeys.ADMIN_HELP_UNWATCH,
             MessageKeys.ADMIN_HELP_WATCHING,
@@ -2260,6 +2462,11 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
         return filter(List.of("review"), args[1]);
       }
 
+      if (sub.equals("bulk")) {
+
+        return filter(List.of("close", "export"), args[1]);
+      }
+
       if (List.of(
               "view",
               "info",
@@ -2290,6 +2497,22 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
     if (args.length == 3 && args[0].equalsIgnoreCase("close")) {
 
       return filter(List.of("resolved", "rejected", "duplicate", "insufficient"), args[2]);
+    }
+
+    if (args.length == 3 && args[0].equalsIgnoreCase("bulk")
+        && args[1].equalsIgnoreCase("close")) {
+
+      return filter(List.of("resolved", "rejected", "duplicate", "insufficient"), args[2]);
+    }
+
+    if (args.length == 3 && args[0].equalsIgnoreCase("bulk")
+        && args[1].equalsIgnoreCase("export")) {
+
+      return filter(
+          List.of(
+              "all", "open", "claimed", "resolved", "rejected", "duplicate", "auto-closed",
+              "overdue"),
+          args[2]);
     }
 
     if (args.length >= 3 && args[0].equalsIgnoreCase("list")) {

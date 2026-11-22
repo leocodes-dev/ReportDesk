@@ -55,6 +55,21 @@
 **文档**
 - README 命令/权限表与实际实现同步；事件契约（主线程同步、线程安全、非阻塞）写入各事件 Javadoc 与 README。
 
+**新增**
+- 管理侧批量操作（ROADMAP P2#12）：`/reports bulk close <裁决> <id...>`（裁决在前、id 可变尾以避免歧义；限 `reportdesk.admin.delete`）与 `/reports bulk export [status|overdue]`（异步 CSV，复用 `FileStorage#exportCsv`，受同一上限约束）。批量关闭对每条复用既有事件/通知/联动处罚管线，但审计只写一条合并 `BULK_CLOSE`（含裁决与数量）；批量导出写一条 `BULK_EXPORT`。
+- 纯核心 `BulkClosePlan.plan`：把一次批量拆成 关闭/跳过（已终态）/缺失 三态分桶，并对超长批次做截断（`BulkClosePlanTest` 7 项）。
+
+**配置**
+- 新增 `reports.bulk-max`（默认 50，范围 1-1000）：单次批量操作可处理的最大举报数，防批量误操作；进 `ConfigKeys` 注册并补 12 语言配置编辑器 label/desc。
+
+**安全**
+- `bulk close` 需 `reportdesk.admin.delete`；`bulk export` 需 `reportdesk.admin`；均沿用管理操作限流。非法/缺失 id 计入 `missing`，已终态计入 `skipped`，均不产生副作用。
+
+**i18n**
+- 新增 5 个文案键（admin.bulk-closed / bulk-empty / bulk-capped / bulk-export-done / help-bulk）同步进入全部 12 个 `lang/*.yml`。
+
+ReportDesk (unreleased 1.3.0, continued) adds admin bulk operations (ROADMAP P2#12): `/reports bulk close <verdict> <id...>` (verdict-first so the variable id tail is unambiguous; gated by `reportdesk.admin.delete`) and `/reports bulk export [status|overdue]` (async CSV reusing the existing exporter, bounded by the same cap). A bulk close reuses the per-report event/notification/punishment pipeline but writes a single consolidated `BULK_CLOSE` audit entry. The configurable cap `reports.bulk-max` (default 50) prevents mass accidents; a pure `BulkClosePlan` class buckets each id into closed/skipped/missing and truncates over-long batches (7 unit tests). Five new message keys ship in all 12 languages.
+
 ReportDesk (unreleased 1.3.0, continued) rounds out the ecosystem-integration surface (ROADMAP P2#11): three dedicated lifecycle events join the existing pre-submit/submitted/status-changed set - ReportClaimedEvent (after a claim or assignment, carrying the claiming admin), ReportClosedEvent (after closure, carrying verdict and closing admin) and ReportEvidenceCapturedEvent (after an evidence snapshot). All fire synchronously on the main thread with listener exceptions isolated, so no third-party listener can break the core workflow. The README gains an "API events & ecosystem integration" chapter with a LuckPerms close-linked punishment listener skeleton and updated command/permission tables.
 
 ReportDesk (unreleased 1.3.0, continued) adds the smart-priority retrospective from ROADMAP P1#6: `/reports smart review [days]` cross-tabs the recorded smart scores of closed reports against their final verdicts, reporting garbage-band precision, recall, the overall garbage flag rate and a 0-100 decile distribution (purely in-memory, single pass, read-only; with the smart layer off the command only prints a hint and computes nothing). A fourth queue sort option "by smart score" joins newest/priority/oldest in both admin and player-history GUIs and in `/reports list smart`, and the admin "other tools" data card gains a garbage-flag-rate line. Eleven new message keys and one lore line ship in all 12 bundled languages with full unit-test coverage.

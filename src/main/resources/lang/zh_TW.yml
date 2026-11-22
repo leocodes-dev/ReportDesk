@@ -794,6 +794,7 @@ gui:
         maintenance-interval-minutes: '維護間隔（分鐘）'
         stats-top-targets: '統計的目標排行數'
         staff-stats-top: '統計的管理組排行數'
+        bulk-max: '批量操作上限'
         default-category: '預設類別'
         priority:
           enabled: '啟用優先級'
@@ -972,6 +973,7 @@ gui:
         maintenance-interval-minutes: '清理、備份與統計任務的頻率（分鐘）。'
         stats-top-targets: '被檢舉排行榜顯示的玩家數。'
         staff-stats-top: '統計中顯示的管理組成員數。'
+        bulk-max: '單次批量操作（關閉/匯出）最多能處理的投訴數，防止批量誤操作。'
         default-category: '玩家未選擇時使用的類別。'
         priority:
           enabled: '依累犯與期限計算檢舉優先級。'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>垃圾標記率: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [天數] <dark_gray>- <gray>智慧優先級複盤（精確率/召回率/分布）'
+  bulk-closed: '<green>批量結案 <white>%closed%</white> 條投訴（裁決：%verdict%；<white>%skipped%</white> 條已結案跳過，<white>%missing%</white> 條未找到）。'
+  bulk-empty: '<yellow>請至少提供一個投訴 ID 再批量結案。'
+  bulk-capped: '<yellow>批量已截斷到設定上限（<white>%capped%</white>），請分批操作。'
+  bulk-export-done: '<green>批量匯出完成: <white>%file%</white>（<white>%count%</white> 條）。'
+  help-bulk: '<gray>/reports bulk close <裁決> <id...> / bulk export [狀態] <dark_gray>- <gray>批量結案 / 匯出投訴（受 reports.bulk-max 上限約束）'
 config:
   list-header: '<gold>===== 可編輯設定（%count% 項，第 %page%/%pages% 頁）====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

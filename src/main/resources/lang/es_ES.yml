@@ -794,6 +794,7 @@ Detectar idioma del cliente Java
         maintenance-interval-minutes: 'Intervalo de Mantenimiento (minutos)'
         stats-top-targets: 'Top Objetivos en Estadísticas'
         staff-stats-top: 'Top del Equipo en Estadísticas'
+        bulk-max: 'Límite de operación por lotes'
         default-category: 'Categoría Predeterminada'
         priority:
           enabled: 'Activar Prioridades'
@@ -972,6 +973,7 @@ Estima el idioma regional del sistema de los clientes Java (mejor esfuerzo).
         maintenance-interval-minutes: 'Frecuencia (en minutos) de las tareas de limpieza, copia y estadísticas.'
         stats-top-targets: 'Cuántos jugadores se muestran en el ranking de más denunciados.'
         staff-stats-top: 'Cuántos miembros del equipo se muestran en las estadísticas.'
+        bulk-max: 'Número máximo de reportes que una acción por lotes (cerrar/exportar) puede afectar; evita errores masivos.'
         default-category: 'Categoría usada cuando el jugador no elige una.'
         priority:
           enabled: 'Calcula la prioridad de la denuncia a partir de reincidentes y plazos.'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>Tasa de marcado de basura: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [dias] <dark_gray>- <gray>Revisión de precisión/recuperación de la prioridad inteligente'
+  bulk-closed: '<green>Cerrados <white>%closed%</white> reportes como %verdict% (<white>%skipped%</white> ya cerrados, <white>%missing%</white> no encontrados).'
+  bulk-empty: '<yellow>Proporciona al menos un id de reporte para el cierre por lotes.'
+  bulk-capped: '<yellow>El lote se truncó al límite configurado (<white>%capped%</white>). Divídilo en lotes menores.'
+  bulk-export-done: '<green>Exportación por lotes completada: <white>%file%</white> (<white>%count%</white> reportes).'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>Cerrar / exportar reportes por lotes (limitado por reports.bulk-max)'
 config:
   list-header: '<gold>===== Configuraciones editables (%count% claves, página %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

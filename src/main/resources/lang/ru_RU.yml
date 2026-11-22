@@ -794,6 +794,7 @@ gui:
         maintenance-interval-minutes: 'Интервал обслуживания (мин)'
         stats-top-targets: 'Топ целей в статистике'
         staff-stats-top: 'Топ команды в статистике'
+        bulk-max: 'Лимит пакетных операций'
         default-category: 'Категория по умолчанию'
         priority:
           enabled: 'Приоритеты включены'
@@ -972,6 +973,7 @@ gui:
         maintenance-interval-minutes: 'Интервал (в минутах) обслуживания.'
         stats-top-targets: 'Сколько игроков в топ целей.'
         staff-stats-top: 'Сколько сотрудников в статистике.'
+        bulk-max: 'Максимум жалоб, на которые может повлиять одна пакетная операция (закрытие/экспорт); защита от массовых ошибок.'
         default-category: 'Категория, если игрок её не выбрал.'
         priority:
           enabled: 'Считать приоритет из повторных нарушений и сроков.'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>Доля помеченного мусора: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [дни] <dark_gray>- <gray>Просмотр точности/полноты умного приоритета'
+  bulk-closed: '<green>Пакетно закрыто <white>%closed%</white> жалоб с вердиктом %verdict% (<white>%skipped%</white> уже закрыто, <white>%missing%</white> не найдено).'
+  bulk-empty: '<yellow>Укажи хотя бы один id жалобы для пакетного закрытия.'
+  bulk-capped: '<yellow>Пакет обрезан до заданного лимита (<white>%capped%</white>). Разбей его на меньшие части.'
+  bulk-export-done: '<green>Пакетный экспорт завершён: <white>%file%</white> (<white>%count%</white> жалоб).'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>Пакетное закрытие / экспорт жалоб (ограничено reports.bulk-max)'
 config:
   list-header: '<gold>===== Доступные настройки (%count% ключей, стр. %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

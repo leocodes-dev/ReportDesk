@@ -794,6 +794,7 @@ Java İstemci Dilini Algıla
         maintenance-interval-minutes: 'Bakım Aralığı (dakika)'
         stats-top-targets: 'İstatistikte En İyi Hedef'
         staff-stats-top: 'İstatistikte Ekip En İyi'
+        bulk-max: 'Toplu İşlem Sınırı'
         default-category: 'Varsayılan Kategori'
         priority:
           enabled: 'Öncelikler Etkin'
@@ -972,6 +973,7 @@ Java istemcilerinin sistem bölge dilini tahmin eder (olası olduğunca).
         maintenance-interval-minutes: 'Temizlik, yedekleme ve istatistik işlerinin sıklığı (dakika olarak).'
         stats-top-targets: 'En çok şikayet edilen listesinde gösterilen oyuncu sayısı.'
         staff-stats-top: 'İstatistiklerde gösterilen ekip üyesi sayısı.'
+        bulk-max: 'Tek toplu işlem (kapatma/dışa aktarma)in dokunabileceği en fazla şikayet sayısı; toplu hataları önler.'
         default-category: 'Oyuncu seçmediyse kullanılan kategori.'
         priority:
           enabled: 'Önceliği tekrar fail ve sürelerden hesaplar.'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>Spam işaret oranı: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [gün] <dark_gray>- <gray>Akıllı öncelik duyarlılık/yakalama incelemesi'
+  bulk-closed: '<green><white>%closed%</white> şikayet %verdict% olarak toplu kapatıldı (<white>%skipped%</white> zaten kapalı, <white>%missing%</white> bulunamadı).'
+  bulk-empty: '<yellow>Toplu kapatma için en az bir şikayet kimliği verin.'
+  bulk-capped: '<yellow>İşlem grubu yapılandırılan sınıra (<white>%capped%</white>) kısaltıldı. Daha küçük gruplara bölün.'
+  bulk-export-done: '<green>Toplu dışa aktarma tamamlandı: <white>%file%</white> (<white>%count%</white> şikayet).'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>Şikayetleri toplu kapat / dışa aktar (reports.bulk-max sınırı)'
 config:
   list-header: '<gold>===== Düzenlenebilir Yapılandırmalar (%count% anahtar, sayfa %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

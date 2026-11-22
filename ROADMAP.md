@@ -121,13 +121,14 @@
 - 验收：取消 Submitted 事件后提交管线终止且不落库。
 - **完成（2026-11）**：可取消拦截由既有 `ReportPreSubmitEvent`（单测 `ReportEventsTest`）承担，取消后 `ReportService#submit` 直接返回 `CANCELLED` 不落库；新增 `ReportClaimedEvent`（claim 与 assign 后触发）、`ReportClosedEvent`（结案后，携带 `Verdict` 与结案管理员）、`ReportEvidenceCapturedEvent`（证据快照采集后），均主线程同步触发 + try/catch Throwable 隔离；各事件 Javadoc 写明线程契约；README 新增「API 事件与生态集成」章节（事件表 + LuckPerms 结案联动处罚监听器骨架，处罚命令走异步池）。BStats 子项保持不做。
 
-### 12. 管理侧批量操作 ⬜
+### 12. 管理侧批量操作 ⬜→✅
 - 目标：大服日常运维效率。
 - 内容：
   - `/reports bulk close <id...> <裁决>`（限 `reportdesk.admin.delete`）；
   - `/reports bulk export <筛选>` 直接输出 CSV 到管理目录；
   - 批量操作写一条合并审计（含 id 列表）。
 - 验收：单次批量上限可配，防误操作。
+- **完成（2026-11）**：`/reports bulk close <裁决> <id...>`（裁决在前、id 可变尾，避免歧义；限 `reportdesk.admin.delete`）与 `/reports bulk export [status|overdue]`（异步 CSV，复用 `FileStorage#exportCsv`）；纯核心 `BulkClosePlan.plan`（关闭/跳过/缺失 三态分桶 + 截断，单测 `BulkClosePlanTest` 7 项）；批量上限 `reports.bulk-max`（默认 50，进 `ConfigKeys` + 12 语言配置编辑器 label/desc）；合并审计 `BULK_CLOSE`/`BULK_EXPORT` 各一条（含裁决/数量）；批量关闭对每条复用既有事件/通知/联动处罚管线。
 
 ### 13. 运维指标（新增）⏸
 - 目标：不动数据文件也能回答"服务器现在健康吗"。

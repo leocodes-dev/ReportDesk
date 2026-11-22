@@ -794,6 +794,7 @@ Détecter la langue du client Java
         maintenance-interval-minutes: 'Intervalle de maintenance (minutes)'
         stats-top-targets: 'Cibles principales dans les stats'
         staff-stats-top: 'Équipe principale dans les stats'
+        bulk-max: 'Limite des opérations groupées'
         default-category: 'Catégorie par défaut'
         priority:
           enabled: 'Priorités activées'
@@ -972,6 +973,7 @@ Détecte la langue du client de chaque joueur et affiche cette langue.
         maintenance-interval-minutes: 'Fréquence (en minutes) des tâches de nettoyage, sauvegarde et statistiques.'
         stats-top-targets: 'Nombre de joueurs affichés dans le classement des plus signalés.'
         staff-stats-top: 'Nombre de membres de l''équipe affichés dans les statistiques.'
+        bulk-max: 'Nombre maximum de rapports qu’une opération groupée (fermeture/export) peut toucher, pour éviter les erreurs de masse.'
         default-category: 'Catégorie utilisée quand le joueur n''en choisit pas.'
         priority:
           enabled: 'Calcule la priorité du signalement à partir des récidives et des délais.'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>Taux de marquage spam : <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [jours] <dark_gray>- <gray>Revue de la précision/rappel de la priorité intelligente'
+  bulk-closed: '<green><white>%closed%</white> rapport(s) clôturé(s) en %verdict% (<white>%skipped%</white> déjà clôturé(s), <white>%missing%</white> introuvable(s)).'
+  bulk-empty: '<yellow>Donnez au moins un id de rapport pour la clôture groupée.'
+  bulk-capped: '<yellow>Le lot a été tronc à la limite configurée (<white>%capped%</white>). Divisez-le en lots plus petits.'
+  bulk-export-done: '<green>Export groupé terminé : <white>%file%</white> (<white>%count%</white> rapports).'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>Clôture / export groupés de rapports (limités par reports.bulk-max)'
 config:
   list-header: '<gold>===== Configurations éditables (%count% clés, page %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

@@ -20,6 +20,7 @@ package com.reportdesk.service;
 
 import com.reportdesk.ReportDeskPlugin;
 import com.reportdesk.config.PluginConfig;
+import com.reportdesk.core.BulkClosePlan;
 import com.reportdesk.core.Evidence;
 import com.reportdesk.core.EvidenceMeta;
 import com.reportdesk.core.PriorityPolicy;
@@ -460,6 +461,91 @@ public final class ReportService {
             "id", String.valueOf(updated.id()),
             "verdict", plugin.messages().plain(NotificationService.verdictKey(verdict.name()))),
         updated);
+  }
+
+  /**
+   * Bulk-close several reports with a single verdict, guarded by a configurable cap
+   * (roadmap P2#12). Each report is closed through the same path as a single close (repository,
+   * status + closed events, reporter/target notification, optional punishment), but the audit
+   * trail is one consolidated {@code BULK_CLOSE} entry listing every id, instead of one line per
+   * report. The caller enforces {@code reports.bulk-max}; this method also re-checks the cap so
+   * the service is safe even when called directly.
+   *
+   * @param ids the report ids to close; the batch is truncated to the configured cap
+   * @param verdict the verdict applied to every report that is not already terminal
+   * @param actor the admin performing the action (nullable for the console)
+   * @param note an optional close note applied to every report
+   * @return an aggregate result with closed / skipped / missing counts
+   */
+  public OpResult bulkClose(List<Long> ids, Verdict verdict, Player actor, String note) {
+
+    if (ids == null || ids.isEmpty() || verdict == null) {
+
+      return OpResult.fail(MessageKeys.ADMIN_BULK_EMPTY, Map.of());
+    }
+
+    String staffName = actor == null ? "console" : actor.getName();
+
+    UUID staffId = actor == null ? new java.util.UUID(0L, 0L) : actor.getUniqueId();
+
+    long now = System.currentTimeMillis();
+
+    BulkClosePlan.Plan plan =
+        BulkClosePlan.plan(
+            plugin.repository(),
+            ids,
+            plugin.config().reports().bulkMax(),
+            verdict,
+            staffId,
+            staffName,
+            note,
+            now);
+
+    for (Report updated : plan.toClose()) {
+
+      Report original = plugin.repository().get(updated.id()).orElse(updated);
+
+      update(updated);
+
+      fireStatusChanged(updated, original.status(), updated.status());
+
+      fireClosed(updated, verdict, staffId, staffName);
+
+      plugin.notification().onClosed(updated, staffName);
+
+      plugin.punishment().apply(updated, verdict, staffName);
+    }
+
+    // One consolidated audit entry for the whole batch, not one line per report.
+
+    plugin.audit(
+        "BULK_CLOSE",
+        actor,
+        0L,
+        verdict.name()
+            + " | closed="
+            + plan.closed()
+            + " skipped="
+            + plan.skipped()
+            + " missing="
+            + plan.missing());
+
+    Map<String, String> placeholders = new java.util.LinkedHashMap<>();
+
+    placeholders.put("closed", String.valueOf(plan.closed()));
+
+    placeholders.put("skipped", String.valueOf(plan.skipped()));
+
+    placeholders.put("missing", String.valueOf(plan.missing()));
+
+    placeholders.put("verdict", plugin.messages().plain(NotificationService.verdictKey(verdict.name())));
+
+    if (plan.capped()) {
+
+      placeholders.put("capped", String.valueOf(plugin.config().reports().bulkMax()));
+    }
+
+    return OpResult.ok(MessageKeys.ADMIN_BULK_CLOSED, placeholders, null);
   }
 
   public OpResult reopen(Report report, Player staff) {

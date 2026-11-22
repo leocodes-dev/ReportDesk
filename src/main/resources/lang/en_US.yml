@@ -794,6 +794,7 @@ Detect Java Client Language
         maintenance-interval-minutes: 'Maintenance Interval (minutes)'
         stats-top-targets: 'Stats Top Targets'
         staff-stats-top: 'Staff Stats Top'
+        bulk-max: 'Batch Operation Limit'
         default-category: 'Default Category'
         priority:
           enabled: 'Enable Priorities'
@@ -973,6 +974,7 @@ Probe Java clients for their system region language (best-effort).
         maintenance-interval-minutes: 'How often background cleanup, backup and statistics tasks run.'
         stats-top-targets: 'How many players are shown in the most-reported leaderboard.'
         staff-stats-top: 'How many staff members are shown in staff statistics.'
+        bulk-max: 'Maximum reports a single bulk action (close/export) may touch, guarding against mass mistakes.'
         default-category: 'Category used when a player does not choose one.'
         priority:
           enabled: 'Calculate report priority from repeat offenders and overdue rules.'
@@ -1358,6 +1360,11 @@ admin:
   smart-review-flag-rate: '<gray>Garbage flag rate: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [days] <dark_gray>- <gray>Review smart-priority precision/recall'
+  bulk-closed: '<green>Bulk-closed <white>%closed%</white> report(s) as %verdict% (<white>%skipped%</white> already closed, <white>%missing%</white> not found).'
+  bulk-empty: '<yellow>Give at least one report id to bulk close.'
+  bulk-capped: '<yellow>The batch was truncated to the configured limit (<white>%capped%</white>). Split it into smaller batches.'
+  bulk-export-done: '<green>Bulk export complete: <white>%file%</white> (<white>%count%</white> reports).'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>Bulk close / export reports (capped by reports.bulk-max)'
 config:
   list-header: '<gold>===== Editable settings (%count% keys, page %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

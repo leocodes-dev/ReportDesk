@@ -794,6 +794,7 @@ Java-Client-Sprache erkennen
         maintenance-interval-minutes: 'Pflege-Intervall (Minuten)'
         stats-top-targets: 'Top-Ziele in Statistik'
         staff-stats-top: 'Team-Top in Statistik'
+        bulk-max: 'Grenze für Bulk-Operationen'
         default-category: 'Standard-Kategorie'
         priority:
           enabled: 'Prioritäten aktiv'
@@ -972,6 +973,7 @@ Schätzt die Systemregionssprache von Java-Clients ab (Best-Effort).
         maintenance-interval-minutes: 'Intervall (in Minuten) der Bereinigungs- und Statistik-Jobs.'
         stats-top-targets: 'Wie viele Spieler im Top-Ziele-Ranking erscheinen.'
         staff-stats-top: 'Wie viele Teammitglieder in den Statistiken erscheinen.'
+        bulk-max: 'Maximale Meldungen, die eine einzelne Bulk-Operation (Schließen/Export) betreffen darf; schützt vor massenhaften Fehlern.'
         default-category: 'Kategorie, wenn der Spieler keine gewählt hat.'
         priority:
           enabled: 'Priorität aus Wiederholungstätern und Fristen ableiten.'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>Spam-Markierungsrate: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [tage] <dark_gray>- <gray>Präzision/Erinnerlichkeit der intelligenten Priorisierung prüfen'
+  bulk-closed: '<green><white>%closed%</white> Meldung(en) als %verdict% gebucht (<white>%skipped%</white> bereits geschlossen, <white>%missing%</white> nicht gefunden).'
+  bulk-empty: '<yellow>Bitte mindestens eine Meldung-ID zum Bulk-Schließen angeben.'
+  bulk-capped: '<yellow>Das Batch wurde auf die konfigurierte Obergrenze (<white>%capped%</white>) gekürzt. In kleinere Batches aufteilen.'
+  bulk-export-done: '<green>Bulk-Export abgeschlossen: <white>%file%</white> (<white>%count%</white> Meldungen).'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>Meldungen per Batch schließen / exportieren (durch reports.bulk-max begrenzt)'
 config:
   list-header: '<gold>===== Konfigurations-Schalter (%count% Schlüssel, Seite %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

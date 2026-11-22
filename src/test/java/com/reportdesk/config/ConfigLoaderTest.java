@@ -87,6 +87,9 @@ class ConfigLoaderTest {
     // Assign/transfer dedicated ping (roadmap P1#4) is on by default.
     assertTrue(config.notifications().assignNotifyEnabled());
 
+    // Bulk-operation cap (roadmap P2#12) defaults to 50.
+    assertEquals(50, config.reports().bulkMax());
+
     assertTrue(config.configEditor().enabled());
 
     assertTrue(config.configEditor().backupOnSave());
@@ -206,6 +209,9 @@ class ConfigLoaderTest {
 
     // Assign/transfer dedicated ping defaults on (roadmap P1#4).
     assertTrue(config.notifications().assignNotifyEnabled());
+
+    // Bulk-operation cap defaults to 50 (roadmap P2#12).
+    assertEquals(50, config.reports().bulkMax());
 
     assertFalse(config.notifications().sla().weeklyEnabled());
 

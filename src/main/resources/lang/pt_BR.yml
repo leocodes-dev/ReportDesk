@@ -794,6 +794,7 @@ Detectar idioma do cliente Java
         maintenance-interval-minutes: 'Intervalo de Manutenção (minutos)'
         stats-top-targets: 'Top Alvos das Estatísticas'
         staff-stats-top: 'Top da Equipe nas Estatísticas'
+        bulk-max: 'Limite de Operação em Lote'
         default-category: 'Categoria Padrão'
         priority:
           enabled: 'Ativar Prioridades'
@@ -972,6 +973,7 @@ Estima o idioma regional do sistema dos clientes Java (melhor esforço).
         maintenance-interval-minutes: 'Quanto tempo (em minutos) entre execuções de limpeza, backup e estatísticas.'
         stats-top-targets: 'Quantos jogadores aparecem no ranking de mais denunciados.'
         staff-stats-top: 'Quantos membros da equipe aparecem nas estatísticas.'
+        bulk-max: 'Número máximo de denúncias que uma ação em lote (fechar/exportar) pode afetar; evita erros em massa.'
         default-category: 'Categoria usada quando o jogador não escolhe uma.'
         priority:
           enabled: 'Calcular a prioridade da denúncia a partir de reincidentes e prazos.'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>Taxa de marcação de spam: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [dias] <dark_gray>- <gray>Revisar precisão/recall da prioridade inteligente'
+  bulk-closed: '<green>Encerradas <white>%closed%</white> denúncias como %verdict% (<white>%skipped%</white> já encerradas, <white>%missing%</white> não encontradas).'
+  bulk-empty: '<yellow>Forneça pelo menos um id de denúncia para o encerramento em lote.'
+  bulk-capped: '<yellow>O lote foi truncado no limite configurado (<white>%capped%</white>). Divida-o em lotes menores.'
+  bulk-export-done: '<green>Exportação em lote concluída: <white>%file%</white> (<white>%count%</white> denúncias).'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>Encerrar / exportar denúncias em lote (limitado por reports.bulk-max)'
 config:
   list-header: '<gold>===== Configurações editáveis (%count% chaves, página %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

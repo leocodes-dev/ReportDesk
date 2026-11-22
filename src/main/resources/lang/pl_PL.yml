@@ -794,6 +794,7 @@ Wykrywanie języka klienta Java
         maintenance-interval-minutes: 'Interwał konserwacji (minuty)'
         stats-top-targets: 'Top celów w statystykach'
         staff-stats-top: 'Top zespołu w statystykach'
+        bulk-max: 'Limit operacji zbiorczych'
         default-category: 'Domyślna kategoria'
         priority:
           enabled: 'Włącz priorytety'
@@ -972,6 +973,7 @@ Szacuje systemowy język regionalny klientów Java (dołożenie starań).
         maintenance-interval-minutes: 'Częstotliwość (w minutach) zadań czyszczenia, kopii i statystyk.'
         stats-top-targets: 'Liczba graczy wyświetlanych w rankingu najczęściej zgłaszanych.'
         staff-stats-top: 'Liczba członków zespołu wyświetlanych w statystykach.'
+        bulk-max: 'Maksymalna liczba zgłoszeń, które może dotknąć pojedyncza operacja zbiorcza (zamknięcie/eksport); chroni przed masowymi błędami.'
         default-category: 'Kategoria używana, gdy gracz jej nie wybrał.'
         priority:
           enabled: 'Oblicza priorytet zgłoszenia z powtórek i terminów.'
@@ -1356,6 +1358,11 @@ admin:
   smart-review-flag-rate: '<gray>Wskaźnik oznaczania spamu: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [dni] <dark_gray>- <gray>Przegląd precyzji/czułości inteligentnego priorytetu'
+  bulk-closed: '<green>Zamknięto zbiorczo <white>%closed%</white> zgłoszeń jako %verdict% (<white>%skipped%</white> już zamkniętych, <white>%missing%</white> nie znalezionych).'
+  bulk-empty: '<yellow>Podaj co najmniej jeden id zgłoszenia do zbiorczego zamknięcia.'
+  bulk-capped: '<yellow>Partia została obcięta do skonfigurowanego limitu (<white>%capped%</white>). Podziel ją na mniejsze partie.'
+  bulk-export-done: '<green>Eksport zbiorczy zakończony: <white>%file%</white> (<white>%count%</white> zgłoszeń).'
+  help-bulk: '<gray>/reports bulk close <verdict> <id...> / bulk export [status] <dark_gray>- <gray>Zbiorcze zamykanie / eksport zgłoszeń (limit: reports.bulk-max)'
 config:
   list-header: '<gold>===== Edytowalne konfiguracje (%count% kluczy, strona %page%/%pages%) ====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

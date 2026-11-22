@@ -794,6 +794,7 @@ gui:
         maintenance-interval-minutes: '维护间隔（分钟）'
         stats-top-targets: '统计显示目标数'
         staff-stats-top: '管理员统计数量'
+        bulk-max: '批量操作上限'
         default-category: '默认举报分类'
         priority:
           enabled: '启用优先级'
@@ -973,6 +974,7 @@ gui:
         maintenance-interval-minutes: '后台清理、备份和统计任务的执行间隔（分钟）。'
         stats-top-targets: '统计页面显示的被举报玩家排行榜数量。'
         staff-stats-top: '管理员统计页面显示的管理员数量。'
+        bulk-max: '单次批量操作（关闭/导出）最多能处理的举报数，防止批量误操作。'
         default-category: '玩家未指定分类时使用的默认举报类型。'
         priority:
           enabled: '根据重复违规和逾期规则为举报计算优先级。'
@@ -1358,6 +1360,11 @@ admin:
   smart-review-flag-rate: '<gray>垃圾标记率: <white>%value%</white>'
   smart-review-bucket: '<gray>%range% <white>%bar% <dark_gray>(%count%)'
   help-smart: '<gray>/reports smart review [天数] <dark_gray>- <gray>智能优先级复盘（精确率/召回率/分布）'
+  bulk-closed: '<green>批量结案 <white>%closed%</white> 条举报（裁决：%verdict%；<white>%skipped%</white> 条已结案跳过，<white>%missing%</white> 条未找到）。'
+  bulk-empty: '<yellow>请至少提供一个举报 ID 再批量结案。'
+  bulk-capped: '<yellow>批量已截断到配置上限（<white>%capped%</white>），请分批操作。'
+  bulk-export-done: '<green>批量导出完成: <white>%file%</white>（<white>%count%</white> 条）。'
+  help-bulk: '<gray>/reports bulk close <裁决> <id...> / bulk export [状态] <dark_gray>- <gray>批量结案 / 导出举报（受 reports.bulk-max 上限约束）'
 config:
   list-header: '<gold>===== 可在线修改的配置（%count% 项，第 %page%/%pages% 页）====='
   list-line: '<gray>%key% <dark_gray>= <white>%value%'

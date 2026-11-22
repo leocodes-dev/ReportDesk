@@ -1342,6 +1342,17 @@ public final class MessageKeys {
 
   public static final String ADMIN_HELP_SMART = "admin.help-smart";
 
+  // Bulk operations (roadmap P2#12).
+  public static final String ADMIN_BULK_CLOSED = "admin.bulk-closed";
+
+  public static final String ADMIN_BULK_EMPTY = "admin.bulk-empty";
+
+  public static final String ADMIN_BULK_CAPPED = "admin.bulk-capped";
+
+  public static final String ADMIN_BULK_EXPORT_DONE = "admin.bulk-export-done";
+
+  public static final String ADMIN_HELP_BULK = "admin.help-bulk";
+
   public static final String EVIDENCE_HEADER = "evidence.header";
 
   public static final String EVIDENCE_TARGET = "evidence.target";
